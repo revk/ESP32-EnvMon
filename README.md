@@ -18,8 +18,4 @@ without heat from components impacting the reading.
 The CO2 sensor used is an expensive NDIR module providing accurate CO2
 measurement which is not fooled by farts, etc.
 
-A PCB design is included based on milling tracks. There is also a PCB
-design in the ESP32-OLED project which uses a professionally printed
-PCB layout.
-
 (c) 2019-21 Andrews & Arnold Ltd, Adrian Kennard. See LICENSE file (GPL).
