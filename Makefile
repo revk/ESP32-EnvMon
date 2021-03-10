@@ -18,7 +18,7 @@ zap:    bootmode flash
 	./ftdizap/ftdizap --cbus0=1 --reset
 
 ftdi: ftdizap/ftdizap
-	./ftdizap/ftdizap --serial="RevK" --description="ESP32-EnvMon" --cbus0-mode=8
+	./ftdizap/ftdizap --serial="RevK" --description="ESP32-EnvMon" --cbus0-mode=8 --cbus1-mode=13
 
 ftdizap/ftdizap: ftdizap/ftdizap.c
 	make -C ftdizap
