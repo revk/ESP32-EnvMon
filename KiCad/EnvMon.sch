@@ -540,9 +540,9 @@ Text GLabel 2100 4850 0    50   Input ~ 0
 CO2-SCL
 Text GLabel 2100 4950 0    50   Input ~ 0
 CO2-SDA
-Text GLabel 9200 3950 2    50   Input ~ 0
+Text GLabel 9200 3250 2    50   Input ~ 0
 CO2-SCL
-Text GLabel 9200 3850 2    50   Input ~ 0
+Text GLabel 9200 3150 2    50   Input ~ 0
 CO2-SDA
 Wire Wire Line
 	1350 4750 1350 5250
@@ -578,8 +578,6 @@ Text GLabel 9500 6300 2    50   Input ~ 0
 IO7
 Text GLabel 9200 3550 2    50   Input ~ 0
 OLED-RST
-NoConn ~ 9200 3150
-NoConn ~ 9200 3250
 NoConn ~ 9200 3350
 NoConn ~ 9200 2250
 Text GLabel 4900 2800 2    50   Input ~ 0
@@ -648,4 +646,8 @@ Wire Wire Line
 Connection ~ 3350 1200
 Wire Wire Line
 	3350 1200 3550 1200
+NoConn ~ 9200 3850
+NoConn ~ 9200 3950
+NoConn ~ 1250 6200
+NoConn ~ 1300 3500
 $EndSCHEMATC
