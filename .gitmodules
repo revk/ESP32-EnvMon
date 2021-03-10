@@ -1,0 +1,21 @@
+[submodule "components/ESP32-RevK"]
+	path = components/ESP32-RevK
+	url = https://github.com/revk/ESP32-RevK
+[submodule "components/esp32-owb"]
+	path = components/esp32-owb
+	url = https://github.com/DavidAntliff/esp32-owb
+[submodule "components/esp32-ds18b20"]
+	path = components/esp32-ds18b20
+	url = https://github.com/DavidAntliff/esp32-ds18b20
+[submodule "SQLlib"]
+	path = SQLlib
+	url = https://github.com/revk/SQLlib
+[submodule "AXL"]
+	path = AXL
+	url = https://github.com/revk/AXL
+[submodule "components/ESP32-OLED"]
+	path = components/ESP32-OLED-RGB
+	url = https://github.com/revk/ESP32-OLED-RGB
+[submodule "PCBCase"]
+	path = PCBCase
+	url = https://github.com/revk/PCBCase
