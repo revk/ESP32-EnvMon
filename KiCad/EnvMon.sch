@@ -36,17 +36,6 @@ F 3 "https://www.pololu.com/product/2842/resources" H 3950 1250 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Interface_USB:FT230XQ U1
-U 1 1 6046E472
-P 4200 2700
-F 0 "U1" H 4200 3581 50  0000 C CNN
-F 1 "FT230XQ" H 4200 3490 50  0000 C CNN
-F 2 "Package_DFN_QFN:QFN-16-1EP_4x4mm_P0.65mm_EP2.1x2.1mm" H 5550 2100 50  0001 C CNN
-F 3 "https://www.ftdichip.com/Support/Documents/DataSheets/ICs/DS_FT230X.pdf" H 4200 2700 50  0001 C CNN
-	1    4200 2700
-	1    0    0    -1  
-$EndComp
-$Comp
 L Connector:Conn_01x08_Male J3
 U 1 1 60473312
 P 7000 5900
@@ -89,17 +78,6 @@ F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" V 2780 1700 50  0
 F 3 "~" H 2850 1700 50  0001 C CNN
 	1    2850 1700
 	1    0    0    -1  
-$EndComp
-$Comp
-L Connector:Conn_01x02_Male J2
-U 1 1 60467E1F
-P 3750 750
-F 0 "J2" H 3858 931 50  0000 C CNN
-F 1 "DC" H 3858 840 50  0000 C CNN
-F 2 "RevK:DC" H 3750 750 50  0001 C CNN
-F 3 "~" H 3750 750 50  0001 C CNN
-	1    3750 750 
-	-1   0    0    1   
 $EndComp
 $Comp
 L RevK:SCD30-4pin M3
@@ -253,20 +231,11 @@ F 3 "" H 4300 3400 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	4300 3400 4200 3400
-Connection ~ 4300 3400
-Wire Wire Line
-	4200 3400 4100 3400
-Connection ~ 4200 3400
-Wire Wire Line
 	3500 2900 3100 2900
 Wire Wire Line
 	3100 2900 3100 2300
 Wire Wire Line
 	3100 2300 3500 2300
-Wire Wire Line
-	4100 2000 4300 2000
-Connection ~ 4100 2000
 $Comp
 L power:GND #PWR0106
 U 1 1 6048DFCC
@@ -290,25 +259,14 @@ F 3 "" H 3150 750 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3550 750  3150 750 
-Wire Wire Line
 	3550 1300 3150 1300
 Wire Wire Line
 	3150 1300 3150 1400
-Wire Wire Line
-	3550 1200 3350 1200
-Wire Wire Line
-	3350 1200 3350 650 
-Wire Wire Line
-	3350 650  3550 650 
 NoConn ~ 3550 1100
-Wire Wire Line
-	3350 1200 2800 1200
 Wire Wire Line
 	2800 1200 2800 1150
 Wire Wire Line
 	2800 1150 2400 1150
-Connection ~ 3350 1200
 $Comp
 L power:+3V3 #PWR0108
 U 1 1 604928EC
@@ -320,9 +278,6 @@ F 3 "" H 4650 2000 50  0001 C CNN
 	1    4650 2000
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	4650 2000 4300 2000
-Connection ~ 4300 2000
 Wire Wire Line
 	2400 1850 2400 1950
 NoConn ~ 2400 2250
@@ -504,21 +459,10 @@ F 3 "" H 5250 2600 50  0001 C CNN
 	1    5250 2600
 	1    0    0    -1  
 $EndComp
-NoConn ~ 4900 2800
-NoConn ~ 4900 2900
-NoConn ~ 4900 3000
 Wire Wire Line
 	4900 2500 6100 2500
 Wire Wire Line
 	6100 2500 6100 1650
-Wire Wire Line
-	4900 3100 6250 3100
-Wire Wire Line
-	6250 3100 6250 1150
-Wire Wire Line
-	9400 1150 9400 1650
-Wire Wire Line
-	9400 1650 9200 1650
 NoConn ~ 8000 1850
 NoConn ~ 8000 1950
 NoConn ~ 3750 4150
@@ -535,8 +479,6 @@ F 3 "" H 4500 5000 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	6100 1650 8000 1650
-Wire Wire Line
-	6250 1150 9400 1150
 Wire Wire Line
 	4900 2300 5950 2300
 Wire Wire Line
@@ -559,14 +501,11 @@ Wire Wire Line
 	9550 1750 9200 1750
 Wire Wire Line
 	3500 2300 3500 2000
-Connection ~ 3500 2300
 Wire Wire Line
 	3500 2000 3500 1400
 Wire Wire Line
 	3500 1400 3550 1400
 Connection ~ 3500 2000
-Wire Wire Line
-	3500 2000 4100 2000
 NoConn ~ 8000 2850
 NoConn ~ 8000 2950
 NoConn ~ 8000 3050
@@ -642,8 +581,71 @@ OLED-RST
 NoConn ~ 9200 3150
 NoConn ~ 9200 3250
 NoConn ~ 9200 3350
-NoConn ~ 9200 3650
-NoConn ~ 9200 3750
-NoConn ~ 9200 1850
 NoConn ~ 9200 2250
+Text GLabel 4900 2800 2    50   Input ~ 0
+CBUS0
+Text GLabel 4900 2900 2    50   Input ~ 0
+CBUS1
+Text GLabel 4900 3000 2    50   Input ~ 0
+CBUS2
+Text GLabel 4900 3100 2    50   Input ~ 0
+CBUS3
+Connection ~ 3500 2300
+Connection ~ 4300 3400
+Wire Wire Line
+	4200 3400 4100 3400
+Wire Wire Line
+	4300 3400 4200 3400
+Connection ~ 4200 3400
+Wire Wire Line
+	3500 2000 4100 2000
+Connection ~ 4100 2000
+Wire Wire Line
+	4650 2000 4300 2000
+Wire Wire Line
+	4100 2000 4300 2000
+Connection ~ 4300 2000
+$Comp
+L Interface_USB:FT230XQ U1
+U 1 1 6046E472
+P 4200 2700
+F 0 "U1" H 4200 3581 50  0000 C CNN
+F 1 "FT230XQ" H 4200 3490 50  0000 C CNN
+F 2 "Package_DFN_QFN:QFN-16-1EP_4x4mm_P0.65mm_EP2.1x2.1mm" H 5550 2100 50  0001 C CNN
+F 3 "https://www.ftdichip.com/Support/Documents/DataSheets/ICs/DS_FT230X.pdf" H 4200 2700 50  0001 C CNN
+	1    4200 2700
+	1    0    0    -1  
+$EndComp
+Text GLabel 9200 1650 2    50   Input ~ 0
+CBUS0
+Text GLabel 9200 1850 2    50   Input ~ 0
+CBUS1
+Text GLabel 9200 3650 2    50   Input ~ 0
+CBUS2
+Text GLabel 9200 3750 2    50   Input ~ 0
+CBUS3
+$Comp
+L RevK:DC J2
+U 1 1 604CCEB5
+P 3650 650
+F 0 "J2" H 3604 875 50  0000 C CNN
+F 1 "DC" H 3604 784 50  0000 C CNN
+F 2 "RevK:DC" H 3650 750 50  0001 C CNN
+F 3 "" H 3650 750 50  0001 C CNN
+	1    3650 650 
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2800 1200 3350 1200
+Wire Wire Line
+	3550 650  3150 650 
+Wire Wire Line
+	3150 650  3150 750 
+Wire Wire Line
+	3550 750  3350 750 
+Wire Wire Line
+	3350 750  3350 1200
+Connection ~ 3350 1200
+Wire Wire Line
+	3350 1200 3550 1200
 $EndSCHEMATC
