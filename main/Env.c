@@ -49,8 +49,8 @@ const char TAG[] = "CO2";
 	s(heaton)	\
 	s(heatoff)	\
 	u32(heatresend,3600)	\
-	u32(heatdaymC,HEATMAX)	\
-	u32(heatnightmC,HEATMAX)	\
+	u32(heatdaymC,1000000)	\
+	u32(heatnightmC,1000000)	\
 
 #define u32(n,d)	uint32_t n;
 #define s8(n,d)	int8_t n;

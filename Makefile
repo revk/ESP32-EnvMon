@@ -11,6 +11,18 @@ update:
 	git submodule update --init --remote --merge
 	git commit -a -m "Library update"
 
+bootmode: ftdizap/ftdizap
+	./ftdizap/ftdizap --cbus0=0
+
+zap:    bootmode flash
+	./ftdizap/ftdizap --cbus0=1 --reset
+
+ftdi: ftdizap/ftdizap
+	./ftdizap/ftdizap --serial="RevK" --description="ESP32-EnvMon" --cbus0-mode=8
+
+ftdizap/ftdizap: ftdizap/ftdizap.c
+	make -C ftdizap
+
 SQLlib/sqllib.o: SQLlib/sqllib.c
 	make -C SQLlib
 AXL/axl.o: AXL/axl.c
