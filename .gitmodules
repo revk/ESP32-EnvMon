@@ -13,3 +13,4 @@
 [submodule "ftdizap"]
 	path = ftdizap
 	url = https://github.com/revk/ftdizap
+	branch = main
