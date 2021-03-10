@@ -13,9 +13,6 @@
 [submodule "AXL"]
 	path = AXL
 	url = https://github.com/revk/AXL
-[submodule "components/ESP32-OLED"]
+[submodule "components/ESP32-OLED-RGB"]
 	path = components/ESP32-OLED-RGB
 	url = https://github.com/revk/ESP32-OLED-RGB
-[submodule "PCBCase"]
-	path = PCBCase
-	url = https://github.com/revk/PCBCase
