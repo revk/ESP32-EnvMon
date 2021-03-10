@@ -10,12 +10,7 @@
 [submodule "SQLlib"]
 	path = SQLlib
 	url = https://github.com/revk/SQLlib
-[submodule "AXL"]
-	path = AXL
-	url = https://github.com/revk/AXL
-[submodule "components/ESP32-OLED-RGB"]
-	path = components/ESP32-OLED-RGB
-	url = https://github.com/revk/ESP32-OLED-RGB
 [submodule "ftdizap"]
 	path = ftdizap
 	url = https://github.com/revk/ftdizap
+	branch = main
