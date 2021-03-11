@@ -568,7 +568,6 @@ Text GLabel 9500 6300 2    50   Input ~ 0
 IO7
 Text GLabel 9200 2950 2    50   Input ~ 0
 OLED-RST
-NoConn ~ 9200 2250
 Text GLabel 4900 2800 2    50   Input ~ 0
 CBUS0
 Text GLabel 4900 2900 2    50   Input ~ 0
@@ -650,4 +649,6 @@ Wire Wire Line
 Wire Wire Line
 	2700 2700 3500 2700
 NoConn ~ 4500 5600
+NoConn ~ 9200 2450
+NoConn ~ 9200 2550
 $EndSCHEMATC
