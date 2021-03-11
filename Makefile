@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := Env
+PROJECT_NAME := EnvMon
 
 include $(IDF_PATH)/make/project.mk
 
@@ -11,12 +11,15 @@ update:
 	git submodule update --init --remote --merge
 	git commit -a -m "Library update"
 
+# Set GPIO low (whichever CBUS is set to mode 8/GPIO)
 bootmode: ftdizap/ftdizap
-	./ftdizap/ftdizap --cbus0=0
+	./ftdizap/ftdizap --cbus=0
 
+# Flash with GPIO control
 zap:    bootmode flash
-	./ftdizap/ftdizap --cbus0=1 --reset
+	./ftdizap/ftdizap --cbus=1 --reset
 
+# Program the FTDI
 ftdi: ftdizap/ftdizap
 	./ftdizap/ftdizap --serial="RevK" --description="ESP32-EnvMon" --cbus0-mode=8 --cbus1-mode=4 --cbus2-mode=13 --cbus3-mode=5
 

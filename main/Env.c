@@ -1,9 +1,10 @@
 // CO2 + other sensors all
 /* Copyright(c) 2019-21 Adrian Kennard, Andrews & Arnold Limited, see LICENSE file(GPL) */
-const char      TAG[] = "CO2";
+const char      TAG[] = "Env";
 
 #include "revk.h"
 #include <driver/i2c.h>
+#include <hal/spi_types.h>
 #include <math.h>
 
 #include "owb.h"
@@ -412,9 +413,10 @@ app_main()
             i2c_set_timeout(co2port, 160000);   /* 2 ms ? allow for clock stretching */
       }
    }
-   //oled_start(1, oledaddress, oledcs, oledclk, oleddin, oleddc, oledrst, oledsda, 1 - oledflip);
-   //TODO
-      oled_set_contrast(oledcontrast);
+   const char     *e = oled_start(SPI2_HOST, oledaddress, oledcs, oledclk, oleddin, oleddc, oledrst, 1 - oledflip);
+   if (e)
+      revk_error("OLED", "Failed to start: %s", e);
+   oled_set_contrast(oledcontrast);
    if (co2port >= 0)
       revk_task("CO2", co2_task, NULL);
    if (ds18b20 >= 0)

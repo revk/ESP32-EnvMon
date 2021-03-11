@@ -230,12 +230,6 @@ F 3 "" H 4300 3400 50  0001 C CNN
 	1    4300 3400
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	3500 2900 3100 2900
-Wire Wire Line
-	3100 2900 3100 2300
-Wire Wire Line
-	3100 2300 3500 2300
 $Comp
 L power:GND #PWR0106
 U 1 1 6048DFCC
@@ -298,13 +292,9 @@ Wire Wire Line
 	2600 2650 1800 2650
 Connection ~ 2600 1850
 Connection ~ 1800 2650
-Wire Wire Line
-	2700 2700 3500 2700
 Connection ~ 2400 1950
 Wire Wire Line
 	2400 1650 2400 1750
-Wire Wire Line
-	3500 2600 2850 2600
 Wire Wire Line
 	2850 2600 2850 2050
 Wire Wire Line
@@ -650,4 +640,14 @@ NoConn ~ 9200 3850
 NoConn ~ 9200 3950
 NoConn ~ 1250 6200
 NoConn ~ 1300 3500
+Wire Wire Line
+	2950 2300 2950 2900
+Wire Wire Line
+	2950 2300 3500 2300
+Wire Wire Line
+	2950 2900 3500 2900
+Wire Wire Line
+	2850 2600 3500 2600
+Wire Wire Line
+	2700 2700 3500 2700
 $EndSCHEMATC
