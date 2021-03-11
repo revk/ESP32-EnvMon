@@ -29,8 +29,8 @@ const char      TAG[] = "Env";
 
 #define	HEATMAX	1000000
 #define settings	\
-	s8(co2sda,22)	\
-	s8(co2scl,23)	\
+	s8(co2sda,26)	\
+	s8(co2scl,25)	\
 	s8(co2address,0x61)	\
 	s8(co2places,-1)	\
 	u32(co2damp,100)	\
@@ -38,12 +38,11 @@ const char      TAG[] = "Env";
 	s8(rhplaces,0)	\
 	u32(rhdamp,10)	\
 	s8(ds18b20,4)	\
-	s8(oleddin,13)	\
-	s8(oledclk,14)	\
-	s8(oledcs,15)	\
-	s8(oleddc,26)	\
-	s8(oledrst,27)	\
-	s8(oledaddress,0x3D)	\
+	s8(oleddin,23)	\
+	s8(oledclk,18)	\
+	s8(oledcs,5)	\
+	s8(oleddc,21)	\
+	s8(oledrst,19)	\
 	u8(oledcontrast,127)	\
 	b(oledflip)	\
 	b(f)	\
@@ -413,7 +412,7 @@ app_main()
             i2c_set_timeout(co2port, 160000);   /* 2 ms ? allow for clock stretching */
       }
    }
-   const char     *e = oled_start(SPI2_HOST, oledaddress, oledcs, oledclk, oleddin, oleddc, oledrst, 1 - oledflip);
+   const char     *e = oled_start(HSPI_HOST, oledcs, oledclk, oleddin, oleddc, oledrst, 1 - oledflip);
    if (e)
       revk_error("OLED", "Failed to start: %s", e);
    oled_set_contrast(oledcontrast);

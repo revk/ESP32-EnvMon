@@ -502,13 +502,13 @@ NoConn ~ 8000 3050
 NoConn ~ 8000 3150
 NoConn ~ 8000 3250
 NoConn ~ 8000 3350
-Text GLabel 9200 2550 2    50   Input ~ 0
+Text GLabel 9200 2150 2    50   Input ~ 0
 OLED-CS0
-Text GLabel 9200 2450 2    50   Input ~ 0
+Text GLabel 9200 2850 2    50   Input ~ 0
 OLED-SCLK
-Text GLabel 9200 2350 2    50   Input ~ 0
+Text GLabel 9200 3250 2    50   Input ~ 0
 OLED-MOSI
-Text GLabel 9200 3450 2    50   Input ~ 0
+Text GLabel 9200 3050 2    50   Input ~ 0
 OLED-DC
 Text GLabel 4500 5300 0    50   Input ~ 0
 OLED-CS0
@@ -530,9 +530,9 @@ Text GLabel 2100 4850 0    50   Input ~ 0
 CO2-SCL
 Text GLabel 2100 4950 0    50   Input ~ 0
 CO2-SDA
-Text GLabel 9200 3250 2    50   Input ~ 0
+Text GLabel 9200 3450 2    50   Input ~ 0
 CO2-SCL
-Text GLabel 9200 3150 2    50   Input ~ 0
+Text GLabel 9200 3350 2    50   Input ~ 0
 CO2-SDA
 Wire Wire Line
 	1350 4750 1350 5250
@@ -544,13 +544,13 @@ Text GLabel 9200 2650 2    50   Input ~ 0
 IO2
 Text GLabel 9200 2750 2    50   Input ~ 0
 IO3
-Text GLabel 9200 2150 2    50   Input ~ 0
+Text GLabel 9200 2250 2    50   Input ~ 0
 IO4
-Text GLabel 9200 2850 2    50   Input ~ 0
+Text GLabel 9200 2350 2    50   Input ~ 0
 IO5
-Text GLabel 9200 2950 2    50   Input ~ 0
+Text GLabel 9200 3550 2    50   Input ~ 0
 IO6
-Text GLabel 9200 3050 2    50   Input ~ 0
+Text GLabel 9200 3150 2    50   Input ~ 0
 IO7
 Text GLabel 9500 5700 2    50   Input ~ 0
 IO1
@@ -566,9 +566,8 @@ Text GLabel 9500 6200 2    50   Input ~ 0
 IO6
 Text GLabel 9500 6300 2    50   Input ~ 0
 IO7
-Text GLabel 9200 3550 2    50   Input ~ 0
+Text GLabel 9200 2950 2    50   Input ~ 0
 OLED-RST
-NoConn ~ 9200 3350
 NoConn ~ 9200 2250
 Text GLabel 4900 2800 2    50   Input ~ 0
 CBUS0
@@ -650,4 +649,5 @@ Wire Wire Line
 	2850 2600 3500 2600
 Wire Wire Line
 	2700 2700 3500 2700
+NoConn ~ 4500 5600
 $EndSCHEMATC
