@@ -29,8 +29,8 @@ const char      TAG[] = "Env";
 
 #define	HEATMAX	1000000
 #define settings	\
-	s8(co2sda,-1)	\
-	s8(co2scl,-1)	\
+	s8(co2sda,25)	\
+	s8(co2scl,26)	\
 	s8(co2address,0x61)	\
 	s8(co2places,-1)	\
 	u32(co2damp,100)	\
@@ -39,11 +39,11 @@ const char      TAG[] = "Env";
 	u32(rhdamp,10)	\
 	s8(ds18b20,4)	\
 	s8(oleddin,23)	\
-	s8(oledclk,19)	\
-	s8(oledcs,22)	\
+	s8(oledclk,18)	\
+	s8(oledcs,5)	\
 	s8(oleddc,21)	\
-	s8(oledrst,18)	\
-	u8(oledcontrast,127)	\
+	s8(oledrst,19)	\
+	u8(oledcontrast,255)	\
 	b(oledflip)	\
 	b(f)	\
 	s(fanon)	\
