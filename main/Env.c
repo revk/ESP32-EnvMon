@@ -384,6 +384,10 @@ app_main()
       if (p == sizeof(logo))
          memcpy(logo, aalogo, sizeof(logo));    /* default */
    }
+   oled_lock();
+   oled_colour(BLUE);
+   oled_box(CONFIG_OLED_WIDTH,CONFIG_OLED_HEIGHT,255);
+   oled_unlock();
    if (co2sda >= 0 && co2scl >= 0)
    {
       co2port = 0;
@@ -451,6 +455,10 @@ app_main()
       else
          revk_task("DS18B20", ds18b20_task, NULL);
    }
+   oled_lock();
+   oled_clear(0);
+   oped_unlock();
+
    /* Main task... */
    time_t          showtime = 0;
    char            showlogo = 1;
