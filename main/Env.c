@@ -139,7 +139,7 @@ app_command(const char *tag, unsigned int len, const unsigned char *value)
    if (!strcmp(tag, "night"))
    {
       oled_dark = 1;
-      oled_set_contrast(0);
+      /* oled_set_contrast(0); */
       return "";
    }
    if (!strcmp(tag, "day"))
@@ -519,8 +519,6 @@ app_main()
             }
          }
       }
-      /* Next second */
-      usleep(1000000LL - (esp_timer_get_time() % 1000000LL));
       /* Display */
       oled_lock();
       char            s[30];
@@ -528,7 +526,6 @@ app_main()
       {                         /* Night mode, just time */
          oled_colour(RED);
          oled_clear(0);
-         oled_box(CONFIG_OLED_WIDTH, CONFIG_OLED_HEIGHT, 255);
          showlogo = 1;
          showtime = 0;
          showco2 = -1000;
@@ -536,14 +533,16 @@ app_main()
          showrh = -1000;
          struct tm       t;
          localtime_r(&now, &t);
-         strftime(s, sizeof(s), "%H:%M", &t);
-         oled_text(0, s);
+         strftime(s, sizeof(s), "%H:%M:%S", &t);
+         oled_pos(0, CONFIG_OLED_HEIGHT - 1, OLED_B | OLED_L);
+         oled_text(1, s);
          oled_unlock();
          continue;
       }
       if (showlogo)
       {
          showlogo = 0;
+         oled_pos(CONFIG_OLED_WIDTH - LOGOW, 12, 0);
          oled_icon16(LOGOW, LOGOH, logo);
       }
       if (now != showtime)
@@ -560,10 +559,11 @@ app_main()
          if (t.tm_year > 100)
          {
             strftime(s, sizeof(s), "%F\004%T %Z", &t);
+            oled_pos(0, 0, 0);
             oled_text(1, s);
          }
       }
-      int y = CONFIG_OLED_HEIGHT - 1,
+      int             y = CONFIG_OLED_HEIGHT - 1,
                       space = (CONFIG_OLED_HEIGHT - 28 - 35 - 21 - 9) / 3;
       y -= 28;
       if (thisco2 != showco2)
@@ -575,6 +575,7 @@ app_main()
             strcpy(s, "^^^^");
          else
             sprintf(s, "%4d", (int)showco2);
+         oled_pos(0, y, 0);
          oled_text(4, s);
          oled_text(1, "CO2");
          oled_text(-1, "ppm");
@@ -626,5 +627,7 @@ app_main()
       }
       y -= space;
       oled_unlock();
+      /* Next second */
+      usleep(1000000LL - (esp_timer_get_time() % 1000000LL));
    }
 }
