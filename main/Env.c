@@ -540,7 +540,13 @@ app_main()
          struct tm       t;
          localtime_r(&now, &t);
          strftime(s, sizeof(s), "%H:%M:%S", &t);
-         oled_pos(t.tm_hour + t.tm_min, CONFIG_OLED_HEIGHT - 1 - t.tm_sec * 2, OLED_B | OLED_L);
+         int             y = CONFIG_OLED_HEIGHT - 1 - t.tm_sec * 2;
+         if (t.tm_min & 1)
+            y = 6 + t.tm_sec * 2;
+         int             x = t.tm_hour + t.tm_min;
+         if (t.tm_hour & 1)
+            x = t.tm_hour + 60 - t.tm_min;
+         oled_pos(x, y, OLED_B | OLED_L);
          oled_text(1, s);
          oled_unlock();
          continue;
