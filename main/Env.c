@@ -139,13 +139,11 @@ app_command(const char *tag, unsigned int len, const unsigned char *value)
    if (!strcmp(tag, "night"))
    {
       oled_dark = 1;
-      /* oled_set_contrast(0); */
       return "";
    }
    if (!strcmp(tag, "day"))
    {
       oled_dark = 0;
-      oled_set_contrast(oledcontrast);
       return "";
    }
    if (!strcmp(tag, "contrast"))
@@ -559,13 +557,12 @@ app_main()
          if (t.tm_year > 100)
          {
             strftime(s, sizeof(s), "%F\004%T %Z", &t);
-            oled_pos(0, 0, 0);
+            oled_pos(0, CONFIG_OLED_HEIGHT - 1, OLED_B | OLED_L);
             oled_text(1, s);
          }
       }
-      int             y = CONFIG_OLED_HEIGHT - 1,
+      int             y = 0,
                       space = (CONFIG_OLED_HEIGHT - 28 - 35 - 21 - 9) / 3;
-      y -= 28;
       if (thisco2 != showco2)
       {
          showco2 = thisco2;
@@ -575,18 +572,29 @@ app_main()
             strcpy(s, "^^^^");
          else
             sprintf(s, "%4d", (int)showco2);
-         oled_pos(0, y, 0);
+         if (fanco2)
+            oled_colour(showco2 > fanco2 ? RED : GREEN);
+         oled_pos(4, y, OLED_T | OLED_L | OLED_H);
          oled_text(4, s);
+         oled_pos(oled_x(), oled_y(), OLED_T | OLED_L | OLED_V);
          oled_text(1, "CO2");
          oled_text(-1, "ppm");
          if (fanco2)
+         {
+            oled_pos(CONFIG_OLED_WIDTH - LOGOW * 2 - 4, 12, 0);
             oled_icon16(LOGOW, LOGOH, showco2 > fanco2 ? fan : NULL);
+         }
+         oled_colour(WHITE);
       }
-      y -= space;               /* Space */
-      y -= 35;
+      y += 28 + space;
       if (thistemp != showtemp)
       {
          showtemp = thistemp;
+         uint32_t        heattemp = (oled_dark ? heatnightmC : heatdaymC);
+         uint32_t        thismC = thistemp * 1000;
+         if (heattemp != HEATMAX)
+            oled_colour(thismC > heattemp ? RED : GREEN);
+         oled_pos(10, y, OLED_T | OLED_L | OLED_H);
          if (f)
          {                      /* Fahrenheit */
             int             fh = (showtemp + 40.0) * 1.8 - 40.0;
@@ -608,11 +616,12 @@ app_main()
          oled_text(5, s);
          oled_text(1, "o");
          oled_text(2, f ? "F" : "C");
+         oled_colour(WHITE);
       }
-      y -= space;               /* Space */
-      y -= 21;
+      y += 35 + space;
       if (thisrh != showrh)
       {
+         oled_pos(3, y, OLED_T | OLED_L | OLED_H);
          showrh = thisrh;
          if (showrh <= 0)
             strcpy(s, "__");
@@ -625,7 +634,7 @@ app_main()
          oled_text(1, "R");
          oled_text(1, "H");
       }
-      y -= space;
+      y += 21 + space;
       oled_unlock();
       /* Next second */
       usleep(1000000LL - (esp_timer_get_time() % 1000000LL));
