@@ -530,7 +530,7 @@ app_main()
       char            s[30];
       if (oled_dark)
       {                         /* Night mode, just time */
-         oled_colour(RED);
+         oled_colour(R);
          oled_clear(0);
          showlogo = 1;
          showtime = 0;
@@ -540,7 +540,7 @@ app_main()
          struct tm       t;
          localtime_r(&now, &t);
          strftime(s, sizeof(s), "%H:%M:%S", &t);
-         oled_pos(0, CONFIG_OLED_HEIGHT - 1, OLED_B | OLED_L);
+         oled_pos(t.tm_hour + t.tm_min, CONFIG_OLED_HEIGHT - 1 - t.tm_sec * 2, OLED_B | OLED_L);
          oled_text(1, s);
          oled_unlock();
          continue;
@@ -574,14 +574,14 @@ app_main()
       if (thisco2 != showco2)
       {
          showco2 = thisco2;
+         if (fanco2)
+            oled_colour(showco2 < 0 ? BLACK : showco2 > fanco2 ? RED : showco2 > 800 ? YELLOW : GREEN);
          if (showco2 < 300)
             strcpy(s, "____");
          else if (showco2 >= 10000)
             strcpy(s, "^^^^");
          else
             sprintf(s, "%4d", (int)showco2);
-         if (fanco2)
-            oled_colour(showco2 > fanco2 ? RED : showco2 > 800 ? YELLOW : GREEN);
          oled_pos(4, y, OLED_T | OLED_L | OLED_H);
          oled_text(4, s);
          oled_pos(oled_x(), oled_y(), OLED_T | OLED_L | OLED_V);
@@ -601,7 +601,7 @@ app_main()
          uint32_t        heattemp = (oled_dark ? heatnightmC : heatdaymC);
          uint32_t        thismC = thistemp * 1000;
          if (heattemp != HEATMAX)
-            oled_colour(thismC > heattemp + 500 ? RED : thismC > heattemp - 500 ? GREEN : BLUE);
+            oled_colour(showtemp == -10000 ? BLACK : thismC > heattemp + 500 ? RED : thismC > heattemp - 500 ? GREEN : BLUE);
          oled_pos(10, y, OLED_T | OLED_L | OLED_H);
          if (f)
          {                      /* Fahrenheit */
@@ -629,9 +629,9 @@ app_main()
       y += 35 + space;
       if (thisrh != showrh)
       {
-         oled_colour(CYAN);
-         oled_pos(3, y, OLED_T | OLED_L | OLED_H);
          showrh = thisrh;
+         oled_colour(showrh < 0 ? BLACK : CYAN);
+         oled_pos(3, y, OLED_T | OLED_L | OLED_H);
          if (showrh <= 0)
             strcpy(s, "__");
          else if (showrh >= 100)
