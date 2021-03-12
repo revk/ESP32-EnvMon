@@ -540,7 +540,7 @@ app_main()
       if (showlogo)
       {
          showlogo = 0;
-         oled_pos(CONFIG_OLED_WIDTH - LOGOW, 12, 0);
+         oled_pos(CONFIG_OLED_WIDTH - LOGOW, CONFIG_OLED_WIDTH - 12, OLED_B | OLED_L);
          oled_icon16(LOGOW, LOGOH, logo);
       }
       if (now != showtime)
@@ -581,7 +581,7 @@ app_main()
          oled_text(-1, "ppm");
          if (fanco2)
          {
-            oled_pos(CONFIG_OLED_WIDTH - LOGOW * 2 - 4, 12, 0);
+            oled_pos(CONFIG_OLED_WIDTH - LOGOW * 2 - 4, CONFIG_OLED_HEIGHT - 12, OLED_B | OLED_L);
             oled_icon16(LOGOW, LOGOH, showco2 > fanco2 ? fan : NULL);
          }
          oled_colour(WHITE);
