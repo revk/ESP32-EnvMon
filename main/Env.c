@@ -386,7 +386,7 @@ app_main()
    }
    oled_lock();
    oled_colour(BLUE);
-   oled_box(CONFIG_OLED_WIDTH,CONFIG_OLED_HEIGHT,255);
+   oled_box(CONFIG_OLED_WIDTH, CONFIG_OLED_HEIGHT, 255);
    oled_unlock();
    if (co2sda >= 0 && co2scl >= 0)
    {
@@ -629,6 +629,7 @@ app_main()
       y += 35 + space;
       if (thisrh != showrh)
       {
+         oled_colour(CYAN);
          oled_pos(3, y, OLED_T | OLED_L | OLED_H);
          showrh = thisrh;
          if (showrh <= 0)
