@@ -29,8 +29,8 @@ const char      TAG[] = "Env";
 
 #define	HEATMAX	1000000
 #define settings	\
-	s8(co2sda,25)	\
-	s8(co2scl,26)	\
+	s8(co2sda,-1)	\
+	s8(co2scl,-1)	\
 	s8(co2address,0x61)	\
 	s8(co2places,-1)	\
 	u32(co2damp,100)	\
@@ -39,11 +39,11 @@ const char      TAG[] = "Env";
 	u32(rhdamp,10)	\
 	s8(ds18b20,4)	\
 	s8(oleddin,23)	\
-	s8(oledclk,18)	\
-	s8(oledcs,5)	\
+	s8(oledclk,19)	\
+	s8(oledcs,22)	\
 	s8(oleddc,21)	\
-	s8(oledrst,19)	\
-	u8(oledcontrast,255)	\
+	s8(oledrst,18)	\
+	u8(oledcontrast,127)	\
 	b(oledflip)	\
 	b(f)	\
 	s(fanon)	\
@@ -526,7 +526,9 @@ app_main()
       char            s[30];
       if (oled_dark)
       {                         /* Night mode, just time */
-         oled_clear();
+         oled_colour(RED);
+         oled_clear(0);
+         oled_box(CONFIG_OLED_WIDTH, CONFIG_OLED_HEIGHT, 255);
          showlogo = 1;
          showtime = 0;
          showco2 = -1000;
@@ -535,14 +537,14 @@ app_main()
          struct tm       t;
          localtime_r(&now, &t);
          strftime(s, sizeof(s), "%H:%M", &t);
-         oled_text(0, 0, 0, s);
+         oled_text(0, s);
          oled_unlock();
          continue;
       }
       if (showlogo)
       {
          showlogo = 0;
-         oled_icon(CONFIG_OLED_WIDTH - LOGOW, 12, logo, LOGOW, LOGOH);
+         oled_icon16(LOGOW, LOGOH, logo);
       }
       if (now != showtime)
       {
@@ -558,11 +560,10 @@ app_main()
          if (t.tm_year > 100)
          {
             strftime(s, sizeof(s), "%F\004%T %Z", &t);
-            oled_text(1, 0, 0, s);
+            oled_text(1, s);
          }
       }
-      int             x,
-                      y = CONFIG_OLED_HEIGHT - 1,
+      int y = CONFIG_OLED_HEIGHT - 1,
                       space = (CONFIG_OLED_HEIGHT - 28 - 35 - 21 - 9) / 3;
       y -= 28;
       if (thisco2 != showco2)
@@ -574,11 +575,11 @@ app_main()
             strcpy(s, "^^^^");
          else
             sprintf(s, "%4d", (int)showco2);
-         x = oled_text(4, 0, y, s);
-         oled_text(1, x, y + 9, "CO2");
-         x = oled_text(-1, x, y, "ppm");
+         oled_text(4, s);
+         oled_text(1, "CO2");
+         oled_text(-1, "ppm");
          if (fanco2)
-            oled_icon(CONFIG_OLED_WIDTH - LOGOW * 2 - 4, 12, showco2 > fanco2 ? fan : NULL, LOGOW, LOGOH);
+            oled_icon16(LOGOW, LOGOH, showco2 > fanco2 ? fan : NULL);
       }
       y -= space;               /* Space */
       y -= 35;
@@ -603,9 +604,9 @@ app_main()
             else
                sprintf(s, "%4.1f", showtemp);
          }
-         x = oled_text(5, 10, y, s);
-         x = oled_text(1, x, y + 12, "o");
-         x = oled_text(2, x, y, f ? "F" : "C");
+         oled_text(5, s);
+         oled_text(1, "o");
+         oled_text(2, f ? "F" : "C");
       }
       y -= space;               /* Space */
       y -= 21;
@@ -618,10 +619,10 @@ app_main()
             strcpy(s, "^^");
          else
             sprintf(s, "%2d", (int)showrh);
-         x = oled_text(3, 0, y, s);
-         x = oled_text(2, x, y, "%%");
-         oled_text(1, x, y + 8, "R");
-         x = oled_text(1, x, y, "H");
+         oled_text(3, s);
+         oled_text(2, "%%");
+         oled_text(1, "R");
+         oled_text(1, "H");
       }
       y -= space;
       oled_unlock();
