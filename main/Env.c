@@ -384,10 +384,6 @@ app_main()
       if (p == sizeof(logo))
          memcpy(logo, aalogo, sizeof(logo));    /* default */
    }
-   oled_lock();
-   oled_colour(BLUE);
-   oled_box(CONFIG_OLED_WIDTH, CONFIG_OLED_HEIGHT, 255);
-   oled_unlock();
    if (co2sda >= 0 && co2scl >= 0)
    {
       co2port = 0;
@@ -417,7 +413,11 @@ app_main()
    const char     *e = oled_start(HSPI_HOST, oledcs, oledclk, oleddin, oleddc, oledrst, 1 - oledflip);
    if (e)
       revk_error("OLED", "Failed to start: %s", e);
+   oled_lock();
    oled_set_contrast(oledcontrast);
+   oled_colour(BLUE);
+   oled_box(CONFIG_OLED_WIDTH, CONFIG_OLED_HEIGHT, 255);
+   oled_unlock();
    if (co2port >= 0)
       revk_task("CO2", co2_task, NULL);
    if (ds18b20 >= 0)
@@ -457,7 +457,7 @@ app_main()
    }
    oled_lock();
    oled_clear(0);
-   oped_unlock();
+   oled_unlock();
 
    /* Main task... */
    time_t          showtime = 0;
@@ -581,7 +581,7 @@ app_main()
          else
             sprintf(s, "%4d", (int)showco2);
          if (fanco2)
-            oled_colour(showco2 > fanco2 ? RED : GREEN);
+            oled_colour(showco2 > fanco2 ? RED : showco2 > 800 ? YELLOW : GREEN);
          oled_pos(4, y, OLED_T | OLED_L | OLED_H);
          oled_text(4, s);
          oled_pos(oled_x(), oled_y(), OLED_T | OLED_L | OLED_V);
@@ -601,7 +601,7 @@ app_main()
          uint32_t        heattemp = (oled_dark ? heatnightmC : heatdaymC);
          uint32_t        thismC = thistemp * 1000;
          if (heattemp != HEATMAX)
-            oled_colour(thismC > heattemp ? RED : GREEN);
+            oled_colour(thismC > heattemp + 500 ? RED : thismC > heattemp - 500 ? GREEN : BLUE);
          oled_pos(10, y, OLED_T | OLED_L | OLED_H);
          if (f)
          {                      /* Fahrenheit */
