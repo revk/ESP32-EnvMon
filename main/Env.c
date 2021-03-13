@@ -382,7 +382,7 @@ void app_main()
 #undef u8
 #undef b
 #undef s
-      revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINARY);      /* fixed logo */
+       revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINARY);     /* fixed logo */
    if (fanco2gpio >= 0)
       gpio_set_direction(fanco2gpio, GPIO_MODE_OUTPUT);
    if (heatgpio >= 0)
@@ -485,10 +485,9 @@ void app_main()
    {
       usleep(100000LL - (esp_timer_get_time() % 100000LL));     /* wait a bit */
       time_t now = time(0);
-      if (*fanon || *fanoff)
       {                         /* Fan control */
-         static time_t   timefan = 0;
-         const char     *fan = NULL;
+         static time_t timefan = 0;
+         const char *fan = NULL;
          if (thisco2 > fanco2on && lastfan != 1)
          {
             if (fanco2gpio >= 0)
@@ -515,7 +514,6 @@ void app_main()
             free(topic);
          }
       }
-      if (*heaton || *heatoff)
       {                         /* Heat control */
          uint32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
          if (heattemp != HEATMAX || lastheat == 1)
