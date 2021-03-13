@@ -480,6 +480,7 @@ app_main()
    float           showrh = -1000;
    void            reset(void)
    {                            /* re display all */
+      oled_clear(0);
       showlogo = 1;
       showtime = 0;
       showco2 = -1000;
@@ -552,29 +553,36 @@ app_main()
       char            s[30];
       if (oled_msg_time)
       {                         /* display fixed message */
-         oled_clear(0);
          if (oled_msg_time < (esp_timer_get_time() / 1000000))
          {                      /* time up */
             oled_msg_time = 0;
             reset();
          } else
          {
-            oled_pos(CONFIG_OLED_WIDTH / 2, 0, OLED_T | OLED_C | OLED_V);
-            int             size = 2;
             char           *m = oled_msg;
+            oled_pos(CONFIG_OLED_WIDTH / 2, 0, OLED_T | OLED_C | OLED_V);
+            uint8_t         size = 2;
             ESP_LOGE(TAG, "Text %s", oled_msg);
             while (*m)
             {
                if (*m == '[')
                {
+                  char            isf = 1;
                   for (; *m && *m != ']'; m++)
                      if (isdigit(*m))
-                        size = *m - '0';
-                     else
-                        oled_colour(*m);
+                        size = *m - '0';        /* size */
+                     else if (isalpha(*m))
+                     {          /* colour */
+                        if ((isf++) & 1)
+                           oled_colour(*m);
+                        else
+                           oled_background(*m);
+                     }
                   if (*m)
                      m++;
                }
+               if (!oled_y())
+                  oled_clear(0);
                char           *e = m;
                while (*e && *e != '/' && *e != '[')
                   e++;
@@ -590,7 +598,6 @@ app_main()
       if (oled_dark)
       {                         /* Night mode, just time */
          oled_colour('r');
-         oled_clear(0);
          reset();
          struct tm       t;
          localtime_r(&now, &t);
