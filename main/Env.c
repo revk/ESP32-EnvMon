@@ -44,6 +44,7 @@ const char      TAG[] = "Env";
 	s8(oleddc,21)	\
 	s8(oledrst,19)	\
 	u8(oledcontrast,255)	\
+	u32(oledmsgtime,30)	\
 	b(oledflip)	\
 	b(f)	\
 	s(fanon)	\
@@ -86,6 +87,8 @@ static DS18B20_Info *ds18b20s[MAX_OWB] = {0};
 static volatile uint8_t oled_update = 0;
 static volatile uint8_t oled_changed = 1;
 static volatile uint8_t oled_dark = 0;
+static volatile uint32_t oled_msg_time = 0;     /* message timer */
+static char     oled_msg[100];  /* message text */
 
 static const char *co2_setting(uint16_t cmd, uint16_t val);
 
@@ -134,6 +137,16 @@ app_command(const char *tag, unsigned int len, const unsigned char *value)
    if (!strcmp(tag, "send") || !strcmp(tag, "connect"))
    {
       sendall();
+      return "";
+   }
+   if (!strcmp(tag, "message"))
+   {
+      if (len > sizeof(oled_msg) - 1)
+         len = sizeof(oled_msg) - 1;
+      if (len)
+         memcpy(oled_msg, value, len);
+      oled_msg[len] = 0;
+      oled_msg_time = (esp_timer_get_time() / 1000000) + oledmsgtime;
       return "";
    }
    if (!strcmp(tag, "night"))
@@ -465,8 +478,17 @@ app_main()
    float           showco2 = -1000;
    float           showtemp = -1000;
    float           showrh = -1000;
-   while (1)
+   void            reset(void)
+   {                            /* re display all */
+      showlogo = 1;
+      showtime = 0;
+      showco2 = -1000;
+      showtemp = -1000;
+      showrh = -1000;
+   }
+   while           (1)
    {
+      usleep(100000LL - (esp_timer_get_time() % 100000LL));     /* wait a bit */
       time_t          now = time(0);
       if (*fanon || *fanoff)
       {                         /* Fan control */
@@ -528,15 +550,71 @@ app_main()
       /* Display */
       oled_lock();
       char            s[30];
+      if (oled_msg_time)
+      {                         /* display fixed message */
+         oled_clear(0);
+         if (oled_msg_time < (esp_timer_get_time() / 1000000))
+         {                      /* time up */
+            oled_msg_time = 0;
+            reset();
+         } else
+         {
+            oled_pos(CONFIG_OLED_WIDTH / 2, 0, OLED_T | OLED_C | OLED_V);
+            int             size = 2;
+            char           *m = oled_msg;
+            ESP_LOGE(TAG, "Text %s", oled_msg);
+            while (*m)
+            {
+               if (*m == '[')
+               {
+                  for (; *m && *m != ']'; m++)
+                     if (isdigit(*m))
+                        size = *m - '0';
+                     else
+                        switch (*m)
+                        {
+                        case 'r':
+                           oled_colour(RED);
+                           break;
+                        case 'g':
+                           oled_colour(GREEN);
+                           break;
+                        case 'b':
+                           oled_colour(BLUE);
+                           break;
+                        case 'm':
+                           oled_colour(MAGENTA);
+                           break;
+                        case 'c':
+                           oled_colour(CYAN);
+                           break;
+                        case 'y':
+                           oled_colour(YELLOW);
+                           break;
+                        case 'w':
+                           oled_colour(WHITE);
+                           break;
+                        }
+                  if (*m)
+                     m++;
+               }
+               char           *e = m;
+               while (*e && *e != '/' && *e != '[')
+                  e++;
+               oled_text(size, "%.*s", (int)(e - m), m);
+               m = e;
+               if (*m == '/')
+                  m++;
+            }
+            oled_unlock();
+            continue;
+         }
+      }
       if (oled_dark)
       {                         /* Night mode, just time */
          oled_colour(R);
          oled_clear(0);
-         showlogo = 1;
-         showtime = 0;
-         showco2 = -1000;
-         showtemp = -1000;
-         showrh = -1000;
+         reset();
          struct tm       t;
          localtime_r(&now, &t);
          strftime(s, sizeof(s), "%H:%M:%S", &t);
@@ -651,7 +729,5 @@ app_main()
       }
       y += 21 + space;
       oled_unlock();
-      /* Next second */
-      usleep(1000000LL - (esp_timer_get_time() % 1000000LL));
    }
 }
