@@ -571,7 +571,7 @@ app_main()
                      if (isdigit(*m))
                         size = *m - '0';
                      else
-                        switch (*m)
+                        switch (tolower(*m))
                         {
                         case 'r':
                            oled_colour(RED);
