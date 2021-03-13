@@ -49,11 +49,14 @@ const char TAG[] = "Env";
 	b(f)	\
 	s(fanon)	\
 	s(fanoff)	\
-	u32(fanco2,1000)	\
+	u32(fanco2on,1000)	\
+	u32(fanco2off,750)	\
+	s8(fanco2gpio,-1)	\
 	u32(fanresend,3600)	\
 	s(heaton)	\
 	s(heatoff)	\
 	u32(heatresend,3600)	\
+	s8(heatgpio,-1)	\
 	u32(heatdaymC,1000000)	\
 	u32(heatnightmC,1000000)	\
 
@@ -379,7 +382,11 @@ void app_main()
 #undef u8
 #undef b
 #undef s
-       revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINARY);     /* fixed logo */
+      revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINARY);      /* fixed logo */
+   if (fanco2gpio >= 0)
+      gpio_set_direction(fanco2gpio, GPIO_MODE_OUTPUT);
+   if (heatgpio >= 0)
+      gpio_set_direction(heatgpio, GPIO_MODE_OUTPUT);
    {
       int p;
       for (p = 0; p < sizeof(logo) && !logo[p]; p++);
@@ -480,19 +487,23 @@ void app_main()
       time_t now = time(0);
       if (*fanon || *fanoff)
       {                         /* Fan control */
-         static time_t timefan = 0;
-         if (fanresend && timefan + fanresend < now)
-            lastfan = -1;
-         const char *fan = NULL;
-         if (thisco2 > fanco2 && lastfan != 1)
+         static time_t   timefan = 0;
+         const char     *fan = NULL;
+         if (thisco2 > fanco2on && lastfan != 1)
          {
+            if (fanco2gpio >= 0)
+               gpio_set_level(fanco2gpio, 1);
             fan = fanon;
             lastfan = 1;
-         } else if (thisco2 < fanco2 && lastfan != 0)
+         } else if (thisco2 < fanco2off && lastfan != 0)
          {
+            if (fanco2gpio >= 0)
+               gpio_set_level(fanco2gpio, 0);
             fan = fanoff;
             lastfan = 0;
          }
+         if (!fan && fanresend && timefan + fanresend < now && lastfan >= 0)
+            fan = (lastfan ? fanon : fanoff);
          if (fan && *fan)
          {
             timefan = now;
@@ -516,10 +527,14 @@ void app_main()
             uint32_t thismC = thistemp * 1000;
             if ((heattemp == HEATMAX || thismC > heattemp) && lastheat != 0)
             {
+               if (heatgpio >= 0)
+                  gpio_set_level(heatgpio, 0);
                heat = heatoff;
                lastheat = 0;
             } else if (thismC < heattemp && lastheat != 1)
             {
+               if (heatgpio >= 0)
+                  gpio_set_level(heatgpio, 0);
                heat = heaton;
                lastheat = 1;
             }
@@ -629,8 +644,8 @@ void app_main()
       if (thisco2 != showco2)
       {
          showco2 = thisco2;
-         if (fanco2)
-            oled_colour(showco2 < 0 ? 'K' : showco2 > fanco2 ? 'R' : showco2 > 800 ? 'Y' : 'G');
+         if (fanco2on)
+            oled_colour(showco2 < 0 ? 'K' : showco2 > fanco2on ? 'R' : showco2 > fanco2off ? 'Y' : 'G');
          if (showco2 < 300)
             strcpy(s, "____");
          else if (showco2 >= 10000)
@@ -642,10 +657,10 @@ void app_main()
          oled_pos(oled_x(), oled_y(), OLED_T | OLED_L | OLED_V);
          oled_text(1, "CO2");
          oled_text(-1, "ppm");
-         if (fanco2)
+         if (lastfan >= 0)
          {
             oled_pos(CONFIG_OLED_WIDTH - LOGOW * 2 - 2, CONFIG_OLED_HEIGHT - 12, OLED_B | OLED_L);
-            oled_icon16(LOGOW, LOGOH, showco2 > fanco2 ? fan : NULL);
+            oled_icon16(LOGOW, LOGOH, lastfan ? fan : NULL);
          }
          oled_colour('W');
       }
