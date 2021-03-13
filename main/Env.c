@@ -650,7 +650,7 @@ app_main()
          oled_text(-1, "ppm");
          if (fanco2)
          {
-            oled_pos(CONFIG_OLED_WIDTH - LOGOW * 2 - 4, CONFIG_OLED_HEIGHT - 12, OLED_B | OLED_L);
+            oled_pos(CONFIG_OLED_WIDTH - LOGOW * 2 - 2, CONFIG_OLED_HEIGHT - 12, OLED_B | OLED_L);
             oled_icon16(LOGOW, LOGOH, showco2 > fanco2 ? fan : NULL);
          }
          oled_colour('W');
