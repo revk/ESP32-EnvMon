@@ -428,7 +428,7 @@ app_main()
       revk_error("OLED", "Failed to start: %s", e);
    oled_lock();
    oled_set_contrast(oledcontrast);
-   oled_colour(BLUE);
+   oled_colour('B');
    oled_box(CONFIG_OLED_WIDTH, CONFIG_OLED_HEIGHT, 255);
    oled_unlock();
    if (co2port >= 0)
@@ -571,30 +571,7 @@ app_main()
                      if (isdigit(*m))
                         size = *m - '0';
                      else
-                        switch (tolower(*m))
-                        {
-                        case 'r':
-                           oled_colour(RED);
-                           break;
-                        case 'g':
-                           oled_colour(GREEN);
-                           break;
-                        case 'b':
-                           oled_colour(BLUE);
-                           break;
-                        case 'm':
-                           oled_colour(MAGENTA);
-                           break;
-                        case 'c':
-                           oled_colour(CYAN);
-                           break;
-                        case 'y':
-                           oled_colour(YELLOW);
-                           break;
-                        case 'w':
-                           oled_colour(WHITE);
-                           break;
-                        }
+                        oled_colour(*m);
                   if (*m)
                      m++;
                }
@@ -612,7 +589,7 @@ app_main()
       }
       if (oled_dark)
       {                         /* Night mode, just time */
-         oled_colour(R);
+         oled_colour('r');
          oled_clear(0);
          reset();
          struct tm       t;
@@ -659,7 +636,7 @@ app_main()
       {
          showco2 = thisco2;
          if (fanco2)
-            oled_colour(showco2 < 0 ? BLACK : showco2 > fanco2 ? RED : showco2 > 800 ? YELLOW : GREEN);
+            oled_colour(showco2 < 0 ? 'K' : showco2 > fanco2 ? 'R' : showco2 > 800 ? 'Y' : 'G');
          if (showco2 < 300)
             strcpy(s, "____");
          else if (showco2 >= 10000)
@@ -676,7 +653,7 @@ app_main()
             oled_pos(CONFIG_OLED_WIDTH - LOGOW * 2 - 4, CONFIG_OLED_HEIGHT - 12, OLED_B | OLED_L);
             oled_icon16(LOGOW, LOGOH, showco2 > fanco2 ? fan : NULL);
          }
-         oled_colour(WHITE);
+         oled_colour('W');
       }
       y += 28 + space;
       if (thistemp != showtemp)
@@ -685,7 +662,7 @@ app_main()
          uint32_t        heattemp = (oled_dark ? heatnightmC : heatdaymC);
          uint32_t        thismC = thistemp * 1000;
          if (heattemp != HEATMAX)
-            oled_colour(showtemp == -10000 ? BLACK : thismC > heattemp + 500 ? RED : thismC > heattemp - 500 ? GREEN : BLUE);
+            oled_colour(showtemp == -10000 ? 'K' : thismC > heattemp + 500 ? 'R' : thismC > heattemp - 500 ? 'G' : 'B');
          oled_pos(10, y, OLED_T | OLED_L | OLED_H);
          if (f)
          {                      /* Fahrenheit */
@@ -708,13 +685,13 @@ app_main()
          oled_text(5, s);
          oled_text(1, "o");
          oled_text(2, f ? "F" : "C");
-         oled_colour(WHITE);
+         oled_colour('W');
       }
       y += 35 + space;
       if (thisrh != showrh)
       {
          showrh = thisrh;
-         oled_colour(showrh < 0 ? BLACK : CYAN);
+         oled_colour(showrh < 0 ? 'K' : 'C');
          oled_pos(3, y, OLED_T | OLED_L | OLED_H);
          if (showrh <= 0)
             strcpy(s, "__");
