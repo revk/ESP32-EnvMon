@@ -382,15 +382,11 @@ void app_main()
 #undef u8
 #undef b
 #undef s
-<<<<<<< HEAD
       revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINARY);      /* fixed logo */
    if (fanco2gpio >= 0)
       gpio_set_direction(fanco2gpio, GPIO_MODE_OUTPUT);
    if (heatgpio >= 0)
       gpio_set_direction(heatgpio, GPIO_MODE_OUTPUT);
-=======
-       revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINARY);     /* fixed logo */
->>>>>>> d5c3e28abd8183bb84bc6c9e73a3390edf80fa29
    {
       int p;
       for (p = 0; p < sizeof(logo) && !logo[p]; p++);
@@ -491,17 +487,9 @@ void app_main()
       time_t now = time(0);
       if (*fanon || *fanoff)
       {                         /* Fan control */
-<<<<<<< HEAD
          static time_t   timefan = 0;
          const char     *fan = NULL;
          if (thisco2 > fanco2on && lastfan != 1)
-=======
-         static time_t timefan = 0;
-         if (fanresend && timefan + fanresend < now)
-            lastfan = -1;
-         const char *fan = NULL;
-         if (thisco2 > fanco2 && lastfan != 1)
->>>>>>> d5c3e28abd8183bb84bc6c9e73a3390edf80fa29
          {
             if (fanco2gpio >= 0)
                gpio_set_level(fanco2gpio, 1);
