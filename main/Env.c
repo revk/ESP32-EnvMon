@@ -668,8 +668,10 @@ void app_main()
          showtemp = thistemp;
          uint32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
          uint32_t thismC = thistemp * 1000;
-         if (heattemp != HEATMAX)
-            oled_colour(showtemp == -10000 ? 'K' : thismC > heattemp + 500 ? 'R' : thismC > heattemp - 500 ? 'G' : 'B');
+         if (showtemp == -10000)
+            oled_colour('K');
+         else if (heattemp != HEATMAX)
+            oled_colour(thismC > heattemp + 500 ? 'R' : thismC > heattemp - 500 ? 'G' : 'B');
          oled_pos(10, y, OLED_T | OLED_L | OLED_H);
          if (f)
          {                      /* Fahrenheit */
