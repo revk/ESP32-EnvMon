@@ -46,7 +46,7 @@ envgraph: envgraph.c SQLlib/sqllib.o AXL/axl.o
 PCBCase/case: PCBCase/case.c
 	make -C PCBCase
 
-case: KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad KiCad/EnvMon-flush.scad
+case: KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad KiCad/EnvMon-flush.scad KiCad/EnvMon-flush-noco2.scad
 
 KiCad/EnvMon.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=9 --top=9.6 --ignore=M3.2,M2.1
@@ -58,7 +58,18 @@ KiCad/EnvMon-nooled.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=9 --top=5.5 --ignore=M3.2,M2
 
 KiCad/EnvMon-flush.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
+	PCBCase/case -o $@ $< --base=9 --top=9.6 --ignore=M2.1,M3.2 --spacing=80
+	echo "translate([62,-23.75,0])difference(){" >> $@
+	cat PCBCase/models/blankplate.scad >> $@
+	echo "translate([20,25.75,-1])cube([46,38,10]);" >> $@
+	echo 'for(x=[12.85:10.05:73.15])translate([x,15,-1])cylinder(d=3,h=10,$$fn=48);' >> $@
+	echo "}" >> $@
+
+KiCad/EnvMon-flush-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=2.5 --top=9.6 --ignore=M2.1,M3 --spacing=80
-	echo "translate([80,0,0])difference(){translate([-9,-14.5,0])hull(){cube([66,66,0.5]);translate([-1,-1,1])cube([70,70,1]);}translate([2,2,-1])cube([46,39,10]);translate([-5,-10.5,1])cube([60,60,3]);}" >> $@
+	echo "translate([62,-23.75,0])difference(){" >> $@
+	cat PCBCase/models/blankplate.scad >> $@
+	echo "translate([20,25.75,-1])cube([46,38,10]);" >> $@
+	echo "}" >> $@
 
 
