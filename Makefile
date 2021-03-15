@@ -48,12 +48,12 @@ PCBCase/case: PCBCase/case.c
 
 case: KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad
 
-KiCad/EnvMon.scad: KiCad/EnvMon.kicad_pcb PCBCase/case.c
-	PCBCase/case -o $@ $< --base=9 --top=10
+KiCad/EnvMon.scad: KiCad/EnvMon.kicad_pcb PCBCase/case
+	PCBCase/case -o $@ $< --base=9 --top=10 --ignore=M3.2,M2.1
 
-KiCad/EnvMon-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case.c
-	PCBCase/case -o $@ $< --base=9 --top=10
+KiCad/EnvMon-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case
+	PCBCase/case -o $@ $< --base=9 --top=10 --ignore=M2.1,M3
 
-KiCad/EnvMon-nooled.scad: KiCad/EnvMon.kicad_pcb PCBCase/case.c
-	PCBCase/case -o $@ $< --base=9 --top=10
+KiCad/EnvMon-nooled.scad: KiCad/EnvMon.kicad_pcb PCBCase/case
+	PCBCase/case -o $@ $< --base=9 --top=10 --ignore=M3.2,M2
 
