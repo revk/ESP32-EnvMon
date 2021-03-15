@@ -43,4 +43,17 @@ envlog: envlog.c SQLlib/sqllib.o
 envgraph: envgraph.c SQLlib/sqllib.o AXL/axl.o
 	cc -O -o $@ $< ${OPTS} -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAXL AXL/axl.o -lcurl
 
+PCBCase/case: PCBCase/case.c
+	make -C PCBCase
+
+case: KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad
+
+KiCad/EnvMon.scad: KiCad/EnvMon.kicad_pcb PCBCase/case.c
+	PCBCase/case -o $@ $< --base=9 --top=10
+
+KiCad/EnvMon-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case.c
+	PCBCase/case -o $@ $< --base=9 --top=10
+
+KiCad/EnvMon-nooled.scad: KiCad/EnvMon.kicad_pcb PCBCase/case.c
+	PCBCase/case -o $@ $< --base=9 --top=10
 

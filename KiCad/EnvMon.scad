@@ -9,11 +9,12 @@
 //
 
 // Globals
+debug=true;
 margin=0.800000;
-casebase=9.000000;
-casetop=10.000000;
+casebase=5.000000;
+casetop=5.000000;
 casewall=3.000000;
-fit=0.200000;
+fit=0.100000;
 edge=2.000000;
 pcbthickness=1.600000;
 pcbwidth=44.500000;
@@ -26,8 +27,8 @@ module pcb(){linear_extrude(height=1.600000)polygon([[39.250000,31.250000],[39.2
 module board(){
 	pcb();
 translate([37.100000,30.150000,0.000000])rotate([0,0,270.000000])rotate([180,0,0])m0(); // RevK:SCD30-4pin
-// Missing RevK:SCD30-4pin
-// Missing RevK:OLED1.5-RGB
+translate([37.100000,30.150000,0.000000])rotate([0,0,270.000000])rotate([180,0,0])m1(); // RevK:SCD30-4pin
+translate([44.500000,37.000000,1.600000])rotate([0,0,180.000000])m2(); // RevK:OLED1.5-RGB
 translate([44.500000,37.000000,1.600000])rotate([0,0,180.000000])m3(); // RevK:OLED1.5-RGB
 translate([36.550000,3.050000,0.000000])rotate([0,0,270.000000])rotate([180,0,0])m4(); // Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder
 translate([34.050000,3.050000,0.000000])rotate([0,0,270.000000])rotate([180,0,0])m4(); // Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder
@@ -50,6 +51,18 @@ module m0()
 translate([0,0,4])cube([23,35,1.6]);
 cube([2.54,17.78,5]);
 translate([6,0,0])cube([17,35,7]);
+
+}
+
+module m1()
+{ // RevK:SCD30-4pin
+translate([-1.27,-1.27,-3])cube([2.54,10.16,100]);
+
+}
+
+module m2()
+{ // RevK:OLED1.5-RGB
+translate([-1.27,-1.27,-3])cube([2.54,17.78,100]);
 
 }
 
@@ -331,5 +344,5 @@ module parts()
 	translate([pcbwidth+casewall+10,0,0])top();
 }
 
-//test();
-parts();
+if(debug)test();
+else parts();
