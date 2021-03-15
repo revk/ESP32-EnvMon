@@ -535,8 +535,6 @@ CO2-SCL
 Text GLabel 9200 3350 2    50   Input ~ 0
 CO2-SDA
 Wire Wire Line
-	1350 4750 1350 5100
-Wire Wire Line
 	1350 4750 2100 4750
 Text GLabel 9200 2050 2    50   Input ~ 0
 IO1
@@ -652,10 +650,5 @@ NoConn ~ 4500 5600
 NoConn ~ 9200 2450
 NoConn ~ 9200 2550
 Wire Wire Line
-	2100 5400 2100 5100
-Wire Wire Line
-	2100 5100 1350 5100
-Connection ~ 1350 5100
-Wire Wire Line
-	1350 5100 1350 5250
+	1350 4750 1350 5250
 $EndSCHEMATC
