@@ -52,8 +52,8 @@ KiCad/EnvMon.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=9 --top=10 --ignore=M3.2,M2.1
 
 KiCad/EnvMon-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=2 --top=10 --ignore=M2.1,M3
+	PCBCase/case -o $@ $< --base=2.5 --top=10 --ignore=M2.1,M3
 
 KiCad/EnvMon-nooled.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=9 --top=5 --ignore=M3.2,M2
+	PCBCase/case -o $@ $< --base=9 --top=5.5 --ignore=M3.2,M2
 
