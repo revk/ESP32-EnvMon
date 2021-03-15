@@ -59,6 +59,6 @@ KiCad/EnvMon-nooled.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 
 KiCad/EnvMon-flush.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=2.5 --top=10 --ignore=M2.1,M3 --spacing=80
-	echo "translate([80,0,0])difference(){translate([-8,-13.5,0])hull(){cube([66,66,0.5]);translate([-2,-2,2])cube([70,70,1]);}translate([2,2,-1])cube([46,39,10]);}" >> $@
+	echo "translate([80,0,0])difference(){translate([-8,-13.5,0])hull(){cube([66,66,0.5]);translate([-2,-2,2])cube([70,70,1]);}translate([2,2,-1])cube([46,39,10]);translate([-5,-10.5,2])cube([60,60,3]);}" >> $@
 
 
