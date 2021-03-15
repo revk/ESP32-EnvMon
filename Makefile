@@ -49,16 +49,16 @@ PCBCase/case: PCBCase/case.c
 case: KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad KiCad/EnvMon-flush.scad
 
 KiCad/EnvMon.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=9 --top=10 --ignore=M3.2,M2.1
+	PCBCase/case -o $@ $< --base=9 --top=9.6 --ignore=M3.2,M2.1
 
 KiCad/EnvMon-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=2.5 --top=10 --ignore=M2.1,M3
+	PCBCase/case -o $@ $< --base=2.5 --top=9.6 --ignore=M2.1,M3
 
 KiCad/EnvMon-nooled.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=9 --top=5.5 --ignore=M3.2,M2
 
 KiCad/EnvMon-flush.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=2.5 --top=10 --ignore=M2.1,M3 --spacing=80
-	echo "translate([80,0,0])difference(){translate([-8,-13.5,0])hull(){cube([66,66,0.5]);translate([-2,-2,2])cube([70,70,1]);}translate([2,2,-1])cube([46,39,10]);translate([-5,-10.5,2])cube([60,60,3]);}" >> $@
+	PCBCase/case -o $@ $< --base=2.5 --top=9.6 --ignore=M2.1,M3 --spacing=80
+	echo "translate([80,0,0])difference(){translate([-9,-14.5,0])hull(){cube([66,66,0.5]);translate([-1,-1,1])cube([70,70,1]);}translate([2,2,-1])cube([46,39,10]);translate([-5,-10.5,1])cube([60,60,3]);}" >> $@
 
 
