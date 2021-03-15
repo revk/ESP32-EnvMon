@@ -59,6 +59,8 @@ const char TAG[] = "Env";
 	s8(heatgpio,-1)	\
 	u32(heatdaymC,1000000)	\
 	u32(heatnightmC,1000000)	\
+	b(nologo)	\
+	b(notime)	\
 
 #define u32(n,d)	uint32_t n;
 #define s8(n,d)	int8_t n;
@@ -599,27 +601,30 @@ void app_main()
       {                         /* Night mode, just time */
          oled_colour('r');
          reset();
-         struct tm t;
-         localtime_r(&now, &t);
-         strftime(s, sizeof(s), "%H:%M:%S", &t);
-         int y = CONFIG_OLED_HEIGHT - 1 - t.tm_sec * 2;
-         if (t.tm_min & 1)
-            y = 6 + t.tm_sec * 2;
-         int x = t.tm_hour + t.tm_min;
-         if (t.tm_hour & 1)
-            x = t.tm_hour + 60 - t.tm_min;
-         oled_pos(x, y, OLED_B | OLED_L);
-         oled_text(1, s);
+         if (!notime)
+         {
+            struct tm t;
+            localtime_r(&now, &t);
+            strftime(s, sizeof(s), "%T", &t);
+            int y = CONFIG_OLED_HEIGHT - 1 - t.tm_sec * 2;
+            if (t.tm_min & 1)
+               y = 6 + t.tm_sec * 2;
+            int x = t.tm_hour + t.tm_min;
+            if (t.tm_hour & 1)
+               x = t.tm_hour + 60 - t.tm_min;
+            oled_pos(x, y, OLED_B | OLED_L);
+            oled_text(1, s);
+         }
          oled_unlock();
          continue;
       }
-      if (showlogo)
+      if (showlogo && !nologo)
       {
          showlogo = 0;
          oled_pos(CONFIG_OLED_WIDTH - LOGOW, CONFIG_OLED_WIDTH - 12, OLED_B | OLED_L);
          oled_icon16(LOGOW, LOGOH, logo);
       }
-      if (now != showtime)
+      if (now != showtime && !notime)
       {
          showtime = now;
          struct tm t;
@@ -668,8 +673,10 @@ void app_main()
          showtemp = thistemp;
          uint32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
          uint32_t thismC = thistemp * 1000;
-         if (heattemp != HEATMAX)
-            oled_colour(showtemp == -10000 ? 'K' : thismC > heattemp + 500 ? 'R' : thismC > heattemp - 500 ? 'G' : 'B');
+         if (showtemp == -10000)
+            oled_colour('K');
+         else if (heattemp != HEATMAX)
+            oled_colour(thismC > heattemp + 500 ? 'R' : thismC > heattemp - 500 ? 'G' : 'B');
          oled_pos(10, y, OLED_T | OLED_L | OLED_H);
          if (f)
          {                      /* Fahrenheit */
