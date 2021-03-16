@@ -689,6 +689,8 @@ app_main()
       {
          showtemp = thistemp;
          uint32_t        heattemp = (oled_dark ? heatnightmC : heatdaymC);
+         if (heattemp == HEATMAX)
+            heattemp = (oled_dark ? heatdaymC : heatnightmC);   /* back up for when only one set so we show colour */
          uint32_t        thismC = thistemp * 1000;
          if (showtemp == -10000)
             oled_colour('K');
