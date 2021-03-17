@@ -67,7 +67,7 @@ KiCad/EnvMon-flush.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=8 --top=10.4 --ignore=M2.1,M3.2 --spacing=80
 	echo 'translate([62,-23.75,0])difference(){' >> $@
 	cat PCBCase/models/blankplate.scad >> $@
-	echo 'translate([50,10,5])rotate([0,90,0])cylinder(d=4,h=100,$$fn=48);' >> $@
+	echo 'translate([50,10,5])rotate([0,90,0])cylinder(d=3,h=100,$$fn=48);' >> $@
 	echo 'translate([20,25.75,-1])cube([46,38,10]);' >> $@
 	echo 'for(x=[12.85:10.05:73.15])translate([x,15,-1])cylinder(d=3,h=10,$$fn=48);' >> $@
 	echo '}' >> $@
@@ -76,7 +76,7 @@ KiCad/EnvMon-flush-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=2.5 --top=10.4 --ignore=M2.1,M3 --spacing=80
 	echo 'translate([62,-23.75,0])difference(){' >> $@
 	cat PCBCase/models/blankplate.scad >> $@
-	echo 'translate([50,10,5])rotate([0,90,0])cylinder(d=4,h=100,$$fn=48);' >> $@
+	echo 'translate([50,10,5])rotate([0,90,0])cylinder(d=3,h=100,$$fn=48);' >> $@
 	echo 'translate([20,25.75,-1])cube([46,38,10]);' >> $@
 	echo '}' >> $@
 
