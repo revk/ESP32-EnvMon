@@ -46,8 +46,8 @@ envgraph: envgraph.c SQLlib/sqllib.o AXL/axl.o
 PCBCase/case: PCBCase/case.c
 	make -C PCBCase
 
-case: KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad KiCad/EnvMon-flush.scad KiCad/EnvMon-flush-noco2.scad
-stl: KiCad/EnvMon.stl KiCad/EnvMon-noco2.stl KiCad/EnvMon-nooled.stl KiCad/EnvMon-flush.stl KiCad/EnvMon-flush-noco2.stl
+case: KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad KiCad/EnvMon-flush.scad KiCad/EnvMon-flush-noco2.scad KiCad/EnvMon-flush-oled.scad
+stl: KiCad/EnvMon.stl KiCad/EnvMon-noco2.stl KiCad/EnvMon-nooled.stl KiCad/EnvMon-flush.stl KiCad/EnvMon-flush-noco2.stl KiCad/EnvMon-flush-oled.stl
 
 %.stl: %.scad
 	echo "Making $@"
@@ -80,4 +80,11 @@ KiCad/EnvMon-flush-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	echo 'translate([20,25.75,-1])cube([46,38,10]);' >> $@
 	echo '}' >> $@
 
+KiCad/EnvMon-flush-oled.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
+	PCBCase/case -o $@ $< --base=8 --top=5.5 --ignore=M3.2,M2 --spacing=80
+	echo 'translate([62,-23.75,0])difference(){' >> $@
+	cat PCBCase/models/blankplate.scad >> $@
+	echo 'translate([50,10,5])rotate([0,90,0])cylinder(d=3,h=100,$$fn=48);' >> $@
+	echo 'translate([20,25.75,-1])cube([46,38,10]);' >> $@
+	echo '}' >> $@
 
