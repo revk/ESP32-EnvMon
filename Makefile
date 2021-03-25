@@ -86,5 +86,6 @@ KiCad/EnvMon-flush-nooled.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	cat PCBCase/models/blankplate.scad >> $@
 	echo 'translate([50,10,5])rotate([0,90,0])cylinder(d=4.5,h=100,$$fn=48);' >> $@
 	echo 'translate([20,25.75,-1])cube([46,38,10]);' >> $@
+	echo 'for(x=[12.85:10.05:73.15])translate([x,15,-1])cylinder(d=3,h=10,$$fn=48);' >> $@
 	echo '}' >> $@
 
