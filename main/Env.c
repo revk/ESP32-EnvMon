@@ -658,10 +658,10 @@ void app_main()
          showco2 = thisco2;
          if (fanco2on)
             oled_colour(showco2 < 0 ? 'K' : showco2 > fanco2on ? 'R' : showco2 > fanco2off ? 'Y' : 'G');
-         if (showco2 < 300)
-            strcpy(s, "????");
+         if (showco2 < 200)
+            strcpy(s, "?LOW");
          else if (showco2 >= 10000)
-            strcpy(s, "^^^^");
+            strcpy(s, "HIGH");
          else
             sprintf(s, "%4d", (int) showco2);
          oled_pos(4, y, OLED_T | OLED_L | OLED_H);
