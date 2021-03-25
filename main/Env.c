@@ -709,7 +709,10 @@ void app_main()
          }
          oled_text(5, s);
          oled_text(1, "o");
+         oled_pos(oled_x(), oled_y(), OLED_T | OLED_L | OLED_V);
          oled_text(2, f ? "F" : "C");
+         if (!num_owb)
+            oled_text(2, "~");
          oled_colour('W');
       }
       y += 35 + space;
