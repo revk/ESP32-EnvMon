@@ -595,7 +595,7 @@ U 1 1 6046E472
 P 4200 2700
 F 0 "U1" H 4200 3581 50  0000 C CNN
 F 1 "FT230XQ" H 4200 3490 50  0000 C CNN
-F 2 "Package_DFN_QFN:QFN-16-1EP_4x4mm_P0.65mm_EP2.1x2.1mm" H 5550 2100 50  0001 C CNN
+F 2 "RevK:QFN-16-(hand)-1EP_4x4mm_P0.65mm_EP2.1x2.1mm" H 5550 2100 50  0001 C CNN
 F 3 "https://www.ftdichip.com/Support/Documents/DataSheets/ICs/DS_FT230X.pdf" H 4200 2700 50  0001 C CNN
 	1    4200 2700
 	1    0    0    -1  
