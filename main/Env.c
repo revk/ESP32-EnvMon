@@ -132,8 +132,6 @@ static void sendall(void)
    lasttemp = -10000;
    lastotemp = -10000;
    lastrh = -10000;
-   lastfan = -1;
-   lastheat = -1;
 }
 
 const char *app_command(const char *tag, unsigned int len, const unsigned char *value)
