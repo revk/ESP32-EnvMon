@@ -61,6 +61,8 @@ const char      TAG[] = "Env";
 	s8(heatgpio,-1)	\
 	u32(heatdaymC,1000000)	\
 	u32(heatnightmC,1000000)	\
+	u32(hhmmnight,0)	\
+	u32(hhmmday,0)		\
 	b(nologo)	\
 	b(notime)	\
 
@@ -99,7 +101,7 @@ static char     oled_msg[100];  /* message text */
 
 static const char *co2_setting(uint16_t cmd, uint16_t val);
 
-static float 
+static float
 report(const char *tag, float last, float this, int places)
 {
    float           mag = powf(10.0, -places);
@@ -127,7 +129,7 @@ report(const char *tag, float last, float this, int places)
    return this;
 }
 
-static void 
+static void
 sendall(void)
 {
    lastco2 = -10000;
@@ -184,7 +186,7 @@ app_command(const char *tag, unsigned int len, const unsigned char *value)
    return NULL;
 }
 
-static uint8_t 
+static          uint8_t
 co2_crc(uint8_t b1, uint8_t b2)
 {
    uint8_t         crc = 0xFF;
@@ -205,7 +207,7 @@ co2_crc(uint8_t b1, uint8_t b2)
    return crc;
 }
 
-static i2c_cmd_handle_t 
+static          i2c_cmd_handle_t
 co2_cmd(uint16_t c)
 {
    i2c_cmd_handle_t i = i2c_cmd_link_create();
@@ -216,7 +218,7 @@ co2_cmd(uint16_t c)
    return i;
 }
 
-static void 
+static void
 co2_add(i2c_cmd_handle_t i, uint16_t v)
 {
    i2c_master_write_byte(i, v >> 8, true);
@@ -237,7 +239,7 @@ co2_setting(uint16_t cmd, uint16_t val)
    return "";
 }
 
-void 
+void
 co2_task(void *p)
 {
    p = p;
@@ -363,7 +365,7 @@ co2_task(void *p)
    }
 }
 
-void 
+void
 ds18b20_task(void *p)
 {
    p = p;
@@ -385,7 +387,7 @@ ds18b20_task(void *p)
    }
 }
 
-void 
+void
 app_main()
 {
    revk_init(&app_command);
@@ -506,6 +508,18 @@ app_main()
    {
       usleep(100000LL - (esp_timer_get_time() % 100000LL));     /* wait a bit */
       time_t          now = time(0);
+      struct tm       t;
+      localtime_r(&now, &t);
+      if (hhmmnight || hhmmday)
+      {                         /* Auto day / night */
+         uint32_t        hhmm = t.tm_hour * 100 + t.tm_min;
+         if (hhmmnight > hhmmday && hhmm >= hhmmnight)
+            oled_dark = 1;
+         else if (hhmm >= hhmmday)
+            oled_dark = 0;
+         else if (hhmm >= hhmmnight)
+            oled_dark = 1;
+      }
       {                         /* Fan control */
          static time_t   timefan = 0;
          const char     *fan = NULL;
@@ -622,8 +636,6 @@ app_main()
          reset();
          if (!notime)
          {
-            struct tm       t;
-            localtime_r(&now, &t);
             strftime(s, sizeof(s), "%T", &t);
             int             y = CONFIG_OLED_HEIGHT - 1 - t.tm_sec * 2;
             if (t.tm_min & 1)
@@ -650,8 +662,6 @@ app_main()
       if (now != showtime && !notime)
       {
          showtime = now;
-         struct tm       t;
-         localtime_r(&showtime, &t);
          static char     lasth = -1;
          if (t.tm_hour != lasth)
          {
