@@ -136,8 +136,6 @@ sendall(void)
    lasttemp = -10000;
    lastotemp = -10000;
    lastrh = -10000;
-   lastfan = -1;
-   lastheat = -1;
 }
 
 const char     *
@@ -438,7 +436,7 @@ app_main()
             revk_error("CO2", "I2C config fail");
             co2port = -1;
          } else
-            i2c_set_timeout(co2port, 160000);   /* 2 ms ? allow for clock stretching */
+            i2c_set_timeout(co2port, 80000 * 5);        /* 5 ms ? allow for clock stretching */
       }
    }
    const char     *e = oled_start(HSPI_HOST, oledcs, oledclk, oleddin, oleddc, oledrst, 1 - oledflip);
