@@ -696,7 +696,6 @@ app_main()
             oled_pos(CONFIG_OLED_WIDTH - LOGOW * 2 - 2, CONFIG_OLED_HEIGHT - 12, OLED_B | OLED_L);
             oled_icon16(LOGOW, LOGOH, lastfan ? fan : NULL);
          }
-         oled_colour('W');
       }
       y += 28 + space;
       if (thistemp != showtemp)
@@ -710,6 +709,8 @@ app_main()
             oled_colour('K');
          else if (heattemp != HEATMAX)
             oled_colour(thismC > heattemp + 500 ? 'R' : thismC > heattemp - 500 ? 'G' : 'B');
+	 else
+            oled_colour('W');
          oled_pos(10, y, OLED_T | OLED_L | OLED_H);
          if (f)
          {                      /* Fahrenheit */
@@ -735,7 +736,6 @@ app_main()
          oled_text(2, f ? "F" : "C");
          if (!num_owb)
             oled_text(2, "~");
-         oled_colour('W');
       }
       y += 35 + space;
       if (thisrh != showrh)
