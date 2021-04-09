@@ -30,6 +30,8 @@ SQLlib/sqllib.o: SQLlib/sqllib.c
 	make -C SQLlib
 AXL/axl.o: AXL/axl.c
 	make -C AXL
+AJL/ajl.o: AJL/ajl.c
+	make -C AJL
 
 SQLINC=$(shell mariadb_config --include)
 SQLLIB=$(shell mariadb_config --libs)
@@ -37,8 +39,8 @@ SQLVER=$(shell mariadb_config --version | sed 'sx\..*xx')
 CCOPTS=${SQLINC} -I. -I/usr/local/ssl/include -D_GNU_SOURCE -g -Wall -funsigned-char -lm
 OPTS=-L/usr/local/ssl/lib ${SQLLIB} ${CCOPTS}
 
-envlog: envlog.c SQLlib/sqllib.o
-	cc -O -o $@ $< ${OPTS} -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o
+envlog: envlog.c SQLlib/sqllib.o AJL/ajl.o
+	cc -O -o $@ $< ${OPTS} -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAJL AJL/ajl.o
 
 envgraph: envgraph.c SQLlib/sqllib.o AXL/axl.o
 	cc -O -o $@ $< ${OPTS} -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAXL AXL/axl.o -lcurl

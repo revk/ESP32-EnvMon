@@ -1,6 +1,6 @@
 // CO2 + other sensors all
 /* Copyright(c) 2019-21 Adrian Kennard, Andrews & Arnold Limited, see LICENSE file(GPL) */
-const char      TAG[] = "Env";
+const char TAG[] = "Env";
 
 #include "revk.h"
 #include <driver/i2c.h>
@@ -29,6 +29,8 @@ const char      TAG[] = "Env";
 
 #define	HEATMAX	1000000
 #define settings	\
+	u32(reporting,300)	\
+	u8(lag,3)	\
 	s8(co2sda,25)	\
 	s8(co2scl,26)	\
 	s8(co2address,0x61)	\
@@ -77,34 +79,92 @@ settings
 #undef u8
 #undef b
 #undef s
-static uint8_t  logo[LOGOW * LOGOH / 2];
-static float    lastco2 = -10000;
-static float    lastrh = -10000;
-static float    lasttemp = -10000;
-static float    lastotemp = -10000;
-static int      lastfan = -1;
-static int      lastheat = -1;
-static float    thisco2 = -10000;
-static float    thistemp = -10000;
-static float    thisrh = -10000;
-static int8_t   co2port = -1;
-static int8_t   num_owb = 0;
+static uint8_t logo[LOGOW * LOGOH / 2];
+static float lastco2 = -10000;
+static float lastrh = -10000;
+static float lasttemp = -10000;
+static float lastotemp = -10000;
+static int lastfan = -1;
+static int lastheat = -1;
+static float thisco2 = -10000;
+static float thistemp = -10000;
+static float thisrh = -10000;
+static int8_t co2port = -1;
+static int8_t num_owb = 0;
 static OneWireBus *owb = NULL;
 static owb_rmt_driver_info rmt_driver_info;
-static DS18B20_Info *ds18b20s[MAX_OWB] = {0};
+static DS18B20_Info *ds18b20s[MAX_OWB] = { 0 };
 
 static volatile uint8_t oled_update = 0;
 static volatile uint8_t oled_changed = 1;
 static volatile uint8_t oled_dark = 0;
 static volatile uint32_t oled_msg_time = 0;     /* message timer */
-static char     oled_msg[100];  /* message text */
+static char oled_msg[100];      /* message text */
 
 static const char *co2_setting(uint16_t cmd, uint16_t val);
 
-static float
-report(const char *tag, float last, float this, int places)
+typedef struct value_s value_t;
+struct value_s {
+   value_t *next;
+   const char *tag;
+   char value[10];
+};
+value_t *values = NULL;
+time_t reportlast = 0,
+    reportchange = 0;
+
+static void reportall(time_t now)
+{                               // Do reporting of values
+   if ((!reportchange || now < reportchange + lag) && now < reportlast + reporting)
+      return;                   // Slight delay on changes
+   if (values)
+   {
+      value_t *v;
+      char temp[100],
+      *p = temp,
+          *e = temp + sizeof(temp) - 2;
+      *p++ = '{';
+      time_t when = reportlast ? : now;
+      p += sprintf(p, "\"ts\":");
+      if (when < 1000000000)
+         p += sprintf(p, "%ld", when); // Uptime
+      else
+      {
+         struct tm t;
+         gmtime_r(&when, &t);
+         p += strftime(p, e - p, "\"%FT%TZ\"", &t);
+      }
+      for (v = values; v; v = v->next)
+      {
+         char *r = p;
+         if (p < e)
+            *p++ = ',';
+         if (p < e)
+            *p++ = '"';
+         if (p < e)
+            p += snprintf(p, e - p, "%s", v->tag);
+         if (p < e)
+            *p++ = '"';
+         if (p < e)
+            *p++ = ':';
+         if (p < e && !*v->value)
+            p += snprintf(p, e - p, "null");
+         else if (p < e)
+            p += snprintf(p, e - p, "%s", v->value);
+         if (p > e)
+            p = r;              // Ignore
+      }
+      *p++ = '}';
+      *p = 0;
+      revk_state("data", "%s", temp);
+   }
+   reportlast = now;
+   reportchange = 0;
+}
+
+static float report(const char *tag, float last, float this, int places)
 {
-   float           mag = powf(10.0, -places);
+   float mag = powf(10.0, -places);
    /* Rounding */
    if (this < last)
    {
@@ -122,24 +182,31 @@ report(const char *tag, float last, float this, int places)
    this = roundf(this / mag) * mag;
    if (this == last)
       return last;
+   /* Record value */
+   value_t *v;
+   for (v = values; v && v->tag != tag; v = v->next);
+   if (!v)
+   {
+      v = malloc(sizeof(*v));
+      v->tag = tag;
+      v->next = values;
+      values = v;
+   }
+   if (!reportchange)
+      reportchange = time(0);
    if (places <= 0)
-      revk_info(tag, "%d", (int)this);
+      snprintf(v->value, sizeof(v->value), "%d", (int) this);
    else
-      revk_info(tag, "%.*f", places, this);
+      snprintf(v->value, sizeof(v->value), "%.*f", places, this);
    return this;
 }
 
-static void
-sendall(void)
+static void sendall(void)
 {
-   lastco2 = -10000;
-   lasttemp = -10000;
-   lastotemp = -10000;
-   lastrh = -10000;
+   reportlast = 0;
 }
 
-const char     *
-app_command(const char *tag, unsigned int len, const unsigned char *value)
+const char *app_command(const char *tag, unsigned int len, const unsigned char *value)
 {
    if (!strcmp(tag, "send") || !strcmp(tag, "connect"))
    {
@@ -168,7 +235,7 @@ app_command(const char *tag, unsigned int len, const unsigned char *value)
    }
    if (!strcmp(tag, "contrast"))
    {
-      oled_set_contrast(atoi((char *)value));
+      oled_set_contrast(atoi((char *) value));
       return "";                /* OK */
    }
    if (!strcmp(tag, "co2autocal"))
@@ -176,23 +243,21 @@ app_command(const char *tag, unsigned int len, const unsigned char *value)
    if (!strcmp(tag, "co2nocal"))
       return co2_setting(0x5306, 0);
    if (!strcmp(tag, "co2cal"))
-      return co2_setting(0x5204, atoi((char *)value));
+      return co2_setting(0x5204, atoi((char *) value));
    if (!strcmp(tag, "co2tempoffset"))
-      return co2_setting(0x5403, atoi((char *)value));
+      return co2_setting(0x5403, atoi((char *) value));
    if (!strcmp(tag, "co2alt"))
-      return co2_setting(0x5102, atoi((char *)value));
+      return co2_setting(0x5102, atoi((char *) value));
    return NULL;
 }
 
-static          uint8_t
-co2_crc(uint8_t b1, uint8_t b2)
+static uint8_t co2_crc(uint8_t b1, uint8_t b2)
 {
-   uint8_t         crc = 0xFF;
-   void            b(uint8_t v)
-   {
+   uint8_t crc = 0xFF;
+   void b(uint8_t v) {
       crc ^= v;
-      uint8_t         n = 8;
-      while           (n--)
+      uint8_t n = 8;
+      while (n--)
       {
          if (crc & 0x80)
             crc = (crc << 1) ^ 0x31;
@@ -200,13 +265,12 @@ co2_crc(uint8_t b1, uint8_t b2)
             crc <<= 1;
       }
    }
-                   b(b1);
+   b(b1);
    b(b2);
    return crc;
 }
 
-static          i2c_cmd_handle_t
-co2_cmd(uint16_t c)
+static i2c_cmd_handle_t co2_cmd(uint16_t c)
 {
    i2c_cmd_handle_t i = i2c_cmd_link_create();
    i2c_master_start(i);
@@ -216,34 +280,31 @@ co2_cmd(uint16_t c)
    return i;
 }
 
-static void
-co2_add(i2c_cmd_handle_t i, uint16_t v)
+static void co2_add(i2c_cmd_handle_t i, uint16_t v)
 {
    i2c_master_write_byte(i, v >> 8, true);
    i2c_master_write_byte(i, v, true);
    i2c_master_write_byte(i, co2_crc(v >> 8, v), true);
 }
 
-static const char *
-co2_setting(uint16_t cmd, uint16_t val)
+static const char *co2_setting(uint16_t cmd, uint16_t val)
 {
    i2c_cmd_handle_t i = co2_cmd(cmd);
    co2_add(i, val);
    i2c_master_stop(i);
-   esp_err_t       e = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+   esp_err_t e = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
    i2c_cmd_link_delete(i);
    if (e)
       return esp_err_to_name(e);
    return "";
 }
 
-void
-co2_task(void *p)
+void co2_task(void *p)
 {
    p = p;
    ESP_LOGI(TAG, "CO2 start");
-   int             try = 10;
-   esp_err_t       e;
+   int try = 10;
+   esp_err_t e;
    while (try--)
    {
       i2c_cmd_handle_t i = co2_cmd(0x0010);
@@ -270,20 +331,20 @@ co2_task(void *p)
       i2c_cmd_handle_t i = co2_cmd(0x0202);
       /* Get ready state */
       i2c_master_stop(i);
-      esp_err_t       err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+      esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
       i2c_cmd_link_delete(i);
       if (err)
          ESP_LOGI(TAG, "Tx GetReady %s", esp_err_to_name(err));
       else
       {
-         uint8_t         buf[3];
+         uint8_t buf[3];
          i = i2c_cmd_link_create();
          i2c_master_start(i);
          i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
          i2c_master_read(i, buf, 2, ACK_VAL);
          i2c_master_read_byte(i, buf + 2, NACK_VAL);
          i2c_master_stop(i);
-         esp_err_t       err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+         esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
          i2c_cmd_link_delete(i);
          if (err)
             ESP_LOGI(TAG, "Rx GetReady %s", esp_err_to_name(err));
@@ -294,46 +355,46 @@ co2_task(void *p)
             i2c_cmd_handle_t i = co2_cmd(0x0300);
             /* Read data */
             i2c_master_stop(i);
-            esp_err_t       err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+            esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
             i2c_cmd_link_delete(i);
             if (err)
                ESP_LOGI(TAG, "Tx GetData %s", esp_err_to_name(err));
             else
             {
-               uint8_t         buf[18];
+               uint8_t buf[18];
                i = i2c_cmd_link_create();
                i2c_master_start(i);
                i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
                i2c_master_read(i, buf, 17, ACK_VAL);
                i2c_master_read_byte(i, buf + 17, NACK_VAL);
                i2c_master_stop(i);
-               esp_err_t       err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+               esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
                i2c_cmd_link_delete(i);
                if (err)
                   ESP_LOGI(TAG, "Rx Data %s", esp_err_to_name(err));
                else
                {
                   //ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, 18, ESP_LOG_INFO);
-                  uint8_t         d[4];
+                  uint8_t d[4];
                   d[3] = buf[0];
                   d[2] = buf[1];
                   d[1] = buf[3];
                   d[0] = buf[4];
-                  float           co2 = *(float *)d;
+                  float co2 = *(float *) d;
                   if (co2_crc(buf[0], buf[1]) != buf[2] || co2_crc(buf[3], buf[4]) != buf[5])
                      co2 = -1;
                   d[3] = buf[6];
                   d[2] = buf[7];
                   d[1] = buf[9];
                   d[0] = buf[10];
-                  float           t = *(float *)d;
+                  float t = *(float *) d;
                   if (co2_crc(buf[6], buf[7]) != buf[8] || co2_crc(buf[9], buf[10]) != buf[11])
                      t = -1000;
                   d[3] = buf[12];
                   d[2] = buf[13];
                   d[1] = buf[15];
                   d[0] = buf[16];
-                  float           rh = *(float *)d;
+                  float rh = *(float *) d;
                   if (co2_crc(buf[12], buf[13]) != buf[14] || co2_crc(buf[15], buf[16]) != buf[17])
                      rh = -1000;
                   if (co2 > 100)
@@ -363,8 +424,7 @@ co2_task(void *p)
    }
 }
 
-void
-ds18b20_task(void *p)
+void ds18b20_task(void *p)
 {
    p = p;
    ESP_LOGI(TAG, "DS18B20 retry");
@@ -373,8 +433,8 @@ ds18b20_task(void *p)
       usleep(100000);
       ds18b20_convert_all(owb);
       ds18b20_wait_for_conversion(ds18b20s[0]);
-      float           readings[MAX_OWB] = {0};
-      DS18B20_ERROR   errors[MAX_OWB] = {0};
+      float readings[MAX_OWB] = { 0 };
+      DS18B20_ERROR errors[MAX_OWB] = { 0 };
       for (int i = 0; i < num_owb; ++i)
          errors[i] = ds18b20_read_temp(ds18b20s[i], &readings[i]);
       if (!errors[0])
@@ -385,8 +445,7 @@ ds18b20_task(void *p)
    }
 }
 
-void
-app_main()
+void app_main()
 {
    revk_init(&app_command);
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
@@ -400,13 +459,13 @@ app_main()
 #undef u8
 #undef b
 #undef s
-      revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINARY);      /* fixed logo */
+       revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINARY);     /* fixed logo */
    if (fanco2gpio >= 0)
       gpio_set_direction(fanco2gpio, GPIO_MODE_OUTPUT);
    if (heatgpio >= 0)
       gpio_set_direction(heatgpio, GPIO_MODE_OUTPUT);
    {
-      int             p;
+      int p;
       for (p = 0; p < sizeof(logo) && !logo[p]; p++);
       if (p == sizeof(logo))
          memcpy(logo, aalogo, sizeof(logo));    /* default */
@@ -421,7 +480,7 @@ app_main()
          co2port = -1;
       } else
       {
-         i2c_config_t    config = {
+         i2c_config_t config = {
             .mode = I2C_MODE_MASTER,
             .sda_io_num = co2sda,
             .scl_io_num = co2scl,
@@ -439,7 +498,7 @@ app_main()
             i2c_set_timeout(co2port, 80000 * 5);        /* 5 ms ? allow for clock stretching */
       }
    }
-   const char     *e = oled_start(HSPI_HOST, oledcs, oledclk, oleddin, oleddc, oledrst, 1 - oledflip);
+   const char *e = oled_start(HSPI_HOST, oledcs, oledclk, oleddin, oleddc, oledrst, 1 - oledflip);
    if (e)
       revk_error("OLED", "Failed to start: %s", e);
    oled_lock();
@@ -456,12 +515,12 @@ app_main()
       OneWireBus_ROMCode device_rom_codes[MAX_OWB] = {
          0
       };
-      OneWireBus_SearchState search_state = {0};
-      bool            found = false;
+      OneWireBus_SearchState search_state = { 0 };
+      bool found = false;
       owb_search_first(owb, &search_state, &found);
       while (found && num_owb < MAX_OWB)
       {
-         char            rom_code_s[17];
+         char rom_code_s[17];
          owb_string_from_rom_code(search_state.rom_code, rom_code_s, sizeof(rom_code_s));
          device_rom_codes[num_owb] = search_state.rom_code;
          ++num_owb;
@@ -469,7 +528,7 @@ app_main()
       }
       for (int i = 0; i < num_owb; i++)
       {
-         DS18B20_Info   *ds18b20_info = ds18b20_malloc();       /* heap allocation */
+         DS18B20_Info *ds18b20_info = ds18b20_malloc(); /* heap allocation */
          ds18b20s[i] = ds18b20_info;
          if (num_owb == 1)
             ds18b20_init_solo(ds18b20_info, owb);       /* only one device on bus */
@@ -486,15 +545,13 @@ app_main()
    oled_lock();
    oled_clear(0);
    oled_unlock();
-
    /* Main task... */
-   time_t          showtime = 0;
-   char            showlogo = 1;
-   float           showco2 = -1000;
-   float           showtemp = -1000;
-   float           showrh = -1000;
-   void            reset(void)
-   {                            /* re display all */
+   time_t showtime = 0;
+   char showlogo = 1;
+   float showco2 = -1000;
+   float showtemp = -1000;
+   float showrh = -1000;
+   void reset(void) {           /* re display all */
       oled_clear(0);
       showlogo = 1;
       showtime = 0;
@@ -502,15 +559,16 @@ app_main()
       showtemp = -1000;
       showrh = -1000;
    }
-   while           (1)
+   while (1)
    {
       usleep(100000LL - (esp_timer_get_time() % 100000LL));     /* wait a bit */
-      time_t          now = time(0);
-      struct tm       t;
+      time_t now = time(0);
+      struct tm t;
       localtime_r(&now, &t);
+      reportall(now);
       if (hhmmnight || hhmmday)
       {                         /* Auto day / night */
-         uint32_t        hhmm = t.tm_hour * 100 + t.tm_min;
+         uint32_t hhmm = t.tm_hour * 100 + t.tm_min;
          if (hhmmnight > hhmmday && hhmm >= hhmmnight)
             oled_dark = 1;
          else if (hhmm >= hhmmday)
@@ -519,8 +577,8 @@ app_main()
             oled_dark = 1;
       }
       {                         /* Fan control */
-         static time_t   timefan = 0;
-         const char     *fan = NULL;
+         static time_t timefan = 0;
+         const char *fan = NULL;
          if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)) && lastfan != 1)
          {
             if (fanco2gpio >= 0)
@@ -539,8 +597,8 @@ app_main()
          if (fan && *fan)
          {
             timefan = now;
-            char           *topic = strdup(fan);
-            char           *data = strchr(topic, ' ');
+            char *topic = strdup(fan);
+            char *data = strchr(topic, ' ');
             if (data)
                *data++ = 0;
             revk_raw(NULL, topic, data ? strlen(data) : 0, data, 0);
@@ -548,14 +606,14 @@ app_main()
          }
       }
       {                         /* Heat control */
-         uint32_t        heattemp = (oled_dark ? heatnightmC : heatdaymC);
+         uint32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
          if (heattemp != HEATMAX || lastheat == 1)
          {                      /* We have a reference temp to work with or we left on */
-            static time_t   timeheat = 0;
+            static time_t timeheat = 0;
             if (heatresend && timeheat + heatresend < now)
                lastheat = -1;
-            const char     *heat = NULL;
-            uint32_t        thismC = thistemp * 1000;
+            const char *heat = NULL;
+            uint32_t thismC = thistemp * 1000;
             if ((heattemp == HEATMAX || thismC > heattemp) && lastheat != 0)
             {
                if (heatgpio >= 0)
@@ -572,8 +630,8 @@ app_main()
             if (heat && *heat)
             {
                timeheat = now;
-               char           *topic = strdup(heat);
-               char           *data = strchr(topic, ' ');
+               char *topic = strdup(heat);
+               char *data = strchr(topic, ' ');
                if (data)
                   *data++ = 0;
                revk_raw(NULL, topic, data ? strlen(data) : 0, data, 0);
@@ -583,7 +641,7 @@ app_main()
       }
       /* Display */
       oled_lock();
-      char            s[30];
+      char s[30];
       if (oled_msg_time)
       {                         /* display fixed message */
          if (oled_msg_time < (esp_timer_get_time() / 1000000))
@@ -592,15 +650,15 @@ app_main()
             reset();
          } else
          {
-            char           *m = oled_msg;
+            char *m = oled_msg;
             oled_pos(CONFIG_OLED_WIDTH / 2, 0, OLED_T | OLED_C | OLED_V);
-            uint8_t         size = 2;
+            uint8_t size = 2;
             ESP_LOGE(TAG, "Text %s", oled_msg);
             while (*m)
             {
                if (*m == '[')
                {
-                  char            isf = 1;
+                  char isf = 1;
                   for (; *m && *m != ']'; m++)
                      if (isdigit(*m))
                         size = *m - '0';        /* size */
@@ -616,10 +674,10 @@ app_main()
                }
                if (!oled_y())
                   oled_clear(0);
-               char           *e = m;
+               char *e = m;
                while (*e && *e != '/' && *e != '[')
                   e++;
-               oled_text(size, "%.*s", (int)(e - m), m);
+               oled_text(size, "%.*s", (int) (e - m), m);
                m = e;
                if (*m == '/')
                   m++;
@@ -635,10 +693,10 @@ app_main()
          if (!notime)
          {
             strftime(s, sizeof(s), "%T", &t);
-            int             y = CONFIG_OLED_HEIGHT - 1 - t.tm_sec * 2;
+            int y = CONFIG_OLED_HEIGHT - 1 - t.tm_sec * 2;
             if (t.tm_min & 1)
                y = 6 + t.tm_sec * 2;
-            int             x = t.tm_hour + t.tm_min;
+            int x = t.tm_hour + t.tm_min;
             if (t.tm_hour & 1)
                x = t.tm_hour + 60 - t.tm_min;
             oled_pos(x, y, OLED_B | OLED_L);
@@ -660,12 +718,6 @@ app_main()
       if (now != showtime && !notime)
       {
          showtime = now;
-         static char     lasth = -1;
-         if (t.tm_hour != lasth)
-         {
-            lasth = t.tm_hour;
-            sendall();
-         }
          if (t.tm_year > 100)
          {
             strftime(s, sizeof(s), "%F\004%T %Z", &t);
@@ -673,8 +725,8 @@ app_main()
             oled_text(1, s);
          }
       }
-      int             y = 0,
-                      space = (CONFIG_OLED_HEIGHT - 28 - 35 - 21 - 9) / 3;
+      int y = 0,
+          space = (CONFIG_OLED_HEIGHT - 28 - 35 - 21 - 9) / 3;
       if (thisco2 != showco2)
       {
          showco2 = thisco2;
@@ -685,7 +737,7 @@ app_main()
          else if (showco2 >= 10000)
             strcpy(s, "HIGH");
          else
-            sprintf(s, "%4d", (int)showco2);
+            sprintf(s, "%4d", (int) showco2);
          oled_pos(4, y, OLED_T | OLED_L | OLED_H);
          oled_text(4, s);
          oled_pos(oled_x(), oled_y(), OLED_T | OLED_L | OLED_V);
@@ -701,20 +753,20 @@ app_main()
       if (thistemp != showtemp)
       {
          showtemp = thistemp;
-         uint32_t        heattemp = (oled_dark ? heatnightmC : heatdaymC);
+         uint32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
          if (heattemp == HEATMAX)
             heattemp = (oled_dark ? heatdaymC : heatnightmC);   /* back up for when only one set so we show colour */
-         uint32_t        thismC = thistemp * 1000;
+         uint32_t thismC = thistemp * 1000;
          if (showtemp == -10000)
             oled_colour('K');
          else if (heattemp != HEATMAX)
             oled_colour(thismC > heattemp + 500 ? 'R' : thismC > heattemp - 500 ? 'G' : 'B');
-	 else
+         else
             oled_colour('W');
          oled_pos(10, y, OLED_T | OLED_L | OLED_H);
          if (f)
          {                      /* Fahrenheit */
-            int             fh = (showtemp + 40.0) * 1.8 - 40.0;
+            int fh = (showtemp + 40.0) * 1.8 - 40.0;
             if (fh <= -100)
                strcpy(s, "___");
             else if (fh >= 1000)
@@ -748,7 +800,7 @@ app_main()
          else if (showrh >= 100)
             strcpy(s, "^^");
          else
-            sprintf(s, "%2d", (int)showrh);
+            sprintf(s, "%2d", (int) showrh);
          oled_text(3, s);
          oled_text(2, "%%");
          oled_text(1, "R");
