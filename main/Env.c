@@ -127,7 +127,7 @@ static void reportall(time_t now)
       time_t when = reportlast ? : now;
       p += sprintf(p, "\"ts\":");
       if (when < 1000000000)
-         p += sprintf(p, "%ld", when); // Uptime
+         p += sprintf(p, "%ld", when);  // Uptime
       else
       {
          struct tm t;
@@ -220,7 +220,8 @@ const char *app_command(const char *tag, unsigned int len, const unsigned char *
       if (len)
          memcpy(oled_msg, value, len);
       oled_msg[len] = 0;
-      oled_msg_time = (esp_timer_get_time() / 1000000) + oledmsgtime;
+      if (oledmsgtime)
+         oled_msg_time = (esp_timer_get_time() / 1000000) + oledmsgtime;
       return "";
    }
    if (!strcmp(tag, "night"))
