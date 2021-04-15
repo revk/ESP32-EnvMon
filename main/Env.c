@@ -593,7 +593,7 @@ void app_main()
             fan = fanoff;
             lastfan = 0;
          }
-         if (!fan && fanresend && timefan + fanresend < now && lastfan >= 0)
+         if (!fan && fanresend && timefan + fanresend < now && lastfan > 0)
             fan = (lastfan ? fanon : fanoff);
          if (fan && *fan)
          {
