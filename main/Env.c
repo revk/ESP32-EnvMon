@@ -229,24 +229,19 @@ static void sendconfig(void)
       {
          char *data;
          if (asprintf(&data, "{\"uniq_id\":\"%s-%s\","  /* */
-                      "\"dev\":{\"ids\":[\"%s\"]},"     /* */
+                      "\"dev\":{\"ids\":[\"%s\"],\"name\":\"%s\",\"mdl\":\"%s\",\"sw\":\"%s\",\"mf\":\"www.me.uk\"},"   /* */
                       "\"dev_cla\":\"%s\","     /* */
-                      "\"name\":\"%s\","        /* */
+                      "\"name\":\"%s %s\","     /* */
                       "\"stat_t\":\"state/%s/%s/data\","        /* */
                       "\"unit_of_meas\":\"%s\","        /* */
-                      "\"val_tpl\":\"{{value_json.%s}}\","      /* */
-                      "\"mf\":\"RevK\","        /* */
-                      "\"sw\":\"%s\","  /* */
-                      "\"mdl\":\"%s\"}",        /* */
+                      "\"val_tpl\":\"{{value_json.%s}}\"}",     /* */
                       us, tag,  /* uniq_id */
-                      revk_id,  /* dev */
+                      revk_id, us, appname, revk_version,       /* dev */
                       name,     /* dev_cla */
-                      us,       /* name */
+                      us, name, /* name */
                       appname, us,      /* stat_t */
                       unit,     /* unit_of_meas */
-                      json,     /* value_json */
-                      revk_version,     /* sw */
-                      appname   /* mdl */
+                      json      /* value_json */
              ) >= 0)
          {
             revk_raw(NULL, topic, strlen(data), data, 1);
@@ -255,9 +250,9 @@ static void sendconfig(void)
          free(topic);
       }
    }
-   add("T", "temperature", "°C", "temp");
-   add("H", "humidity", "%", "rh");
-   add("C", "CO₂", "ppm", "co2");
+   add("Temp", "temperature", "°C", "temp");
+   add("RH", "humidity", "%", "rh");
+   add("CO2", "carbon_dioxide", "ppm", "co2");
 }
 
 const char *app_command(const char *tag, unsigned int len, const unsigned char *value)
