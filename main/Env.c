@@ -234,14 +234,19 @@ static void sendconfig(void)
                       "\"name\":\"%s %s\","     /* */
                       "\"stat_t\":\"state/%s/%s/data\","        /* */
                       "\"unit_of_meas\":\"%s\","        /* */
-                      "\"val_tpl\":\"{{value_json.%s}}\"}",     /* */
+                      "\"val_tpl\":\"{{value_json.%s}}\"," /* */
+		      "\"mf\":\"RevK\"," /* */
+		      "\"sw\":\"%s\"," /* */
+		      "\"mdl\":\"%s\"}",     /* */
                       us, tag,  /* uniq_id */
                       revk_id,  /* dev */
                       name,     /* dev_cla */
                       us, tag,  /* name */
                       appname, us,      /* stat_t */
                       unit,     /* unit_of_meas */
-                      json      /* value_json */
+                      json,      /* value_json */
+		      revk_version, /* sw */
+		      appname /* mdl */
              ) >= 0)
          {
             revk_raw(NULL, topic, strlen(data), data, 1);
