@@ -18,4 +18,6 @@ without heat from components impacting the reading.
 The CO2 sensor used is an expensive NDIR module providing accurate CO2
 measurement which is not fooled by farts, etc.
 
+![IMG_8093](https://user-images.githubusercontent.com/996983/114298107-a1878e00-9aac-11eb-95fa-5be9127406a7.jpg)
+
 (c) 2019-21 Andrews & Arnold Ltd, Adrian Kennard. See LICENSE file (GPL).
