@@ -235,10 +235,10 @@ static void sendconfig(void)
                       "\"stat_t\":\"state/%s/%s/data\","        /* */
                       "\"unit_of_meas\":\"%s\","        /* */
                       "\"val_tpl\":\"{{value_json.%s}}\"}",     /* */
-                      us, *tag,  /* uniq_id */
+                      us, *tag, /* uniq_id */
                       revk_id, us, appname, revk_version,       /* dev */
                       type,     /* dev_cla */
-                      us, tag, /* name */
+                      us, tag,  /* name */
                       appname, us,      /* stat_t */
                       unit,     /* unit_of_meas */
                       json      /* value_json */
