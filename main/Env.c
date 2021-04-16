@@ -221,40 +221,21 @@ static void sendconfig(void)
    extern char *hostname,
    *appname;
    char *us = (*hostname ? hostname : revk_id);
-   if (asprintf(&topic, "homeassistant/sensor/%s-T/config", us) >= 0)
-   {
-      char *data;
-      if (asprintf(&data, "{\"dev_cla\":\"Temperature\",\"name\":\"%s Temperature\",\"stat_t\":\"state/%s/%s/data\",\"unit_of_meas\":\"°C\",\"val_tpl\":\"{{value_json.temp}}\"}", us, appname, us) >= 0)
+   void add(const char *tag, const char *name, const char *unit, const char *json) {
+      if (asprintf(&topic, "homeassistant/sensor/%s-%s/config", us, tag) >= 0)
       {
-         revk_raw(NULL, topic, strlen(data), data, 1);
-         free(data);
+         char *data;
+         if (asprintf(&data, "{\"uniq_id\":\"%s-%s\",\"dev\":{\"ids\":[\"%s\"]},\"dev_cla\":\"%s\",\"name\":\"%s %s\",\"stat_t\":\"state/%s/%s/data\",\"unit_of_meas\":\"%s\",\"val_tpl\":\"{{value_json.%s}}\"}", us, tag, revk_id, name, us, name, appname, us, unit, json) >= 0)
+         {
+            revk_raw(NULL, topic, strlen(data), data, 1);
+            free(data);
+         }
+         free(topic);
       }
-      free(topic);
    }
-   if (asprintf(&topic, "homeassistant/sensor/%s-H/config", us) >= 0)
-   {
-      extern char *hostname,
-      *appname;
-      char *data;
-      if (asprintf(&data, "{\"dev_cla\":\"Humidity\",\"name\":\"%s Humidity\",\"stat_t\":\"state/%s/%s/data\",\"unit_of_meas\":\"%%\",\"val_tpl\":\"{{value_json.rh}}\"}", us, appname, us) >= 0)
-      {
-         revk_raw(NULL, topic, strlen(data), data, 1);
-         free(data);
-      }
-      free(topic);
-   }
-   if (asprintf(&topic, "homeassistant/sensor/%s-C/config", us) >= 0)
-   {
-      extern char *hostname,
-      *appname;
-      char *data;
-      if (asprintf(&data, "{\"dev_cla\":\"CO₂\",\"name\":\"%s CO₂\",\"stat_t\":\"state/%s/%s/data\",\"unit_of_meas\":\"ppm\",\"val_tpl\":\"{{value_json.co2}}\"}", us, appname, us) >= 0)
-      {
-         revk_raw(NULL, topic, strlen(data), data, 1);
-         free(data);
-      }
-      free(topic);
-   }
+   add("T", "temperature", "°C", "temp");
+   add("H", "humidity", "%", "rh");
+   add("C", "CO₂", "ppm", "co2");
 }
 
 const char *app_command(const char *tag, unsigned int len, const unsigned char *value)
