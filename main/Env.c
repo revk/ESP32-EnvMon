@@ -224,21 +224,21 @@ static void sendconfig(void)
    extern char *hostname,
    *appname;
    char *us = (*hostname ? hostname : revk_id);
-   void add(const char *tag, const char *name, const char *unit, const char *json) {
+   void add(const char *tag, const char *type, const char *unit, const char *json) {
       if (asprintf(&topic, "homeassistant/sensor/%s-%s/config", us, tag) >= 0)
       {
          char *data;
-         if (asprintf(&data, "{\"uniq_id\":\"%s-%s\","  /* */
+         if (asprintf(&data, "{\"uniq_id\":\"%s-%c\","  /* */
                       "\"dev\":{\"ids\":[\"%s\"],\"name\":\"%s\",\"mdl\":\"%s\",\"sw\":\"%s\",\"mf\":\"www.me.uk\"},"   /* */
                       "\"dev_cla\":\"%s\","     /* */
                       "\"name\":\"%s %s\","     /* */
                       "\"stat_t\":\"state/%s/%s/data\","        /* */
                       "\"unit_of_meas\":\"%s\","        /* */
                       "\"val_tpl\":\"{{value_json.%s}}\"}",     /* */
-                      us, tag,  /* uniq_id */
+                      us, *tag,  /* uniq_id */
                       revk_id, us, appname, revk_version,       /* dev */
-                      name,     /* dev_cla */
-                      us, name, /* name */
+                      type,     /* dev_cla */
+                      us, tag, /* name */
                       appname, us,      /* stat_t */
                       unit,     /* unit_of_meas */
                       json      /* value_json */
@@ -251,8 +251,8 @@ static void sendconfig(void)
       }
    }
    add("Temp", "temperature", "°C", "temp");
-   add("RH", "humidity", "%", "rh");
-   add("CO2", "co2", "ppm", "co2");
+   add("R/H", "humidity", "%", "rh");
+   add("CO₂", "co2", "ppm", "co2");
 }
 
 const char *app_command(const char *tag, unsigned int len, const unsigned char *value)
