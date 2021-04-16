@@ -252,7 +252,7 @@ static void sendconfig(void)
    }
    add("Temp", "temperature", "°C", "temp");
    add("RH", "humidity", "%", "rh");
-   add("CO2", "carbon_dioxide", "ppm", "co2");
+   add("CO2", "co2", "ppm", "co2");
 }
 
 const char *app_command(const char *tag, unsigned int len, const unsigned char *value)
