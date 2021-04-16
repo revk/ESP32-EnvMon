@@ -49,6 +49,7 @@ const char TAG[] = "Env";
 	u32(oledmsgtime,30)	\
 	b(oledflip)	\
 	b(f)	\
+	b(ha)	\
 	s(fanon)	\
 	s(fanoff)	\
 	u32(fanco2on,1000)	\
@@ -215,6 +216,8 @@ static void sendall(void)
 static void sendconfig(void)
 {
    /* TODO only send for things we have devices? */
+   if (!ha)
+      return;
    reportconfig = time(0);
    revk_info("config", "send");
    char *topic;
@@ -225,7 +228,21 @@ static void sendconfig(void)
       if (asprintf(&topic, "homeassistant/sensor/%s-%s/config", us, tag) >= 0)
       {
          char *data;
-         if (asprintf(&data, "{\"uniq_id\":\"%s-%s\",\"dev\":{\"ids\":[\"%s\"]},\"dev_cla\":\"%s\",\"name\":\"%s %s\",\"stat_t\":\"state/%s/%s/data\",\"unit_of_meas\":\"%s\",\"val_tpl\":\"{{value_json.%s}}\"}", us, tag, revk_id, name, us, name, appname, us, unit, json) >= 0)
+         if (asprintf(&data, "{\"uniq_id\":\"%s-%s\","  /* */
+                      "\"dev\":{\"ids\":[\"%s\"]},"     /* */
+                      "\"dev_cla\":\"%s\","     /* */
+                      "\"name\":\"%s %s\","     /* */
+                      "\"stat_t\":\"state/%s/%s/data\","        /* */
+                      "\"unit_of_meas\":\"%s\","        /* */
+                      "\"val_tpl\":\"{{value_json.%s}}\"}",     /* */
+                      us, tag,  /* uniq_id */
+                      revk_id,  /* dev */
+                      name,     /* dev_cla */
+                      us, tag,  /* name */
+                      appname, us,      /* stat_t */
+                      unit,     /* unit_of_meas */
+                      json      /* value_json */
+             ) >= 0)
          {
             revk_raw(NULL, topic, strlen(data), data, 1);
             free(data);
