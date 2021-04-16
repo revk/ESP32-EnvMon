@@ -231,22 +231,22 @@ static void sendconfig(void)
          if (asprintf(&data, "{\"uniq_id\":\"%s-%s\","  /* */
                       "\"dev\":{\"ids\":[\"%s\"]},"     /* */
                       "\"dev_cla\":\"%s\","     /* */
-                      "\"name\":\"%s %s\","     /* */
+                      "\"name\":\"%s\","        /* */
                       "\"stat_t\":\"state/%s/%s/data\","        /* */
                       "\"unit_of_meas\":\"%s\","        /* */
-                      "\"val_tpl\":\"{{value_json.%s}}\"," /* */
-		      "\"mf\":\"RevK\"," /* */
-		      "\"sw\":\"%s\"," /* */
-		      "\"mdl\":\"%s\"}",     /* */
+                      "\"val_tpl\":\"{{value_json.%s}}\","      /* */
+                      "\"mf\":\"RevK\","        /* */
+                      "\"sw\":\"%s\","  /* */
+                      "\"mdl\":\"%s\"}",        /* */
                       us, tag,  /* uniq_id */
                       revk_id,  /* dev */
                       name,     /* dev_cla */
-                      us, tag,  /* name */
+                      us,       /* name */
                       appname, us,      /* stat_t */
                       unit,     /* unit_of_meas */
-                      json,      /* value_json */
-		      revk_version, /* sw */
-		      appname /* mdl */
+                      json,     /* value_json */
+                      revk_version,     /* sw */
+                      appname   /* mdl */
              ) >= 0)
          {
             revk_raw(NULL, topic, strlen(data), data, 1);
