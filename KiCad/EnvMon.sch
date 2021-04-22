@@ -220,17 +220,6 @@ F 3 "" H 8600 4250 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GND #PWR0105
-U 1 1 6048B1E6
-P 4300 3400
-F 0 "#PWR0105" H 4300 3150 50  0001 C CNN
-F 1 "GND" H 4305 3227 50  0000 C CNN
-F 2 "" H 4300 3400 50  0001 C CNN
-F 3 "" H 4300 3400 50  0001 C CNN
-	1    4300 3400
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR0106
 U 1 1 6048DFCC
 P 3150 1400
@@ -437,25 +426,11 @@ F 3 "" H 10200 5050 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	4900 2600 5250 2600
-$Comp
-L power:GND #PWR0114
-U 1 1 604E9ABF
-P 5250 2600
-F 0 "#PWR0114" H 5250 2350 50  0001 C CNN
-F 1 "GND" H 5255 2427 50  0000 C CNN
-F 2 "" H 5250 2600 50  0001 C CNN
-F 3 "" H 5250 2600 50  0001 C CNN
-	1    5250 2600
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
 	4900 2500 6100 2500
 Wire Wire Line
 	6100 2500 6100 1650
 NoConn ~ 8000 1850
 NoConn ~ 8000 1950
-NoConn ~ 3750 4150
 $Comp
 L RevK:OLED1.5-RGB M2
 U 1 1 6050B2B3
@@ -566,21 +541,7 @@ Text GLabel 9500 6300 2    50   Input ~ 0
 IO7
 Text GLabel 9200 2950 2    50   Input ~ 0
 OLED-RST
-Text GLabel 4900 2800 2    50   Input ~ 0
-CBUS0
-Text GLabel 4900 2900 2    50   Input ~ 0
-CBUS1
-Text GLabel 4900 3000 2    50   Input ~ 0
-CBUS2
-Text GLabel 4900 3100 2    50   Input ~ 0
-CBUS3
 Connection ~ 3500 2300
-Connection ~ 4300 3400
-Wire Wire Line
-	4200 3400 4100 3400
-Wire Wire Line
-	4300 3400 4200 3400
-Connection ~ 4200 3400
 Wire Wire Line
 	3500 2000 4100 2000
 Connection ~ 4100 2000
@@ -589,25 +550,6 @@ Wire Wire Line
 Wire Wire Line
 	4100 2000 4300 2000
 Connection ~ 4300 2000
-$Comp
-L Interface_USB:FT230XQ U1
-U 1 1 6046E472
-P 4200 2700
-F 0 "U1" H 4200 3581 50  0000 C CNN
-F 1 "FT230XQ" H 4200 3490 50  0000 C CNN
-F 2 "RevK:QFN-16-(hand)-1EP_4x4mm_P0.65mm_EP2.1x2.1mm" H 5550 2100 50  0001 C CNN
-F 3 "https://www.ftdichip.com/Support/Documents/DataSheets/ICs/DS_FT230X.pdf" H 4200 2700 50  0001 C CNN
-	1    4200 2700
-	1    0    0    -1  
-$EndComp
-Text GLabel 9200 1650 2    50   Input ~ 0
-CBUS0
-Text GLabel 9200 1850 2    50   Input ~ 0
-CBUS1
-Text GLabel 9200 3650 2    50   Input ~ 0
-CBUS2
-Text GLabel 9200 3750 2    50   Input ~ 0
-CBUS3
 $Comp
 L RevK:DC J2
 U 1 1 604CCEB5
@@ -663,14 +605,102 @@ F 3 "" H 10900 7000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L RevK:AJK 1
+L RevK:AJK 11
 U 1 1 60625C2F
 P 10900 6850
-F 0 "1" H 10925 6896 50  0000 L CNN
+F 0 "11" H 10925 6896 50  0000 L CNN
 F 1 "AJK" H 10925 6805 50  0000 L CNN
 F 2 "RevK:AJK" H 10900 6750 50  0001 C CNN
 F 3 "" H 10900 6750 50  0001 C CNN
 	1    10900 6850
+	1    0    0    -1  
+$EndComp
+NoConn ~ 9200 1850
+NoConn ~ 9200 3650
+NoConn ~ 9200 3750
+$Comp
+L Interface_USB:FT231XQ U1
+U 1 1 6081E5C7
+P 4200 2900
+F 0 "U1" H 4200 3981 50  0000 C CNN
+F 1 "FT231XQ" H 4200 3890 50  0000 C CNN
+F 2 "RevK:QFN-20-(hand)-1EP_4x4mm_P0.5mm_EP2.5x2.5mm" H 5550 2100 50  0001 C CNN
+F 3 "https://www.ftdichip.com/Support/Documents/DataSheets/ICs/DS_FT231X.pdf" H 4200 2900 50  0001 C CNN
+	1    4200 2900
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9200 1650 9350 1650
+Wire Wire Line
+	9350 1650 9350 1150
+Wire Wire Line
+	9350 1150 6700 1150
+Wire Wire Line
+	6700 1150 6700 2700
+Wire Wire Line
+	6700 2700 4900 2700
+$Comp
+L power:GND #PWR02
+U 1 1 608291EB
+P 4900 2600
+F 0 "#PWR02" H 4900 2350 50  0001 C CNN
+F 1 "GND" V 4905 2472 50  0000 R CNN
+F 2 "" H 4900 2600 50  0001 C CNN
+F 3 "" H 4900 2600 50  0001 C CNN
+	1    4900 2600
+	0    -1   -1   0   
+$EndComp
+$Comp
+L power:GND #PWR03
+U 1 1 608296B7
+P 4900 2800
+F 0 "#PWR03" H 4900 2550 50  0001 C CNN
+F 1 "GND" V 4905 2672 50  0000 R CNN
+F 2 "" H 4900 2800 50  0001 C CNN
+F 3 "" H 4900 2800 50  0001 C CNN
+	1    4900 2800
+	0    -1   -1   0   
+$EndComp
+$Comp
+L power:GND #PWR04
+U 1 1 60829B8F
+P 4900 2900
+F 0 "#PWR04" H 4900 2650 50  0001 C CNN
+F 1 "GND" V 4905 2772 50  0000 R CNN
+F 2 "" H 4900 2900 50  0001 C CNN
+F 3 "" H 4900 2900 50  0001 C CNN
+	1    4900 2900
+	0    -1   -1   0   
+$EndComp
+$Comp
+L power:GND #PWR05
+U 1 1 6082A073
+P 4900 3000
+F 0 "#PWR05" H 4900 2750 50  0001 C CNN
+F 1 "GND" V 4905 2872 50  0000 R CNN
+F 2 "" H 4900 3000 50  0001 C CNN
+F 3 "" H 4900 3000 50  0001 C CNN
+	1    4900 3000
+	0    -1   -1   0   
+$EndComp
+NoConn ~ 4900 3200
+NoConn ~ 4900 3300
+NoConn ~ 4900 3400
+NoConn ~ 4900 3500
+Wire Wire Line
+	4100 3800 4200 3800
+Wire Wire Line
+	4200 3800 4300 3800
+Connection ~ 4200 3800
+$Comp
+L power:GND #PWR01
+U 1 1 6083A01F
+P 4200 3800
+F 0 "#PWR01" H 4200 3550 50  0001 C CNN
+F 1 "GND" H 4205 3627 50  0000 C CNN
+F 2 "" H 4200 3800 50  0001 C CNN
+F 3 "" H 4200 3800 50  0001 C CNN
+	1    4200 3800
 	1    0    0    -1  
 $EndComp
 $EndSCHEMATC
