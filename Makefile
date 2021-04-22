@@ -15,7 +15,7 @@ update:
 bootmode: ftdizap/ftdizap
 	./ftdizap/ftdizap --cbus=0
 
-# Flash with GPIO control
+# Flash with GPIO control using CBUS0 (FT230X design)
 zap:    bootmode flash
 	./ftdizap/ftdizap --cbus=1 --reset
 
