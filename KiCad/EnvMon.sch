@@ -25,17 +25,6 @@ F 3 "https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_
 	1    0    0    -1  
 $EndComp
 $Comp
-L RevK:D24V5F3-NoSHDN M1
-U 1 1 6046A5CD
-P 3550 1100
-F 0 "M1" H 4328 996 50  0000 L CNN
-F 1 "D24V5F3-NoSHDN" H 4328 905 50  0000 L CNN
-F 2 "RevK:D24V5F3-SMD-Like" H 3950 1250 50  0001 C CNN
-F 3 "https://www.pololu.com/product/2842/resources" H 3950 1250 50  0001 C CNN
-	1    3550 1100
-	1    0    0    -1  
-$EndComp
-$Comp
 L Connector:Conn_01x08_Male J3
 U 1 1 60473312
 P 7000 5900
@@ -245,7 +234,6 @@ Wire Wire Line
 	3550 1300 3150 1300
 Wire Wire Line
 	3150 1300 3150 1400
-NoConn ~ 3550 1100
 Wire Wire Line
 	2800 1200 2800 1150
 Wire Wire Line
@@ -570,7 +558,7 @@ Wire Wire Line
 Wire Wire Line
 	3550 750  3350 750 
 Wire Wire Line
-	3350 750  3350 1200
+	3350 750  3350 1100
 Connection ~ 3350 1200
 Wire Wire Line
 	3350 1200 3550 1200
@@ -605,10 +593,10 @@ F 3 "" H 10900 7000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L RevK:AJK 11
+L RevK:AJK 111
 U 1 1 60625C2F
 P 10900 6850
-F 0 "11" H 10925 6896 50  0000 L CNN
+F 0 "111" H 10925 6896 50  0000 L CNN
 F 1 "AJK" H 10925 6805 50  0000 L CNN
 F 2 "RevK:AJK" H 10900 6750 50  0001 C CNN
 F 3 "" H 10900 6750 50  0001 C CNN
@@ -703,4 +691,20 @@ F 3 "" H 4200 3800 50  0001 C CNN
 	1    4200 3800
 	1    0    0    -1  
 $EndComp
+$Comp
+L RevK:Regulator Reg1
+U 1 1 608EC412
+P 3550 1100
+F 0 "Reg1" H 4128 1001 50  0000 L CNN
+F 1 "Regulator" H 4128 910 50  0000 L CNN
+F 2 "RevK:RegulatorBlock" H 4000 1200 50  0001 C CNN
+F 3 "https://www.pololu.com/product/2842/resources" H 4000 1200 50  0001 C CNN
+	1    3550 1100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3550 1100 3350 1100
+Connection ~ 3350 1100
+Wire Wire Line
+	3350 1100 3350 1200
 $EndSCHEMATC
