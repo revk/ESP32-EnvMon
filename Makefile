@@ -48,7 +48,7 @@ envgraph: envgraph.c SQLlib/sqllib.o AXL/axl.o
 PCBCase/case: PCBCase/case.c
 	make -C PCBCase
 
-case: KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad KiCad/EnvMon-flush.scad KiCad/EnvMon-flush-noco2.scad KiCad/EnvMon-flush-nooled.scad
+scad: KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad KiCad/EnvMon-flush.scad KiCad/EnvMon-flush-noco2.scad KiCad/EnvMon-flush-nooled.scad
 stl: KiCad/EnvMon.stl KiCad/EnvMon-noco2.stl KiCad/EnvMon-nooled.stl KiCad/EnvMon-flush.stl KiCad/EnvMon-flush-noco2.stl KiCad/EnvMon-flush-nooled.stl
 
 %.stl: %.scad
