@@ -5,8 +5,8 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 1
 Title "1.5\" OLED Module driver with GPIO"
-Date "2021-03-08"
-Rev "1"
+Date "2021-05-20"
+Rev "2"
 Comp "Adrian Kennard / Andrews & Arnold Ltd"
 Comment1 "@TheRealRevK"
 Comment2 "www.me.uk"
@@ -19,7 +19,7 @@ U 1 1 60467763
 P 8600 2850
 F 0 "U2" H 8600 4431 50  0000 C CNN
 F 1 "ESP32-WROOM-32" H 8600 4340 50  0000 C CNN
-F 2 "RF_Module:ESP32-WROOM-32" H 8600 1350 50  0001 C CNN
+F 2 "RevK:ESP32-WROOM-32" H 8600 1350 50  0001 C CNN
 F 3 "https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf" H 8300 2900 50  0001 C CNN
 	1    8600 2850
 	1    0    0    -1  
@@ -582,10 +582,10 @@ NoConn ~ 9200 2550
 Wire Wire Line
 	1350 4750 1350 5250
 $Comp
-L RevK:AJK ~1
+L RevK:AJK Logo2
 U 1 1 6061DC7B
 P 10900 7000
-F 0 "~1" H 10925 7046 50  0000 L CNN
+F 0 "Logo2" H 10925 7046 50  0001 L CNN
 F 1 "AJK" H 10925 7000 50  0000 L CNN
 F 2 "RevK:AJK" H 10900 7000 50  0001 C CNN
 F 3 "" H 10900 7000 50  0001 C CNN
@@ -593,10 +593,10 @@ F 3 "" H 10900 7000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L RevK:AJK 111
+L RevK:AJK Logo1
 U 1 1 60625C2F
 P 10900 6850
-F 0 "111" H 10925 6896 50  0000 L CNN
+F 0 "Logo1" H 10925 6896 50  0001 L CNN
 F 1 "AJK" H 10925 6805 50  0000 L CNN
 F 2 "RevK:AJK" H 10900 6750 50  0001 C CNN
 F 3 "" H 10900 6750 50  0001 C CNN
@@ -707,4 +707,15 @@ Wire Wire Line
 Connection ~ 3350 1100
 Wire Wire Line
 	3350 1100 3350 1200
+$Comp
+L RevK:AA Logo3
+U 1 1 60A6ADA4
+P 10750 6900
+F 0 "Logo3" H 10750 6900 50  0001 C CNN
+F 1 "AA" H 10775 6900 50  0000 L CNN
+F 2 "RevK:AA" H 10750 6900 50  0001 C CNN
+F 3 "" H 10750 6900 50  0001 C CNN
+	1    10750 6900
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
