@@ -697,7 +697,7 @@ U 1 1 608EC412
 P 3550 1100
 F 0 "Reg1" H 4128 1001 50  0000 L CNN
 F 1 "Regulator" H 4128 910 50  0000 L CNN
-F 2 "RevK:RegulatorBlock2" H 4000 1200 50  0001 C CNN
+F 2 "RevK:RegulatorBlock" H 4000 1200 50  0001 C CNN
 F 3 "https://www.pololu.com/product/2842/resources" H 4000 1200 50  0001 C CNN
 	1    3550 1100
 	1    0    0    -1  
