@@ -221,9 +221,9 @@ static void sendconfig(void)
    reportconfig = time(0);
    revk_info("config", "send");
    char *topic;
-   extern char *hostname,
-   *appname;
-   char *us = (*hostname ? hostname : revk_id);
+   const char *us = revk_hostname();
+   if (!*us)
+      us = revk_id;
    void add(const char *tag, const char *type, const char *unit, const char *json) {
       if (asprintf(&topic, "homeassistant/sensor/%s-%s/config", us, tag) >= 0)
       {
@@ -236,10 +236,10 @@ static void sendconfig(void)
                       "\"unit_of_meas\":\"%s\","        /* */
                       "\"val_tpl\":\"{{value_json.%s}}\"}",     /* */
                       us, *tag, /* uniq_id */
-                      revk_id, us, appname, revk_version,       /* dev */
+                      revk_id, us, revk_appname(), revk_version,        /* dev */
                       type,     /* dev_cla */
                       us, tag,  /* name */
-                      appname, us,      /* stat_t */
+                      revk_appname(), us,       /* stat_t */
                       unit,     /* unit_of_meas */
                       json      /* value_json */
              ) >= 0)
