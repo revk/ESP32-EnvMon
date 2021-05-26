@@ -5,8 +5,8 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 1
 Title "1.5\" OLED Module driver with GPIO"
-Date "2021-05-20"
-Rev "2"
+Date "2021-05-26"
+Rev "3"
 Comp "Adrian Kennard / Andrews & Arnold Ltd"
 Comment1 "@TheRealRevK"
 Comment2 "www.me.uk"
@@ -505,7 +505,7 @@ Text GLabel 9200 2650 2    50   Input ~ 0
 IO2
 Text GLabel 9200 2750 2    50   Input ~ 0
 IO3
-Text GLabel 9200 2250 2    50   Input ~ 0
+Text GLabel 9200 2450 2    50   Input ~ 0
 IO4
 Text GLabel 9200 2350 2    50   Input ~ 0
 IO5
@@ -577,7 +577,7 @@ Wire Wire Line
 Wire Wire Line
 	2700 2700 3500 2700
 NoConn ~ 4500 5600
-NoConn ~ 9200 2450
+NoConn ~ 9200 2250
 NoConn ~ 9200 2550
 Wire Wire Line
 	1350 4750 1350 5250
@@ -603,7 +603,6 @@ F 3 "" H 10900 6750 50  0001 C CNN
 	1    10900 6850
 	1    0    0    -1  
 $EndComp
-NoConn ~ 9200 1850
 NoConn ~ 9200 3650
 NoConn ~ 9200 3750
 $Comp
@@ -717,5 +716,40 @@ F 2 "RevK:AA" H 10750 6900 50  0001 C CNN
 F 3 "" H 10750 6900 50  0001 C CNN
 	1    10750 6900
 	1    0    0    -1  
+$EndComp
+$Comp
+L Device:LED D1
+U 1 1 60AE7096
+P 10175 1850
+F 0 "D1" H 10168 2067 50  0000 C CNN
+F 1 "LED" H 10168 1976 50  0000 C CNN
+F 2 "LED_SMD:LED_0603_1608Metric" H 10175 1850 50  0001 C CNN
+F 3 "~" H 10175 1850 50  0001 C CNN
+	1    10175 1850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9200 1850 10025 1850
+$Comp
+L Device:R R10
+U 1 1 60AEA9F3
+P 10475 1850
+F 0 "R10" V 10268 1850 50  0000 C CNN
+F 1 "680R" V 10359 1850 50  0000 C CNN
+F 2 "RevK:R_0603" V 10405 1850 50  0001 C CNN
+F 3 "~" H 10475 1850 50  0001 C CNN
+	1    10475 1850
+	0    1    1    0   
+$EndComp
+$Comp
+L power:+3.3V #PWR0105
+U 1 1 60AEB4B8
+P 10625 1850
+F 0 "#PWR0105" H 10625 1700 50  0001 C CNN
+F 1 "+3.3V" V 10640 1978 50  0000 L CNN
+F 2 "" H 10625 1850 50  0001 C CNN
+F 3 "" H 10625 1850 50  0001 C CNN
+	1    10625 1850
+	0    1    1    0   
 $EndComp
 $EndSCHEMATC
