@@ -125,45 +125,25 @@ static void reportall(time_t now)
    if (values)
    {
       value_t *v;
-      char temp[100],
-      *p = temp,
-          *e = temp + sizeof(temp) - 2;
-      *p++ = '{';
+      jo_t j = jo_create_alloc();
+      jo_object(j, NULL);
       time_t when = reportlast ? : now;
-      p += sprintf(p, "\"ts\":");
       if (when < 1000000000)
-         p += sprintf(p, "%ld", when);
-      //Uptime
+         jo_litf(j, "ts", "%ld", when);
       else
       {
-         struct tm t;
-         gmtime_r(&when, &t);
-         p += strftime(p, e - p, "\"%FT%TZ\"", &t);
+         struct tm tm;
+         gmtime_r(&when, &tm);
+         jo_stringf(j, "ts", "%04d-%02d-%02dT%02d:%02d:%02dZ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
       }
       for (v = values; v; v = v->next)
       {
-         char *r = p;
-         if (p < e)
-            *p++ = ',';
-         if (p < e)
-            *p++ = '"';
-         if (p < e)
-            p += snprintf(p, e - p, "%s", v->tag);
-         if (p < e)
-            *p++ = '"';
-         if (p < e)
-            *p++ = ':';
-         if (p < e && !*v->value)
-            p += snprintf(p, e - p, "null");
-         else if (p < e)
-            p += snprintf(p, e - p, "%s", v->value);
-         if (p > e)
-            p = r;
-         //Ignore
+         if (!*v->value)
+            jo_null(j, v->tag);
+         else
+            jo_lit(j, v->tag, v->value);
       }
-      *p++ = '}';
-      *p = 0;
-      revk_state("data", "%s", temp);
+      revk_state("data", "%s", jo_result_free(&j) ? : "");
    }
    reportlast = now;
    reportchange = 0;
