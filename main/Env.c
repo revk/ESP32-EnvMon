@@ -3,6 +3,7 @@
 const char TAG[] = "Env";
 
 #include "revk.h"
+#include "jo.h"
 #include <driver/i2c.h>
 #include <hal/spi_types.h>
 #include <math.h>
@@ -227,26 +228,24 @@ static void sendconfig(void)
    void add(const char *tag, const char *type, const char *unit, const char *json) {
       if (asprintf(&topic, "homeassistant/sensor/%s-%s/config", us, tag) >= 0)
       {
-         char *data;
-         if (asprintf(&data, "{\"uniq_id\":\"%s-%c\","  /* */
-                      "\"dev\":{\"ids\":[\"%s\"],\"name\":\"%s\",\"mdl\":\"%s\",\"sw\":\"%s\",\"mf\":\"www.me.uk\"},"   /* */
-                      "\"dev_cla\":\"%s\","     /* */
-                      "\"name\":\"%s %s\","     /* */
-                      "\"stat_t\":\"state/%s/%s/data\","        /* */
-                      "\"unit_of_meas\":\"%s\","        /* */
-                      "\"val_tpl\":\"{{value_json.%s}}\"}",     /* */
-                      us, *tag, /* uniq_id */
-                      revk_id, us, revk_appname(), revk_version,        /* dev */
-                      type,     /* dev_cla */
-                      us, tag,  /* name */
-                      revk_appname(), us,       /* stat_t */
-                      unit,     /* unit_of_meas */
-                      json      /* value_json */
-             ) >= 0)
-         {
-            revk_raw(NULL, topic, strlen(data), data, 1);
-            free(data);
-         }
+         jo_t j = jo_create_alloc();
+         jo_object(j, NULL);
+         jo_stringf(j, "%s-%c", us, *tag);
+         jo_object(j, "dev");
+         jo_string(j, "ids", revk_id);
+         jo_string(j, "name", us);
+         jo_string(j, "mdl", revk_appname());
+         jo_string(j, "sw", revk_version);
+         jo_string(j, "mf", "www.me.uk");
+         jo_close(j);
+         jo_string(j, "dev_cla", type);
+         jo_stringf(j, "name", "%s %s", us, tag);
+         jo_stringf(j, "stat_t", "state/%s/%s/data", revk_appname(), us);
+         jo_string(j, "unit_of_meas", unit);
+         jo_stringf(j, "val_tpl", "{{value_json.%s}}", json);
+         char *o = jo_result_free(&j);
+         if (o)
+            revk_raw(NULL, topic, strlen(o), o, 1);
          free(topic);
       }
    }
@@ -608,8 +607,7 @@ void app_main()
       showco2 = -1000;
       showtemp = -1000;
       showrh = -1000;
-   }
-   while (1)
+   } while (1)
    {
       usleep(100000LL - (esp_timer_get_time() % 100000LL));     /* wait a bit */
       time_t now = time(0);
