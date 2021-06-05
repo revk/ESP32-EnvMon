@@ -200,7 +200,6 @@ static void sendconfig(void)
    if (!ha)
       return;
    reportconfig = time(0);
-   revk_info("config", "send");
    char *topic;
    const char *us = revk_hostname();
    if (!*us)
@@ -208,9 +207,10 @@ static void sendconfig(void)
    void add(const char *tag, const char *type, const char *unit, const char *json) {
       if (asprintf(&topic, "homeassistant/sensor/%s-%s/config", us, tag) >= 0)
       {
+         ESP_LOGI(TAG, "HA %s", tag);
          jo_t j = jo_create_alloc();
          jo_object(j, NULL);
-         jo_stringf(j, "%s-%c", us, *tag);
+         jo_stringf(j, "uniq_id", "%s-%c", us, *tag);
          jo_object(j, "dev");
          jo_string(j, "ids", revk_id);
          jo_string(j, "name", us);
