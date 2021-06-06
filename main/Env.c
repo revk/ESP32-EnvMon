@@ -3,7 +3,6 @@
 const char TAG[] = "Env";
 
 #include "revk.h"
-#include "jo.h"
 #include <driver/i2c.h>
 #include <hal/spi_types.h>
 #include <math.h>
