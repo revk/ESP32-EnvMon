@@ -143,7 +143,12 @@ static void reportall(time_t now)
          else
             jo_lit(j, v->tag, v->value);
       }
-      revk_state("data", "%s", jo_result_free(&j) ? : "");
+      char *res=jo_finisha(&j);
+      if(res)
+      {
+      revk_state("data", "%s", res);
+      free(res);
+      }
    }
    reportlast = now;
    reportchange = 0;
@@ -223,9 +228,12 @@ static void sendconfig(void)
          jo_stringf(j, "stat_t", "state/%s/%s/data", revk_appname(), us);
          jo_string(j, "unit_of_meas", unit);
          jo_stringf(j, "val_tpl", "{{value_json.%s}}", json);
-         char *o = jo_result_free(&j);
-         if (o)
-            revk_raw(NULL, topic, strlen(o), o, 1);
+         char *res = jo_finisha(&j);
+         if (res)
+	 {
+            revk_raw(NULL, topic, strlen(res), res, 1);
+	    free(res);
+	 }
          free(topic);
       }
    }
