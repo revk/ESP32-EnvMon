@@ -209,24 +209,26 @@ static void sendconfig(void)
    if (!*us)
       us = revk_id;
    void add(const char *tag, const char *type, const char *unit, const char *json) {
-      if (asprintf(&topic, "homeassistant/sensor/%s-%s/config", us, tag) >= 0)
+      if (asprintf(&topic, "homeassistant/sensor/%s%c/config", revk_id, *tag) >= 0)
       {
          ESP_LOGI(TAG, "HA %s", tag);
          jo_t j = jo_create_alloc();
          jo_object(j, NULL);
-         jo_stringf(j, "uniq_id", "%s-%c", us, *tag);
-         jo_object(j, "dev");
-         jo_stringf(j, "ids", "%06X", (revk_binid >> 2) & 0xFFFFFF);
+         jo_stringf(j, "unique_id", "%s%c", revk_id, *tag);
+         jo_object(j, "device");
+	 jo_array(j,"identifiers");
+         jo_string(j, NULL, revk_id);
+	 jo_close(j);
          jo_string(j, "name", us);
-         jo_string(j, "mdl", revk_appname());
-         jo_string(j, "sw", revk_version);
-         jo_string(j, "mf", "www.me.uk");
+         jo_string(j, "model", revk_appname());
+         jo_string(j, "sw_version", revk_version);
+         jo_string(j, "manufacturer", "www.me.uk");
          jo_close(j);
-         jo_string(j, "dev_cla", type);
-         jo_stringf(j, "name", "%s %s", us, tag);
-         jo_stringf(j, "stat_t", "state/%s/%s/data", revk_appname(), us);
-         jo_string(j, "unit_of_meas", unit);
-         jo_stringf(j, "val_tpl", "{{value_json.%s}}", json);
+         jo_string(j, "device_class", type);
+         jo_stringf(j, "name", "%s (%s)", tag,us);
+         jo_stringf(j, "state_topic", "state/%s/%s/data", revk_appname(), us);
+         jo_string(j, "unit_of_measurement", unit);
+         jo_stringf(j, "value_template", "{{value_json.%s}}", json);
          char *res = jo_finisha(&j);
          if (res)
          {
