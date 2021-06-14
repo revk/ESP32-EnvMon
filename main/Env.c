@@ -238,7 +238,7 @@ sendconfig(void)
                          jo_object(j, NULL);
                          jo_stringf(j, "%s-%c", us, *tag);
                          jo_object(j, "dev");
-                         jo_stringf(j, "ids", "%06X", (revk_bin_id >> 1) & 0xFFFFFF);
+                         jo_stringf(j, "ids", "%06X", (revk_binid >> 1) & 0xFFFFFF);
                          jo_string(j, "name", us);
                          jo_string(j, "mdl", revk_appname());
                          jo_string(j, "sw", revk_version);
