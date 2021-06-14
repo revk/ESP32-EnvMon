@@ -142,11 +142,11 @@ static void reportall(time_t now)
          else
             jo_lit(j, v->tag, v->value);
       }
-      char *res=jo_finisha(&j);
-      if(res)
+      char *res = jo_finisha(&j);
+      if (res)
       {
-      revk_state("data", "%s", res);
-      free(res);
+         revk_state("data", "%s", res);
+         free(res);
       }
    }
    reportlast = now;
@@ -216,7 +216,7 @@ static void sendconfig(void)
          jo_object(j, NULL);
          jo_stringf(j, "uniq_id", "%s-%c", us, *tag);
          jo_object(j, "dev");
-         jo_string(j, "ids", revk_id);
+         jo_stringf(j, "ids", "%06X", (revk_binid >> 2) & 0xFFFFFF);
          jo_string(j, "name", us);
          jo_string(j, "mdl", revk_appname());
          jo_string(j, "sw", revk_version);
@@ -229,10 +229,10 @@ static void sendconfig(void)
          jo_stringf(j, "val_tpl", "{{value_json.%s}}", json);
          char *res = jo_finisha(&j);
          if (res)
-	 {
+         {
             revk_raw(NULL, topic, strlen(res), res, 1);
-	    free(res);
-	 }
+            free(res);
+         }
          free(topic);
       }
    }
