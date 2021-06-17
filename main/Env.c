@@ -3,7 +3,6 @@
 const char      TAG[] = "Env";
 
 #include "revk.h"
-#include "jo.h"
 #include <driver/i2c.h>
 #include <hal/spi_types.h>
 #include <math.h>
@@ -126,6 +125,7 @@ reportall(time_t now)
    //Slight delay on changes
       if (values)
    {
+<<<<<<< HEAD
       value_t        *v;
       char            temp[100],
                      *p = temp,
@@ -162,10 +162,33 @@ reportall(time_t now)
          if (p > e)
             p = r;
          //Ignore
+=======
+      value_t *v;
+      jo_t j = jo_create_alloc();
+      jo_object(j, NULL);
+      time_t when = reportlast ? : now;
+      if (when < 1000000000)
+         jo_litf(j, "ts", "%ld", when);
+      else
+      {
+         struct tm tm;
+         gmtime_r(&when, &tm);
+         jo_stringf(j, "ts", "%04d-%02d-%02dT%02d:%02d:%02dZ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
       }
-      *p++ = '}';
-      *p = 0;
-      revk_state("data", "%s", temp);
+      for (v = values; v; v = v->next)
+      {
+         if (!*v->value)
+            jo_null(j, v->tag);
+         else
+            jo_lit(j, v->tag, v->value);
+      }
+      char *res=jo_finisha(&j);
+      if(res)
+      {
+      revk_state("data", "%s", res);
+      free(res);
+>>>>>>> a79ca1721f001bc1114f845b333f4085e4959e68
+      }
    }
    reportlast = now;
    reportchange = 0;
@@ -225,15 +248,21 @@ sendconfig(void)
    if (!ha)
       return;
    reportconfig = time(0);
+<<<<<<< HEAD
    revk_info("config", "send");
    char           *topic;
    const char     *us = revk_hostname();
+=======
+   char *topic;
+   const char *us = revk_hostname();
+>>>>>>> a79ca1721f001bc1114f845b333f4085e4959e68
    if (!*us)
       us = revk_id;
    void            add(const char *tag, const char *type, const char *unit, const char *json)
    {
       if (asprintf(&topic, "homeassistant/sensor/%s-%s/config", us, tag) >= 0)
       {
+<<<<<<< HEAD
          jo_t            j = jo_create_alloc();
                          jo_object(j, NULL);
                          jo_stringf(j, "%s-%c", us, *tag);
@@ -253,6 +282,31 @@ sendconfig(void)
          if              (o)
                             revk_raw(NULL, topic, strlen(o), o, 1);
                          free(topic);
+=======
+         ESP_LOGI(TAG, "HA %s", tag);
+         jo_t j = jo_create_alloc();
+         jo_object(j, NULL);
+         jo_stringf(j, "uniq_id", "%s-%c", us, *tag);
+         jo_object(j, "dev");
+         jo_string(j, "ids", revk_id);
+         jo_string(j, "name", us);
+         jo_string(j, "mdl", revk_appname());
+         jo_string(j, "sw", revk_version);
+         jo_string(j, "mf", "www.me.uk");
+         jo_close(j);
+         jo_string(j, "dev_cla", type);
+         jo_stringf(j, "name", "%s %s", us, tag);
+         jo_stringf(j, "stat_t", "state/%s/%s/data", revk_appname(), us);
+         jo_string(j, "unit_of_meas", unit);
+         jo_stringf(j, "val_tpl", "{{value_json.%s}}", json);
+         char *res = jo_finisha(&j);
+         if (res)
+	 {
+            revk_raw(NULL, topic, strlen(res), res, 1);
+	    free(res);
+	 }
+         free(topic);
+>>>>>>> a79ca1721f001bc1114f845b333f4085e4959e68
       }
    }
                    add("Temp", "temperature", "°C", "temp");
