@@ -142,12 +142,7 @@ static void reportall(time_t now)
          else
             jo_lit(j, v->tag, v->value);
       }
-      char *res = jo_finisha(&j);
-      if (res)
-      {
-         revk_state("data", "%s", res);
-         free(res);
-      }
+      revk_state("data", &j);
    }
    reportlast = now;
    reportchange = 0;
@@ -216,25 +211,20 @@ static void sendconfig(void)
          jo_object(j, NULL);
          jo_stringf(j, "unique_id", "%s%c", revk_id, *tag);
          jo_object(j, "device");
-	 jo_array(j,"identifiers");
+         jo_array(j, "identifiers");
          jo_string(j, NULL, revk_id);
-	 jo_close(j);
+         jo_close(j);
          jo_string(j, "name", us);
          jo_string(j, "model", revk_appname());
          jo_string(j, "sw_version", revk_version);
          jo_string(j, "manufacturer", "www.me.uk");
          jo_close(j);
          jo_string(j, "device_class", type);
-         jo_stringf(j, "name", "%s (%s)", tag,us);
+         jo_stringf(j, "name", "%s (%s)", tag, us);
          jo_stringf(j, "state_topic", "state/%s/%s/data", revk_appname(), us);
          jo_string(j, "unit_of_measurement", unit);
          jo_stringf(j, "value_template", "{{value_json.%s}}", json);
-         char *res = jo_finisha(&j);
-         if (res)
-         {
-            revk_raw(NULL, topic, strlen(res), res, 1);
-            free(res);
-         }
+         revk_mqtt_send(NULL, 1, topic, &j);
          free(topic);
       }
    }
@@ -243,49 +233,47 @@ static void sendconfig(void)
    add("CO₂", "co2", "ppm", "co2");
 }
 
-const char *app_command(const char *tag, unsigned int len, const unsigned char *value)
+const char *app_callback(int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
-   if (!strcmp(tag, "send") || !strcmp(tag, "connect"))
+   if (client || !prefix || target || strcmp(prefix, "command") || !suffix)
+      return NULL;
+   if (!strcmp(suffix, "send") || !strcmp(suffix, "connect"))
    {
       sendall();
       return "";
    }
-   if (!strcmp(tag, "message"))
+   if (!strcmp(suffix, "message"))
    {
-      if (len > sizeof(oled_msg) - 1)
-         len = sizeof(oled_msg) - 1;
-      if (len)
-         memcpy(oled_msg, value, len);
-      oled_msg[len] = 0;
+      jo_strncpy(j, oled_msg, sizeof(oled_msg));
       if (oledmsgtime)
          oled_msg_time = (esp_timer_get_time() / 1000000) + oledmsgtime;
       return "";
    }
-   if (!strcmp(tag, "night"))
+   if (!strcmp(suffix, "night"))
    {
       oled_dark = 1;
       return "";
    }
-   if (!strcmp(tag, "day"))
+   if (!strcmp(suffix, "day"))
    {
       oled_dark = 0;
       return "";
    }
-   if (!strcmp(tag, "contrast"))
+   if (!strcmp(suffix, "contrast"))
    {
-      oled_set_contrast(atoi((char *) value));
+      oled_set_contrast(jo_read_int(j));
       return "";                /* OK */
    }
-   if (!strcmp(tag, "co2autocal"))
+   if (!strcmp(suffix, "co2autocal"))
       return co2_setting(0x5306, 1);
-   if (!strcmp(tag, "co2nocal"))
+   if (!strcmp(suffix, "co2nocal"))
       return co2_setting(0x5306, 0);
-   if (!strcmp(tag, "co2cal"))
-      return co2_setting(0x5204, atoi((char *) value));
-   if (!strcmp(tag, "co2tempoffset"))
-      return co2_setting(0x5403, atoi((char *) value));
-   if (!strcmp(tag, "co2alt"))
-      return co2_setting(0x5102, atoi((char *) value));
+   if (!strcmp(suffix, "co2cal"))
+      return co2_setting(0x5204, jo_read_int(j));
+   if (!strcmp(suffix, "co2tempoffset"))
+      return co2_setting(0x5403, jo_read_int(j));
+   if (!strcmp(suffix, "co2alt"))
+      return co2_setting(0x5102, jo_read_int(j));
    return NULL;
 }
 
@@ -358,7 +346,11 @@ void co2_task(void *p)
    }
    if (e)
    {                            /* failed */
-      revk_error("CO2", "Configuration failed %s", esp_err_to_name(e));
+      jo_t j = jo_object_alloc();
+      jo_string(j, "error", "Config fail");
+      jo_int(j, "code", e);
+      jo_string(j, "description", esp_err_to_name(e));
+      revk_error("CO2", &j);
       vTaskDelete(NULL);
       return;
    }
@@ -485,7 +477,7 @@ void ds18b20_task(void *p)
 
 void app_main()
 {
-   revk_init(&app_command);
+   revk_init(&app_callback);
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
@@ -497,7 +489,7 @@ void app_main()
 #undef u8
 #undef b
 #undef s
-       revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINARY);     /* fixed logo */
+       revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINDATA);    /* fixed logo */
    if (fanco2gpio >= 0)
       gpio_set_direction(fanco2gpio, GPIO_MODE_OUTPUT);
    if (heatgpio >= 0)
@@ -513,8 +505,9 @@ void app_main()
       co2port = 0;
       if (i2c_driver_install(co2port, I2C_MODE_MASTER, 0, 0, 0))
       {
-         ESP_LOGE(TAG, "CO2 fail");
-         revk_error("CO2", "I2C config fail");
+         jo_t j = jo_object_alloc();
+         jo_string(j, "error", "Install fail");
+         revk_error("CO2", &j);
          co2port = -1;
       } else
       {
@@ -529,8 +522,9 @@ void app_main()
          if (i2c_param_config(co2port, &config))
          {
             i2c_driver_delete(co2port);
-            ESP_LOGE(TAG, "CO2 fail");
-            revk_error("CO2", "I2C config fail");
+            jo_t j = jo_object_alloc();
+            jo_string(j, "error", "Config fail");
+            revk_error("CO2", &j);
             co2port = -1;
          } else
             i2c_set_timeout(co2port, 80000 * 5);        /* 5 ms ? allow for clock stretching */
@@ -538,7 +532,12 @@ void app_main()
    }
    const char *e = oled_start(HSPI_HOST, oledcs, oledclk, oleddin, oleddc, oledrst, 1 - oledflip);
    if (e)
-      revk_error("OLED", "Failed to start: %s", e);
+   {
+      jo_t j = jo_object_alloc();
+      jo_string(j, "error", "Failed to start");
+      jo_string(j, "description", e);
+      revk_error("OLED", &j);
+   }
    oled_lock();
    oled_set_contrast(oledcontrast);
    oled_colour('B');
@@ -576,8 +575,11 @@ void app_main()
          ds18b20_set_resolution(ds18b20_info, DS18B20_RESOLUTION);
       }
       if (!num_owb)
-         revk_error("temp", "No OWB devices");
-      else
+      {
+         jo_t j = jo_object_alloc();
+         jo_string(j, "error", "No OWB devices");
+         revk_error("temp", &j);
+      } else
          revk_task("DS18B20", ds18b20_task, NULL);
    }
    oled_lock();
@@ -636,12 +638,7 @@ void app_main()
          if (fan && *fan)
          {
             timefan = now;
-            char *topic = strdup(fan);
-            char *data = strchr(topic, ' ');
-            if (data)
-               *data++ = 0;
-            revk_raw(NULL, topic, data ? strlen(data) : 0, data, 0);
-            free(topic);
+            revk_mqtt_send_str(fan);
          }
       }
       {                         /* Heat control */
@@ -669,12 +666,7 @@ void app_main()
             if (heat && *heat)
             {
                timeheat = now;
-               char *topic = strdup(heat);
-               char *data = strchr(topic, ' ');
-               if (data)
-                  *data++ = 0;
-               revk_raw(NULL, topic, data ? strlen(data) : 0, data, 0);
-               free(topic);
+               revk_mqtt_send_str(heat);
             }
          }
       }
