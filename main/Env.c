@@ -200,7 +200,7 @@ static void sendconfig(void)
       return;
    reportconfig = time(0);
    char *topic;
-   const char *us = revk_hostname();
+   const char *us = hostname;
    if (!*us)
       us = revk_id;
    void add(const char *tag, const char *type, const char *unit, const char *json) {
@@ -212,13 +212,13 @@ static void sendconfig(void)
          jo_object(j, "dev");
          jo_stringf(j, "ids", "%06X", (revk_binid >> 2) & 0xFFFFFF);
          jo_string(j, "name", us);
-         jo_string(j, "mdl", revk_appname());
+         jo_string(j, "mdl", appname);
          jo_string(j, "sw", revk_version);
          jo_string(j, "mf", "www.me.uk");
          jo_close(j);
          jo_string(j, "dev_cla", type);
          jo_stringf(j, "name", "%s %s", us, tag);
-         jo_stringf(j, "stat_t", "state/%s/%s/data", revk_appname(), us);
+         jo_stringf(j, "stat_t", "state/%s/%s/data", appname, us);
          jo_string(j, "unit_of_meas", unit);
          jo_stringf(j, "val_tpl", "{{value_json.%s}}", json);
          revk_mqtt_send(NULL, 1, topic, &j);
@@ -473,7 +473,7 @@ void ds18b20_task(void *p)
 
 void app_main()
 {
-   revk_init(&app_callback);
+   revk_boot(&app_callback);
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
@@ -486,6 +486,7 @@ void app_main()
 #undef b
 #undef s
        revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINDATA);    /* fixed logo */
+   revk_start();
    if (fanco2gpio >= 0)
       gpio_set_direction(fanco2gpio, GPIO_MODE_OUTPUT);
    if (heatgpio >= 0)
