@@ -48,8 +48,8 @@ envgraph: envgraph.c SQLlib/sqllib.o AXL/axl.o
 PCBCase/case: PCBCase/case.c
 	make -C PCBCase
 
-scad: KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad KiCad/EnvMon-flush.scad KiCad/EnvMon-flush-noco2.scad KiCad/EnvMon-flush-nooled.scad
-stl: KiCad/EnvMon.stl KiCad/EnvMon-noco2.stl KiCad/EnvMon-nooled.stl KiCad/EnvMon-flush.stl KiCad/EnvMon-flush-noco2.stl KiCad/EnvMon-flush-nooled.stl
+scad: KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad KiCad/EnvMon-flush.scad KiCad/EnvMon-flush-noco2.scad KiCad/EnvMon-flush-nooled.scad KiCad/EnvMon-nooled-noco2.scad
+stl: KiCad/EnvMon.stl KiCad/EnvMon-noco2.stl KiCad/EnvMon-nooled.stl KiCad/EnvMon-flush.stl KiCad/EnvMon-flush-noco2.stl KiCad/EnvMon-flush-nooled.stl KiCad/EnvMon-nooled-noco2.stl
 
 %.stl: %.scad
 	echo "Making $@"
@@ -64,6 +64,9 @@ KiCad/EnvMon-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 
 KiCad/EnvMon-nooled.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=8 --top=6 --ignore=M3.2,M2
+
+KiCad/EnvMon-nooled-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
+	PCBCase/case -o $@ $< --base=8 --top=6 --ignore=M3.2,M2,M2.1,M3
 
 KiCad/EnvMon-flush.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=8 --top=10.4 --ignore=M2.1,M3.2 --spacing=80
