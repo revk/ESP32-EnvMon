@@ -231,8 +231,7 @@ static void sendconfig(void)
 
 const char *app_callback(int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
-   if (client || !prefix || target || strcmp(prefix, "command") || !suffix)
-      return NULL;
+   if (client || !prefix || target || strcmp(prefix, "command") || !suffix) return NULL;
    if (!strcmp(suffix, "send") || !strcmp(suffix, "connect"))
    {
       sendall();
