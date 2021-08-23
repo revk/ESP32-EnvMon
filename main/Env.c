@@ -63,7 +63,7 @@ const char TAG[] = "Env";
 	u32(heatresend,3600)	\
 	s8(heatgpio,-1)	\
 	u32(heatdaymC,21000)	\
-	u32(heatnightmC,1000000)	\
+	u32(heatnightmC,21000)	\
 	u32(hhmmnight,0)	\
 	u32(hhmmday,0)		\
 	b(nologo)	\
