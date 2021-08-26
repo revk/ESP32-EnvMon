@@ -14,10 +14,10 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L RF_Module:ESP32-WROOM-32 U2
+L RF_Module:ESP32-WROOM-32 U3
 U 1 1 60467763
 P 8425 2775
-F 0 "U2" H 8000 1375 50  0000 C CNN
+F 0 "U3" H 8000 1375 50  0000 C CNN
 F 1 "ESP32-WROOM-32" H 8825 1400 50  0000 C CNN
 F 2 "RevK:ESP32-WROOM-32" H 8425 1275 50  0001 C CNN
 F 3 "https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf" H 8125 2825 50  0001 C CNN
@@ -604,10 +604,10 @@ $EndComp
 NoConn ~ 9025 3575
 NoConn ~ 9025 3675
 $Comp
-L Interface_USB:FT231XQ U1
+L Interface_USB:FT231XQ U2
 U 1 1 6081E5C7
 P 4025 2825
-F 0 "U1" H 4025 3906 50  0000 C CNN
+F 0 "U2" H 4025 3906 50  0000 C CNN
 F 1 "FT231XQ" H 4025 3815 50  0000 C CNN
 F 2 "RevK:QFN-20-1EP_4x4mm_P0.5mm_EP2.5x2.5mm" H 5375 2025 50  0001 C CNN
 F 3 "https://www.ftdichip.com/Support/Documents/DataSheets/ICs/DS_FT231X.pdf" H 4025 2825 50  0001 C CNN
@@ -688,17 +688,6 @@ F 3 "" H 4025 3725 50  0001 C CNN
 	1    4025 3725
 	1    0    0    -1  
 $EndComp
-$Comp
-L RevK:Regulator Reg1
-U 1 1 608EC412
-P 3375 1025
-F 0 "Reg1" H 3953 926 50  0000 L CNN
-F 1 "Regulator" H 3953 835 50  0000 L CNN
-F 2 "RevK:RegulatorBlock" H 3825 1125 50  0001 C CNN
-F 3 "https://www.pololu.com/product/2842/resources" H 3825 1125 50  0001 C CNN
-	1    3375 1025
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	3375 1025 3175 1025
 Connection ~ 3175 1025
@@ -738,10 +727,10 @@ F 3 "" H 5000 6625 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L Device:LED_ARGB D1
+L Device:LED_ARGB D2
 U 1 1 60CF36BC
 P 4800 6625
-F 0 "D1" H 4800 7122 50  0000 C CNN
+F 0 "D2" H 4800 7122 50  0000 C CNN
 F 1 "RGB" H 4800 7031 50  0000 C CNN
 F 2 "RevK:LED-RGB-1.6x1.6" H 4800 6575 50  0001 C CNN
 F 3 "~" H 4800 6575 50  0001 C CNN
@@ -783,4 +772,80 @@ Text GLabel 9025 2475 2    50   Input ~ 0
 B
 Text GLabel 9025 1775 2    50   Input ~ 0
 G
+$Comp
+L RevK:LMR16006YQ3 U1
+U 1 1 610EE400
+P 3375 1025
+F 0 "U1" H 3875 1125 50  0000 L CNN
+F 1 "LMR16006YQ3" H 3375 625 50  0000 L CNN
+F 2 "RevK:RegulatorBlock" H 3825 1125 50  0001 C CNN
+F 3 "https://www.ti.com/lit/ds/symlink/lmr16006y-q1.pdf" H 3825 1125 50  0001 C CNN
+F 4 "TI" H 3375 1025 50  0001 C CNN "Manufacturer"
+F 5 "LMR16006YQ3" H 3375 1025 50  0001 C CNN "Part No"
+F 6 "" H 3375 1025 50  0001 C CNN "Note"
+	1    3375 1025
+	1    0    0    -1  
+$EndComp
+$Comp
+L RevK:Hidden C1
+U 1 1 610F9B88
+P 3975 1025
+F 0 "C1" H 3950 1025 50  0000 L CNN
+F 1 "0.1uF" H 4500 1025 50  0000 R CNN
+F 2 "RevK:Hidden" H 3975 1025 50  0001 C CNN
+F 3 "" H 3975 1025 50  0001 C CNN
+F 4 "X7R or X5R 0603" H 3975 1025 50  0001 C CNN "Note"
+	1    3975 1025
+	1    0    0    -1  
+$EndComp
+$Comp
+L RevK:Hidden C2
+U 1 1 610FD0EF
+P 3975 1100
+F 0 "C2" H 3950 1100 50  0000 L CNN
+F 1 "2.2uF" H 4500 1100 50  0000 R CNN
+F 2 "RevK:Hidden" H 3975 1100 50  0001 C CNN
+F 3 "" H 3975 1100 50  0001 C CNN
+F 4 "0603 or 0805" H 3975 1100 50  0001 C CNN "Note"
+	1    3975 1100
+	1    0    0    -1  
+$EndComp
+$Comp
+L RevK:Hidden C3
+U 1 1 610FD80E
+P 3975 1175
+F 0 "C3" H 3950 1175 50  0000 L CNN
+F 1 "10uF" H 4500 1175 50  0000 R CNN
+F 2 "RevK:Hidden" H 3975 1175 50  0001 C CNN
+F 3 "" H 3975 1175 50  0001 C CNN
+F 4 "0603 or 0805" H 3975 1175 50  0001 C CNN "Note"
+	1    3975 1175
+	1    0    0    -1  
+$EndComp
+$Comp
+L RevK:Hidden L1
+U 1 1 610FE01A
+P 3975 1250
+F 0 "L1" H 3950 1250 50  0000 L CNN
+F 1 "6.8uH" H 4500 1250 50  0000 R CNN
+F 2 "RevK:Hidden" H 3975 1250 50  0001 C CNN
+F 3 "https://www.mouser.co.uk/datasheet/2/987/Laird_Performance_TYA4020_series__Rev_A_-1877538.pdf" H 3975 1250 50  0001 C CNN
+F 4 "Laird" H 3975 1250 50  0001 C CNN "Manufacturer"
+F 5 "TYA4020" H 3975 1250 50  0001 C CNN "Part No"
+	1    3975 1250
+	1    0    0    -1  
+$EndComp
+$Comp
+L RevK:Hidden D1
+U 1 1 610FE5D2
+P 3975 1325
+F 0 "D1" H 3950 1325 50  0000 L CNN
+F 1 "Schottky" H 4500 1325 50  0000 R CNN
+F 2 "RevK:Hidden" H 3975 1325 50  0001 C CNN
+F 3 "https://www.mouser.co.uk/datasheet/2/54/CD1206-B220_B2100-777245.pdf" H 3975 1325 50  0001 C CNN
+F 4 "Bourns" H 3975 1325 50  0001 C CNN "Manufacturer"
+F 5 "CD1206-B2100" H 3975 1325 50  0001 C CNN "Part No"
+	1    3975 1325
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
