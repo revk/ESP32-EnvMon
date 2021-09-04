@@ -787,7 +787,6 @@ void app_main()
          if (heattemp == HEATMAX)
             heattemp = 21000;   // Back up for colour
          uint32_t thismC = thistemp * 1000;
-	 ESP_LOGI("Env","heattemp=%d thismc=%d",heattemp,thismC);
          if (showtemp == -10000)
             oled_colour('K');
          else if (heattemp != HEATMAX)
