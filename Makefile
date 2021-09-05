@@ -9,7 +9,7 @@ include $(IDF_PATH)/make/project.mk
 
 pull:
 	git pull
-	gut submodule update
+	git submodule update
 
 update:
 	git submodule update --init --remote --merge
