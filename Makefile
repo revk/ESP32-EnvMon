@@ -7,6 +7,10 @@ PROJECT_NAME := EnvMon
 
 include $(IDF_PATH)/make/project.mk
 
+pull:
+	git pull
+	gut submodule update
+
 update:
 	git submodule update --init --remote --merge
 	git commit -a -m "Library update"
