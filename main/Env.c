@@ -62,8 +62,8 @@ const char TAG[] = "Env";
 	s(heatoff)	\
 	u32(heatresend,3600)	\
 	s8(heatgpio,-1)	\
-	u32(heatdaymC,21000)	\
-	u32(heatnightmC,21000)	\
+	u32(heatdaymC,1000000)	\
+	u32(heatnightmC,1000000)	\
 	u32(hhmmnight,0)	\
 	u32(hhmmday,0)		\
 	b(nologo)	\
@@ -231,7 +231,8 @@ static void sendconfig(void)
 
 const char *app_callback(int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
-   if (client || !prefix || target || strcmp(prefix, "command") || !suffix) return NULL;
+   if (client || !prefix || target || strcmp(prefix, "command") || !suffix)
+      return NULL;
    if (!strcmp(suffix, "send") || !strcmp(suffix, "connect"))
    {
       sendall();
@@ -783,6 +784,8 @@ void app_main()
          uint32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
          if (heattemp == HEATMAX)
             heattemp = (oled_dark ? heatdaymC : heatnightmC);   /* back up for when only one set so we show colour */
+         if (heattemp == HEATMAX)
+            heattemp = 21000;   // Back up for colour
          uint32_t thismC = thistemp * 1000;
          if (showtemp == -10000)
             oled_colour('K');
