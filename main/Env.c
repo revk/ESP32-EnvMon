@@ -210,9 +210,9 @@ static void sendconfig(void)
          jo_object(j, NULL);
          jo_stringf(j, "unique_id", "%s-%c", us, *tag);
          jo_object(j, "dev");
-	 jo_array(j,"ids");
-         jo_stringf(j, NULL, "%06X", (revk_binid >> 2ULL) & 0xFFFFFF);
-	 jo_close(j);
+         jo_array(j, "ids");
+         jo_string(j, NULL,  revk_id);
+         jo_close(j);
          jo_string(j, "name", us);
          jo_string(j, "mdl", appname);
          jo_string(j, "sw", revk_version);
