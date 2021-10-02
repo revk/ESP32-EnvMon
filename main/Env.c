@@ -195,7 +195,6 @@ static void sendall(void)
 
 static void sendconfig(void)
 {
-   /* TODO only send for things we have devices? */
    if (!ha)
       return;
    reportconfig = time(0);
@@ -211,7 +210,7 @@ static void sendconfig(void)
          jo_stringf(j, "unique_id", "%s-%c", us, *tag);
          jo_object(j, "dev");
          jo_array(j, "ids");
-         jo_string(j, NULL,  revk_id);
+         jo_string(j, NULL, revk_id);
          jo_close(j);
          jo_string(j, "name", us);
          jo_string(j, "mdl", appname);
@@ -226,9 +225,12 @@ static void sendconfig(void)
          revk_mqtt_send(NULL, 1, topic, &j);
       }
    }
-   add("Temp", "temperature", "°C", "temp");
-   add("R/H", "humidity", "%", "rh");
-   add("CO₂", "co2", "ppm", "co2");
+   if (ds18b20 >= 0 || co2port >= 0)
+      add("Temp", "temperature", "°C", "temp");
+   if (co2port >= 0)
+      add("R/H", "humidity", "%", "rh");
+   if (co2port >= 0)
+      add("CO₂", "co2", "ppm", "co2");
 }
 
 const char *app_callback(int client, const char *prefix, const char *target, const char *suffix, jo_t j)
@@ -604,7 +606,7 @@ void app_main()
       struct tm t;
       localtime_r(&now, &t);
       reportall(now);
-      if (!reportconfig)
+      if (reportconfig && uptime() > 10)
          sendconfig();
       if (hhmmnight || hhmmday)
       {                         /* Auto day / night */
