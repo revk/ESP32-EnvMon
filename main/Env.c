@@ -606,7 +606,7 @@ void app_main()
       struct tm t;
       localtime_r(&now, &t);
       reportall(now);
-      if (reportconfig && uptime() > 10)
+      if (!reportconfig && uptime() > 10)
          sendconfig();
       if (hhmmnight || hhmmday)
       {                         /* Auto day / night */
