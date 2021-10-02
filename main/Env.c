@@ -204,7 +204,7 @@ static void sendconfig(void)
    if (!*us)
       us = revk_id;
    void add(const char *tag, const char *type, const char *unit, const char *json) {
-      if (asprintf(&topic, "homeassistant/sensor/%s-%s/config", us, tag) >= 0)
+      if (asprintf(&topic, "homeassistant/sensor/%s-%c/config", us, *tag) >= 0)
       {
          jo_t j = jo_create_alloc();
          jo_object(j, NULL);
