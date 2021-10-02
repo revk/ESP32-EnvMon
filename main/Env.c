@@ -208,7 +208,7 @@ static void sendconfig(void)
       {
          jo_t j = jo_create_alloc();
          jo_object(j, NULL);
-         jo_stringf(j, "%s-%c", us, *tag);
+         jo_stringf(j, "unique_id", "%s-%c", us, *tag);
          jo_object(j, "dev");
          jo_stringf(j, "ids", "%06X", (revk_binid >> 2) & 0xFFFFFF);
          jo_string(j, "name", us);
