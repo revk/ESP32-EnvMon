@@ -1,0 +1,15 @@
+[Unit]
+Description=EnvMon log
+After=mysql.service
+
+[Service]
+Type=simple
+User=adrian
+Group=adrian
+WorkingDirectory=/projects/EnvMon
+ExecStart=/projects/EnvMon/envlog --mqtt-hostname=mqtt
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
