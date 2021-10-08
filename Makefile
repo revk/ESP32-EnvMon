@@ -5,7 +5,22 @@
 
 PROJECT_NAME := EnvMon
 
-include $(IDF_PATH)/make/project.mk
+all:
+	idf.py build
+
+flash:
+	idf.py flash
+
+monitor:
+	idf.py monitor
+
+clean:
+	idf.py clean
+
+menuconfig:
+	idf.py menuconfig
+
+#include $(IDF_PATH)/make/project.mk
 
 pull:
 	git pull
