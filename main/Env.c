@@ -57,10 +57,10 @@ const char TAG[] = "Env";
 	u32(fanrhon,0)	\
 	u32(fanrhoff,0)	\
 	s8(fanco2gpio,-1)	\
-	u32(fanresend,3600)	\
+	u32(fanresend,600)	\
 	s(heaton)	\
 	s(heatoff)	\
-	u32(heatresend,3600)	\
+	u32(heatresend,600)	\
 	s8(heatgpio,-1)	\
 	u32(heatdaymC,1000000)	\
 	u32(heatnightmC,1000000)	\
@@ -85,8 +85,6 @@ static float lastco2 = -10000;
 static float lastrh = -10000;
 static float lasttemp = -10000;
 static float lastotemp = -10000;
-static int lastfan = -1;
-static int lastheat = -1;
 static float thisco2 = -10000;
 static float thistemp = -10000;
 static float thisrh = -10000;
@@ -95,6 +93,9 @@ static int8_t num_owb = 0;
 static OneWireBus *owb = NULL;
 static owb_rmt_driver_info rmt_driver_info;
 static DS18B20_Info *ds18b20s[MAX_OWB] = { 0 };
+
+static uint32_t timefan = 0;
+static uint32_t timeheat = 0;
 
 static volatile uint8_t oled_update = 0;
 static volatile uint8_t oled_changed = 1;
@@ -191,6 +192,8 @@ static void sendall(void)
 {
    reportlast = 0;
    reportconfig = 0;
+   timeheat = 0;
+   timefan = 0;
 }
 
 static void sendconfig(void)
@@ -592,6 +595,8 @@ void app_main()
    float showco2 = -1000;
    float showtemp = -1000;
    float showrh = -1000;
+   int lastfan = -1;
+   int lastheat = -1;
    void reset(void) {           /* re display all */
       oled_clear(0);
       showlogo = 1;
@@ -599,18 +604,20 @@ void app_main()
       showco2 = -1000;
       showtemp = -1000;
       showrh = -1000;
-   } while (1)
+   };
+   while (1)
    {
       usleep(100000LL - (esp_timer_get_time() % 100000LL));     /* wait a bit */
       time_t now = time(0);
       struct tm t;
       localtime_r(&now, &t);
+      uint32_t hhmm = t.tm_hour * 100 + t.tm_min;
+      uint32_t up = uptime();
       reportall(now);
-      if (!reportconfig && uptime() > 10)
+      if (!reportconfig && up > 10)
          sendconfig();
       if (hhmmnight || hhmmday)
       {                         /* Auto day / night */
-         uint32_t hhmm = t.tm_hour * 100 + t.tm_min;
          if (hhmmnight > hhmmday && hhmm >= hhmmnight)
             oled_dark = 1;
          else if (hhmm >= hhmmday)
@@ -618,8 +625,33 @@ void app_main()
          else if (hhmm >= hhmmnight)
             oled_dark = 1;
       }
+#if 0
+      {                         // Debug
+         static int tick = 0;
+         if (!tick--)
+         {
+            tick = 100;
+            jo_t j = jo_object_alloc();
+            jo_int(j, "hhmm", hhmm);
+            jo_int(j, "hhmmnight", hhmmnight);
+            jo_int(j, "hhmmday", hhmmday);
+            jo_int(j, "oled_dark", oled_dark);
+            jo_int(j, "heatdaymC", heatdaymC);
+            jo_int(j, "heatnightmC", heatnightmC);
+            uint32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
+            uint32_t thismC = thistemp * 1000;
+            jo_int(j, "heattemp", heattemp);
+            jo_int(j, "thismC", thismC);
+            jo_int(j, "lastheat", lastheat);
+            jo_int(j, "timeheat", timeheat);
+            jo_int(j, "heatresend", heatresend);
+            jo_string(j, "heaton", heaton);
+            jo_string(j, "heatoff", heatoff);
+            revk_info("debug", &j);
+         }
+      }
+#endif
       {                         /* Fan control */
-         static time_t timefan = 0;
          const char *fan = NULL;
          if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)) && lastfan != 1)
          {
@@ -634,11 +666,11 @@ void app_main()
             fan = fanoff;
             lastfan = 0;
          }
-         if (!fan && fanresend && timefan + fanresend < now && lastfan > 0)
+         if (!fan && fanresend && timefan < up && lastfan > 0)
             fan = (lastfan ? fanon : fanoff);
          if (fan && *fan)
          {
-            timefan = now;
+            timefan = up + fanresend;
             revk_mqtt_send_str(fan);
          }
       }
@@ -646,8 +678,7 @@ void app_main()
          uint32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
          if (heattemp != HEATMAX || lastheat == 1)
          {                      /* We have a reference temp to work with or we left on */
-            static time_t timeheat = 0;
-            if (heatresend && timeheat + heatresend < now)
+            if (heatresend && timeheat < up)
                lastheat = -1;
             const char *heat = NULL;
             uint32_t thismC = thistemp * 1000;
@@ -666,7 +697,7 @@ void app_main()
             }
             if (heat && *heat)
             {
-               timeheat = now;
+               timeheat = up + heatresend;
                revk_mqtt_send_str(heat);
             }
          }
