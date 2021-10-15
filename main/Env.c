@@ -443,7 +443,7 @@ void co2_task(void *p)
                         thisrh = (thisrh * rhdamp + rh) / (rhdamp + 1);
                   }
                   if (!num_owb && t >= -1000)
-                     lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);
+                     lasttemp = report("itemp", lasttemp, thistemp = t, tempplaces);
                   /* Use temp here as no DS18B20 */
                   lastco2 = report("co2", lastco2, thisco2, co2places);
                   lastrh = report("rh", lastrh, thisrh, rhplaces);

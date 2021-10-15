@@ -34,7 +34,7 @@ int main(int argc, const char *argv[])
    const char *mqtthostname = "localhost";
    const char *mqttusername = NULL;
    const char *mqttpassword = NULL;
-   const char *mqttappname = "EnvMon";
+   const char *mqttappname = "Env";
    const char *mqttid = NULL;
    int interval = 600;
    int debug = 0;
