@@ -5,7 +5,7 @@
 
 PROJECT_NAME := EnvMon
 
-all:
+all:	envlog envgraph
 	idf.py build
 
 flash:
