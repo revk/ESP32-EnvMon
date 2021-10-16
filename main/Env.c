@@ -126,7 +126,7 @@ time_t reportlast = 0,
 static void reportall(time_t now)
 {
    //Do reporting of values
-   if ((!reportchange || now < reportchange + lag) && now < reportlast + reporting)
+   if ((!reportchange || now < reportchange + lag) && now < reportlast + reporting && now >= reportlast)
       return;
    //Slight delay on changes
    if (values)
@@ -490,11 +490,11 @@ void ds18b20_task(void *p)
 void app_main()
 {
    revk_boot(&app_callback);
-   revk_register("heat",0,0,&heaton,NULL,SETTING_SECRET);
-   revk_register("fan",0,0,&fanon,NULL,SETTING_SECRET);
-   revk_register("oled",0,sizeof(oledflip),&oledflip,NULL,SETTING_BOOLEAN|SETTING_SECRET);
-   revk_register("co2",0,sizeof(co2places),&co2places,"-1",SETTING_SIGNED|SETTING_SECRET);
-   revk_register("hhmm",0,sizeof(hhmmday),&hhmmday,NULL,SETTING_SECRET);
+   revk_register("heat", 0, 0, &heaton, NULL, SETTING_SECRET);
+   revk_register("fan", 0, 0, &fanon, NULL, SETTING_SECRET);
+   revk_register("oled", 0, sizeof(oledflip), &oledflip, NULL, SETTING_BOOLEAN | SETTING_SECRET);
+   revk_register("co2", 0, sizeof(co2places), &co2places, "-1", SETTING_SIGNED | SETTING_SECRET);
+   revk_register("hhmm", 0, sizeof(hhmmday), &hhmmday, NULL, SETTING_SECRET);
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define u16(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
