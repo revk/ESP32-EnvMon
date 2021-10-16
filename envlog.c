@@ -149,23 +149,12 @@ int main(int argc, const char *argv[])
       if (debug)
          warnx("Tag [%s] Type [%s] Val [%.*s]", tag, type, msg->payloadlen, (char *) msg->payload);
       time_t now = (time(0) / interval) * interval;
-      void logval(const char *type, char **p, const char *val) {
-         if (l->when && l->when != now + interval)
-         {                      // Log to SQL
-            void insert(time_t when) {
-               sql_safe_query_free(&sql, sql_printf("INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T,`temp`=%#s,`rh`=%#s,`co2`=%#s,`heat`=%#s,`fan`=%#s", sqltable, tag, when, l->temp, l->rh, l->co2, l->heat, l->fan));
-            }
-            insert(l->when);
-            if (l->when < now)
-               insert(now);
-         }
-         // Store new value
+      void logval(const char *type, char **p, const char *val) {        // Store value
          free(*p);
          if (val)
             *p = strdup((char *) val);
          else
             *p = NULL;
-         l->when = now + interval;
       }
       if (!strncmp(topic, "state/", 6) && !strcmp(type, "data"))
       {                         // JSON
@@ -188,8 +177,25 @@ int main(int argc, const char *argv[])
                logval("rh", &l->rh, v);
             if ((v = j_get(data, "co2")))
                logval("co2", &l->co2, v);
-            logval("heat", &l->heat, j_get(data, "fan"));
-            logval("fan", &l->fan, j_get(data, "fan"));
+            if ((v = j_get(data, "heat")) && (*v == 't' || !l->heat))
+               logval("heat", &l->heat, v);     // True latches
+            if ((v = j_get(data, "fan")) && (*v == 't' || !l->fan))
+               logval("fan", &l->fan, v);       // True latches
+            if (l->when != now)
+            {                   // Log to SQL
+               l->when = now;
+               sql_safe_query_free(&sql, sql_printf("INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T,`temp`=%#s,`rh`=%#s,`co2`=%#s,`heat`=%#s,`fan`=%#s", sqltable, tag, now, l->temp, l->rh, l->co2, l->heat, l->fan));
+               free(l->rh);
+               l->rh = NULL;
+               free(l->temp);
+               l->temp = NULL;
+               free(l->co2);
+               l->co2 = NULL;
+               free(l->heat);
+               l->heat = NULL;
+               free(l->fan);
+               l->fan = NULL;
+            }
             j_delete(&data);
          }
       }
