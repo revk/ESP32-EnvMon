@@ -53,6 +53,7 @@ const char TAG[] = "Env";
 	b(ha)	\
 	s(fanon)	\
 	s(fanoff)	\
+	u8(fanswitch,30)	\
 	u32(fanco2on,1000)	\
 	u32(fanco2off,750)	\
 	u32(fanrhon,0)	\
@@ -61,6 +62,7 @@ const char TAG[] = "Env";
 	u32(fanresend,600)	\
 	s(heaton)	\
 	s(heatoff)	\
+	u8(heatswitch,30)	\
 	u32(heatresend,600)	\
 	s8(heatgpio,-1)	\
 	s32(heatdaymC,0)	\
@@ -99,10 +101,10 @@ static OneWireBus *owb = NULL;
 static owb_rmt_driver_info rmt_driver_info;
 static DS18B20_Info *ds18b20s[MAX_OWB] = { 0 };
 
-static uint32_t timefan = 0;
-static uint32_t timeheat = 0;
-static int lastfan = -1;
-static int lastheat = -1;
+static uint32_t fantime = 0;
+static uint32_t heattime = 0;
+static int fanlast = -1;
+static int heatlast = -1;
 
 static volatile uint8_t oled_update = 0;
 static volatile uint8_t oled_changed = 1;
@@ -149,10 +151,10 @@ static void reportall(time_t now)
          else
             jo_lit(j, v->tag, v->value);
       }
-      if (lastheat >= 0)
-         jo_bool(j, "heat", lastheat);
-      if (lastfan >= 0)
-         jo_bool(j, "fan", lastfan);
+      if (heatlast >= 0)
+         jo_bool(j, "heat", heatlast);
+      if (fanlast >= 0)
+         jo_bool(j, "fan", fanlast);
       revk_state("data", &j);
    }
    reportlast = now;
@@ -202,8 +204,8 @@ static void sendall(void)
 {
    reportlast = 0;
    reportconfig = 0;
-   timeheat = 0;
-   timefan = 0;
+   heattime = 0;
+   fantime = 0;
 }
 
 static void sendconfig(void)
@@ -641,57 +643,63 @@ void app_main()
          else if (hhmm >= hhmmnight)
             oled_dark = 1;
       }
+      static uint32_t fanwait = 0;
+      if (fanwait < up)
       {                         /* Fan control */
          const char *fan = NULL;
-         if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)) && lastfan != 1)
+         if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)) && fanlast != 1)
          {
             if (fanco2gpio >= 0)
                gpio_set_level(fanco2gpio, 1);
             fan = fanon;
-            lastfan = 1;
-	       reportchange = time(0);
-         } else if ((!fanco2off || thisco2 < fanco2off) && (!fanrhoff || thisrh < fanrhoff) && lastfan != 0)
+            fanlast = 1;
+            reportchange = time(0);
+         } else if ((!fanco2off || thisco2 < fanco2off) && (!fanrhoff || thisrh < fanrhoff) && fanlast != 0)
          {
             if (fanco2gpio >= 0)
                gpio_set_level(fanco2gpio, 0);
             fan = fanoff;
-            lastfan = 0;
-	       reportchange = time(0);
+            fanlast = 0;
+            reportchange = time(0);
          }
-         if (!fan && fanresend && timefan < up && lastfan > 0)
-            fan = (lastfan ? fanon : fanoff);
+         if (!fan && fanresend && fantime < up && fanlast > 0)
+            fan = (fanlast ? fanon : fanoff);
          if (fan && *fan)
          {
-            timefan = up + fanresend;
+            fanwait = up + fanswitch;
+            fantime = up + fanresend;
             revk_mqtt_send_str(fan);
          }
       }
+      static uint32_t heatwait = 0;
+      if (heatwait < up)
       {                         /* Heat control */
          int32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
-         if (heattemp || lastheat == 1)
+         if (heattemp || heatlast == 1)
          {                      /* We have a reference temp to work with or we left on */
-            if (heatresend && timeheat < up)
-               lastheat = -1;
+            if (heatresend && heattime < up)
+               heatlast = -1;
             const char *heat = NULL;
             int32_t thismC = thistemp * 1000;
-            if ((!heattemp || thismC > heattemp) && lastheat != 0)
+            if ((!heattemp || thismC > heattemp) && heatlast != 0)
             {
                if (heatgpio >= 0)
                   gpio_set_level(heatgpio, 0);
                heat = heatoff;
-               lastheat = 0;
-	       reportchange = time(0);
-            } else if (thismC < heattemp && lastheat != 1)
+               heatlast = 0;
+               reportchange = time(0);
+            } else if (thismC < heattemp && heatlast != 1)
             {
                if (heatgpio >= 0)
                   gpio_set_level(heatgpio, 0);
                heat = heaton;
-               lastheat = 1;
-	       reportchange = time(0);
+               heatlast = 1;
+               reportchange = time(0);
             }
             if (heat && *heat)
             {
-               timeheat = up + heatresend;
+               heatwait = up + heatswitch;
+               heattime = up + heatresend;
                revk_mqtt_send_str(heat);
             }
          }
@@ -800,10 +808,10 @@ void app_main()
          oled_pos(oled_x(), oled_y(), OLED_T | OLED_L | OLED_V);
          oled_text(1, "CO2");
          oled_text(-1, "ppm");
-         if (lastfan >= 0)
+         if (fanlast >= 0)
          {
             oled_pos(CONFIG_OLED_WIDTH - LOGOW * 2 - 2, CONFIG_OLED_HEIGHT - 12, OLED_B | OLED_L);
-            oled_icon16(LOGOW, LOGOH, lastfan ? fan : NULL);
+            oled_icon16(LOGOW, LOGOH, fanlast ? fan : NULL);
          }
       }
       y += 28 + space;
