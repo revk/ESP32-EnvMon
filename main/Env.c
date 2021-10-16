@@ -641,32 +641,6 @@ void app_main()
          else if (hhmm >= hhmmnight)
             oled_dark = 1;
       }
-#if 0
-      {                         // Debug
-         static int tick = 0;
-         if (!tick--)
-         {
-            tick = 100;
-            jo_t j = jo_object_alloc();
-            jo_int(j, "hhmm", hhmm);
-            jo_int(j, "hhmmnight", hhmmnight);
-            jo_int(j, "hhmmday", hhmmday);
-            jo_int(j, "oled_dark", oled_dark);
-            jo_int(j, "heatdaymC", heatdaymC);
-            jo_int(j, "heatnightmC", heatnightmC);
-            uint32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
-            uint32_t thismC = thistemp * 1000;
-            jo_int(j, "heattemp", heattemp);
-            jo_int(j, "thismC", thismC);
-            jo_int(j, "lastheat", lastheat);
-            jo_int(j, "timeheat", timeheat);
-            jo_int(j, "heatresend", heatresend);
-            jo_string(j, "heaton", heaton);
-            jo_string(j, "heatoff", heatoff);
-            revk_info("debug", &j);
-         }
-      }
-#endif
       {                         /* Fan control */
          const char *fan = NULL;
          if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)) && lastfan != 1)
@@ -675,12 +649,14 @@ void app_main()
                gpio_set_level(fanco2gpio, 1);
             fan = fanon;
             lastfan = 1;
+	       reportchange = time(0);
          } else if ((!fanco2off || thisco2 < fanco2off) && (!fanrhoff || thisrh < fanrhoff) && lastfan != 0)
          {
             if (fanco2gpio >= 0)
                gpio_set_level(fanco2gpio, 0);
             fan = fanoff;
             lastfan = 0;
+	       reportchange = time(0);
          }
          if (!fan && fanresend && timefan < up && lastfan > 0)
             fan = (lastfan ? fanon : fanoff);
@@ -704,12 +680,14 @@ void app_main()
                   gpio_set_level(heatgpio, 0);
                heat = heatoff;
                lastheat = 0;
+	       reportchange = time(0);
             } else if (thismC < heattemp && lastheat != 1)
             {
                if (heatgpio >= 0)
                   gpio_set_level(heatgpio, 0);
                heat = heaton;
                lastheat = 1;
+	       reportchange = time(0);
             }
             if (heat && *heat)
             {
