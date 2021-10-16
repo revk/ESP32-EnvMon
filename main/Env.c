@@ -675,10 +675,7 @@ void app_main()
             fantime = up + fanresend;
             revk_mqtt_send_str(fan);
             if (fanlast > fanmax)
-            {
                fanmax = fanlast;
-               reportchange = time(0);
-            }
          }
       }
       static uint32_t heatwait = 0;
@@ -713,10 +710,7 @@ void app_main()
                heattime = up + heatresend;
                revk_mqtt_send_str(heat);
                if (heatlast > heatmax)
-               {
                   heatmax = heatlast;
-                  reportchange = time(0);
-               }
             }
          }
       }
