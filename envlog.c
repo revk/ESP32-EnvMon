@@ -38,7 +38,7 @@ int main(int argc, const char *argv[])
    const char *mqttpassword = NULL;
    const char *mqttappname = "Env";
    const char *mqttid = NULL;
-   int interval = 600;
+   int interval = 300;
    int debug = 0;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
