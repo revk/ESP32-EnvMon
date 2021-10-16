@@ -137,13 +137,12 @@ static void reportall(time_t now)
    {
       value_t *v;
       jo_t j = jo_object_alloc();
-      time_t when = reportlast ? : now;
-      if (when < 1000000000)
-         jo_litf(j, "ts", "%ld", when);
+      if (now < 1000000000)
+         jo_litf(j, "ts", "%ld", now);
       else
       {
          struct tm tm;
-         gmtime_r(&when, &tm);
+         gmtime_r(&now, &tm);
          jo_stringf(j, "ts", "%04d-%02d-%02dT%02d:%02d:%02dZ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
       }
       for (v = values; v; v = v->next)
