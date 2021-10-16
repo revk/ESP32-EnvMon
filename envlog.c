@@ -153,16 +153,18 @@ int main(int argc, const char *argv[])
          if (l->when && l->when != now + interval)
          {                      // Log to SQL
             void insert(time_t when) {
-               sql_safe_query_free(&sql, sql_printf("INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T,`temp`=%#s,`rh`=%#s,`co2`=%#s,`heat`=%#s,`fan`=%#s", sqltable, tag, when, l->temp, l->rh, l->co2,l->heat,l->fan));
+               sql_safe_query_free(&sql, sql_printf("INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T,`temp`=%#s,`rh`=%#s,`co2`=%#s,`heat`=%#s,`fan`=%#s", sqltable, tag, when, l->temp, l->rh, l->co2, l->heat, l->fan));
             }
             insert(l->when);
             if (l->when < now)
                insert(now);
          }
          // Store new value
-         if (*p)
-            free(*p);
-         *p = strdup((char *) val);
+         free(*p);
+         if (val)
+            *p = strdup((char *) val);
+         else
+            *p = NULL;
          l->when = now + interval;
       }
       if (!strncmp(topic, "state/", 6) && !strcmp(type, "data"))
@@ -186,10 +188,8 @@ int main(int argc, const char *argv[])
                logval("rh", &l->rh, v);
             if ((v = j_get(data, "co2")))
                logval("co2", &l->co2, v);
-            if ((v = j_get(data, "heat")))
-               logval("heat", &l->heat, v);
-            if ((v = j_get(data, "fan")))
-               logval("fan", &l->fan, v);
+            logval("heat", &l->heat, j_get(data, "fan"));
+            logval("fan", &l->fan, j_get(data, "fan"));
             j_delete(&data);
          }
       }
