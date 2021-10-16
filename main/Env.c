@@ -103,8 +103,10 @@ static DS18B20_Info *ds18b20s[MAX_OWB] = { 0 };
 
 static uint32_t fantime = 0;
 static uint32_t heattime = 0;
-static int fanlast = -1;
-static int heatlast = -1;
+static int8_t fanlast = -1,
+    fanmax = -1;
+static int8_t heatlast = -1,
+    heatmax = -1;
 
 static volatile uint8_t oled_update = 0;
 static volatile uint8_t oled_changed = 1;
@@ -151,10 +153,12 @@ static void reportall(time_t now)
          else
             jo_lit(j, v->tag, v->value);
       }
-      if (heatlast >= 0)
-         jo_bool(j, "heat", heatlast);
-      if (fanlast >= 0)
-         jo_bool(j, "fan", fanlast);
+      if (heatmax >= 0)
+         jo_bool(j, "heat", heatmax);
+      if (fanmax >= 0)
+         jo_bool(j, "fan", fanmax);
+      fanmax = fanlast;
+      heatmax = heatlast;
       revk_state("data", &j);
    }
    reportlast = now;
@@ -655,7 +659,6 @@ void app_main()
                   gpio_set_level(fanco2gpio, 1);
                fan = fanon;
                fanlast = 1;
-               reportchange = time(0);
             }
          } else if (fanlast != 0)
          {                      // Fan off, change
@@ -663,7 +666,6 @@ void app_main()
                gpio_set_level(fanco2gpio, 0);
             fan = fanoff;
             fanlast = 0;
-            reportchange = time(0);
          }
          if (!fan && fanresend && fantime < up && fanlast > 0)
             fan = (fanlast ? fanon : fanoff);
@@ -672,6 +674,11 @@ void app_main()
             fanwait = up + fanswitch;
             fantime = up + fanresend;
             revk_mqtt_send_str(fan);
+            if (fanlast > fanmax)
+            {
+               fanmax = fanlast;
+               reportchange = time(0);
+            }
          }
       }
       static uint32_t heatwait = 0;
@@ -692,7 +699,6 @@ void app_main()
                      gpio_set_level(heatgpio, 0);
                   heat = heatoff;
                   heatlast = 0;
-                  reportchange = time(0);
                }
             } else if (heatlast != 1)
             {                   // Heat on, change
@@ -700,13 +706,17 @@ void app_main()
                   gpio_set_level(heatgpio, 0);
                heat = heaton;
                heatlast = 1;
-               reportchange = time(0);
             }
             if (heat && *heat)
             {
                heatwait = up + heatswitch;
                heattime = up + heatresend;
                revk_mqtt_send_str(heat);
+               if (heatlast > heatmax)
+               {
+                  heatmax = heatlast;
+                  reportchange = time(0);
+               }
             }
          }
       }
