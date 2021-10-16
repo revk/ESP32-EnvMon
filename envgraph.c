@@ -158,17 +158,23 @@ int main(int argc, const char *argv[])
       for (d = 0; d < MAX; d++)
       {
          fclose(data[d].f);
+	 if(*data[d].path)
+	 {
          xml_t p = xml_element_add(data[d].g, "path");
          xml_addf(p, "@opacity", "%.1f", (double) day / days);
          xml_add(p, "@d", data[d].path);
          free(data[d].path);
+	 }
          if (data[d].secondary)
          {
             fclose(data[d].f2);
+	    if(*data[d].path2)
+	    {
             xml_t p = xml_element_add(data[d].g, "path");
             xml_addf(p, "@opacity", "%.1f", (double) day / days);
             xml_add(p, "@stroke-width", "2");
             xml_add(p, "@d", data[d].path2);
+	    }
             free(data[d].path2);
          }
       }
