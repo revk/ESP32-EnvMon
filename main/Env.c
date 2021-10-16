@@ -27,7 +27,8 @@ const char TAG[] = "Env";
 #define	MAX_OWB	8
 #define DS18B20_RESOLUTION   (DS18B20_RESOLUTION_12_BIT)
 
-#define	HEATMAX	1000000
+// Note a heat target of 0 is considered "off", so if actually targeting 0, use 1 or -1
+
 #define settings	\
 	u32(reporting,300)	\
 	u8(lag,3)	\
@@ -62,20 +63,24 @@ const char TAG[] = "Env";
 	s(heatoff)	\
 	u32(heatresend,600)	\
 	s8(heatgpio,-1)	\
-	u32(heatdaymC,1000000)	\
-	u32(heatnightmC,1000000)	\
-	u32(hhmmnight,0)	\
-	u32(hhmmday,0)		\
+	s32(heatdaymC,0)	\
+	s32(heatnightmC,0)	\
+	u16(hhmmnight,0)	\
+	u16(hhmmday,0)		\
 	b(nologo)	\
 	b(notime)	\
 
 #define u32(n,d)	uint32_t n;
+#define u16(n,d)	uint16_t n;
+#define s32(n,d)	int32_t n;
 #define s8(n,d)	int8_t n;
 #define u8(n,d)	uint8_t n;
 #define b(n) uint8_t n;
 #define s(n) char * n;
 settings
 #undef u32
+#undef u16
+#undef s32
 #undef s8
 #undef u8
 #undef b
@@ -96,6 +101,8 @@ static DS18B20_Info *ds18b20s[MAX_OWB] = { 0 };
 
 static uint32_t timefan = 0;
 static uint32_t timeheat = 0;
+static int lastfan = -1;
+static int lastheat = -1;
 
 static volatile uint8_t oled_update = 0;
 static volatile uint8_t oled_changed = 1;
@@ -125,8 +132,7 @@ static void reportall(time_t now)
    if (values)
    {
       value_t *v;
-      jo_t j = jo_create_alloc();
-      jo_object(j, NULL);
+      jo_t j = jo_object_alloc();
       time_t when = reportlast ? : now;
       if (when < 1000000000)
          jo_litf(j, "ts", "%ld", when);
@@ -143,6 +149,10 @@ static void reportall(time_t now)
          else
             jo_lit(j, v->tag, v->value);
       }
+      if (lastheat >= 0)
+         jo_bool(j, "heat", lastheat);
+      if (lastfan >= 0)
+         jo_bool(j, "fan", lastfan);
       revk_state("data", &j);
    }
    reportlast = now;
@@ -208,8 +218,7 @@ static void sendconfig(void)
    void add(const char *tag, const char *type, const char *unit, const char *json) {
       if (asprintf(&topic, "homeassistant/sensor/%s-%c/config", us, *tag) >= 0)
       {
-         jo_t j = jo_create_alloc();
-         jo_object(j, NULL);
+         jo_t j = jo_object_alloc();
          jo_stringf(j, "unique_id", "%s-%c", us, *tag);
          jo_object(j, "dev");
          jo_array(j, "ids");
@@ -481,13 +490,22 @@ void ds18b20_task(void *p)
 void app_main()
 {
    revk_boot(&app_callback);
+   revk_register("heat",0,0,&heaton,NULL,SETTING_SECRET);
+   revk_register("fan",0,0,&fanon,NULL,SETTING_SECRET);
+   revk_register("oled",0,sizeof(oledflip),&oledflip,NULL,SETTING_BOOLEAN|SETTING_SECRET);
+   revk_register("co2",0,sizeof(co2places),&co2places,"-1",SETTING_SIGNED|SETTING_SECRET);
+   revk_register("hhmm",0,sizeof(hhmmday),&hhmmday,NULL,SETTING_SECRET);
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
+#define u16(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
+#define s32(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define s(n) revk_register(#n,0,0,&n,NULL,0);
    settings
 #undef u32
+#undef u16
+#undef s32
 #undef s8
 #undef u8
 #undef b
@@ -595,8 +613,6 @@ void app_main()
    float showco2 = -1000;
    float showtemp = -1000;
    float showrh = -1000;
-   int lastfan = -1;
-   int lastheat = -1;
    void reset(void) {           /* re display all */
       oled_clear(0);
       showlogo = 1;
@@ -675,14 +691,14 @@ void app_main()
          }
       }
       {                         /* Heat control */
-         uint32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
-         if (heattemp != HEATMAX || lastheat == 1)
+         int32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
+         if (heattemp || lastheat == 1)
          {                      /* We have a reference temp to work with or we left on */
             if (heatresend && timeheat < up)
                lastheat = -1;
             const char *heat = NULL;
-            uint32_t thismC = thistemp * 1000;
-            if ((heattemp == HEATMAX || thismC > heattemp) && lastheat != 0)
+            int32_t thismC = thistemp * 1000;
+            if ((!heattemp || thismC > heattemp) && lastheat != 0)
             {
                if (heatgpio >= 0)
                   gpio_set_level(heatgpio, 0);
@@ -816,15 +832,15 @@ void app_main()
       if (thistemp != showtemp)
       {
          showtemp = thistemp;
-         uint32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
-         if (heattemp == HEATMAX)
+         int32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
+         if (!heattemp)
             heattemp = (oled_dark ? heatdaymC : heatnightmC);   /* back up for when only one set so we show colour */
-         if (heattemp == HEATMAX)
+         if (!heattemp)
             heattemp = 21000;   // Back up for colour
-         uint32_t thismC = thistemp * 1000;
+         int32_t thismC = thistemp * 1000;
          if (showtemp == -10000)
             oled_colour('K');
-         else if (heattemp != HEATMAX)
+         else if (heattemp)
             oled_colour(thismC > heattemp + 500 ? 'R' : thismC > heattemp - 500 ? 'G' : 'B');
          else
             oled_colour('W');

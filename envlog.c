@@ -20,6 +20,8 @@ struct log_s {
    char *co2;
    char *rh;
    char *temp;
+   char *heat;
+   char *fan;
 };
 log_t *logs = NULL;
 
@@ -151,7 +153,7 @@ int main(int argc, const char *argv[])
          if (l->when && l->when != now + interval)
          {                      // Log to SQL
             void insert(time_t when) {
-               sql_safe_query_free(&sql, sql_printf("INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T,`temp`=%#s,`rh`=%#s,`co2`=%#s", sqltable, tag, when, l->temp, l->rh, l->co2));
+               sql_safe_query_free(&sql, sql_printf("INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T,`temp`=%#s,`rh`=%#s,`co2`=%#s,`heat`=%#s,`fan`=%#s", sqltable, tag, when, l->temp, l->rh, l->co2,l->heat,l->fan));
             }
             insert(l->when);
             if (l->when < now)
@@ -184,26 +186,12 @@ int main(int argc, const char *argv[])
                logval("rh", &l->rh, v);
             if ((v = j_get(data, "co2")))
                logval("co2", &l->co2, v);
+            if ((v = j_get(data, "heat")))
+               logval("heat", &l->heat, v);
+            if ((v = j_get(data, "fan")))
+               logval("fan", &l->fan, v);
             j_delete(&data);
          }
-      } else if (!strncmp(topic, "info/", 5))
-      {
-         char *val = malloc(msg->payloadlen + 1);
-         memcpy(val, msg->payload, msg->payloadlen);
-         val[msg->payloadlen] = 0;
-         if (!strcmp(type, "temp"))
-            logval(type, &l->temp, val);
-         else if (!strcmp(type, "rh"))
-            logval(type, &l->rh, val);
-         else if (!strcmp(type, "co2"))
-            logval(type, &l->co2, val);
-         else
-         {                      // Other info messages
-            if (debug)
-               warnx("Unknown type [%s] Type [%s] Val [%s]", tag, type, val);
-            return;
-         }
-         free(val);
       }
    }
    mosquitto_connect_callback_set(mqtt, connect);

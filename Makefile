@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := EnvMon
+PROJECT_NAME := Env
 
 all:	envlog envgraph
 	idf.py build
