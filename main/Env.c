@@ -54,8 +54,8 @@ const char TAG[] = "Env";
 	s(fanon)	\
 	s(fanoff)	\
 	u8(fanswitch,30)	\
-	u32(fanco2on,1000)	\
-	u32(fanco2off,750)	\
+	u32(fanco2on,0)	\
+	u32(fanco2off,0)	\
 	u32(fanrhon,0)	\
 	u32(fanrhoff,0)	\
 	s8(fanco2gpio,-1)	\
@@ -644,18 +644,21 @@ void app_main()
             oled_dark = 1;
       }
       static uint32_t fanwait = 0;
-      if (fanwait < up)
+      if (fanwait < up && (fanco2on || fanco2off || fanrhon || fanrhoff))
       {                         /* Fan control */
          const char *fan = NULL;
-         if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)) && fanlast != 1)
-         {
-            if (fanco2gpio >= 0)
-               gpio_set_level(fanco2gpio, 1);
-            fan = fanon;
-            fanlast = 1;
-            reportchange = time(0);
-         } else if ((!fanco2off || thisco2 < fanco2off) && (!fanrhoff || thisrh < fanrhoff) && fanlast != 0)
-         {
+         if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)))
+         {                      // Fan on
+            if (fanlast != 1)
+            {                   // Change
+               if (fanco2gpio >= 0)
+                  gpio_set_level(fanco2gpio, 1);
+               fan = fanon;
+               fanlast = 1;
+               reportchange = time(0);
+            }
+         } else if (fanlast != 0)
+         {                      // Fan off, change
             if (fanco2gpio >= 0)
                gpio_set_level(fanco2gpio, 0);
             fan = fanoff;
@@ -672,7 +675,7 @@ void app_main()
          }
       }
       static uint32_t heatwait = 0;
-      if (heatwait < up)
+      if (heatwait < up && (heatnightmC || heatdaymC))
       {                         /* Heat control */
          int32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
          if (heattemp || heatlast == 1)
@@ -681,15 +684,18 @@ void app_main()
                heatlast = -1;
             const char *heat = NULL;
             int32_t thismC = thistemp * 1000;
-            if ((!heattemp || thismC > heattemp) && heatlast != 0)
-            {
-               if (heatgpio >= 0)
-                  gpio_set_level(heatgpio, 0);
-               heat = heatoff;
-               heatlast = 0;
-               reportchange = time(0);
-            } else if (thismC < heattemp && heatlast != 1)
-            {
+            if (!heattemp || thismC > heattemp)
+            {                   // Heat off
+               if (heatlast != 0)
+               {                // Change
+                  if (heatgpio >= 0)
+                     gpio_set_level(heatgpio, 0);
+                  heat = heatoff;
+                  heatlast = 0;
+                  reportchange = time(0);
+               }
+            } else if (heatlast != 1)
+            {                   // Heat on, change
                if (heatgpio >= 0)
                   gpio_set_level(heatgpio, 0);
                heat = heaton;
@@ -795,8 +801,7 @@ void app_main()
       if (thisco2 != showco2)
       {
          showco2 = thisco2;
-         if (fanco2on)
-            oled_colour(showco2 < 0 ? 'K' : showco2 > fanco2on ? 'R' : showco2 > fanco2off ? 'Y' : 'G');
+         oled_colour(showco2 < 200 ? 'K' : showco2 > (fanco2on ? : 1000) ? 'R' : showco2 > (fanco2off ? : 750) ? 'Y' : 'G');
          if (showco2 < 200)
             strcpy(s, "?LOW");
          else if (showco2 >= 10000)
