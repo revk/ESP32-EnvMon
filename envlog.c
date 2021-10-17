@@ -193,15 +193,19 @@ int main(int argc, const char *argv[])
          {                      // Shelly
             for (j_t j = j_first(data); j; j = j_next(j))
             {
-               const char *tag = j_get(j, "hwID");
-               if (!tag)
+               const char *hwid = j_get(j, "hwID");
+               if (!hwid)
                   continue;
-               log_t *l = find(tag);
+               char *shelly;
+               if (asprintf(&shelly, "%s-%s", tag, j_name(j)) < 0)
+                  errx(1, "malloc");
+               log_t *l = find(shelly);
                if ((v = j_get(j, "tC")))
                {
                   logval("temp", &l->temp, v);
                   done(l);
                }
+               free(shelly);
             }
          } else if (!strncmp(topic, "state/", 6) && !strcmp(type, "data"))
          {                      // Env
