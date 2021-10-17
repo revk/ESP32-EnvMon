@@ -102,6 +102,12 @@ int main(int argc, const char *argv[])
       if (debug)
          warnx("MQTT Sub %s", sub);
       free(sub);
+      sub = "shellies/+/ext_temperatures";
+      e = mosquitto_subscribe(mqtt, NULL, sub, 0);
+      if (e)
+         errx(1, "MQTT subscribe failed %s (%s)", mosquitto_strerror(e), sub);
+      if (debug)
+         warnx("MQTT Sub %s", sub);
       asprintf(&sub, "command/%s/*/send", mqttappname);
       e = mosquitto_publish(mqtt, NULL, sub, 0, NULL, 1, 0);
       if (e)
@@ -134,17 +140,20 @@ int main(int argc, const char *argv[])
          return;
       }
       *tag++ = 0;
-      log_t *l;
-      for (l = logs; l && strcmp(l->tag, tag); l = l->next);
-      if (!l)
-      {
-         l = malloc(sizeof(*l));
-         memset(l, 0, sizeof(*l));
-         l->tag = strdup(tag);
-         l->next = logs;
-         logs = l;
-         if (debug)
-            warnx("New device [%s]", tag);
+      log_t *find(const char *tag) {
+         log_t *l;
+         for (l = logs; l && strcmp(l->tag, tag); l = l->next);
+         if (!l)
+         {
+            l = malloc(sizeof(*l));
+            memset(l, 0, sizeof(*l));
+            l->tag = strdup(tag);
+            l->next = logs;
+            logs = l;
+            if (debug)
+               warnx("New device [%s]", tag);
+         }
+         return l;
       }
       if (debug)
          warnx("Tag [%s] Type [%s] Val [%.*s]", tag, type, msg->payloadlen, (char *) msg->payload);
@@ -156,15 +165,27 @@ int main(int argc, const char *argv[])
          else
             *p = NULL;
       }
-      if (!strncmp(topic, "state/", 6) && !strcmp(type, "data"))
-      {                         // JSON
-         j_t data = j_create();
-         const char *e = j_read_mem(data, msg->payload, msg->payloadlen);
-         if (e)
-            warnx("Bad JSON [%s] Type [%s] Val [%.*s]", tag, type, msg->payloadlen, (char *) msg->payload);
-         else
-         {
-            const char *v;
+      j_t data = j_create();
+      const char *e = j_read_mem(data, msg->payload, msg->payloadlen);
+      if (e)
+         warnx("Bad JSON [%s] Type [%s] Val [%.*s]", tag, type, msg->payloadlen, (char *) msg->payload);
+      else
+      {
+         const char *v;
+         if (!strcmp(type, "ext_temperatures"))
+         {                      // Shelly
+            for (j_t j = j_first(data); j; j = j_next(j))
+            {
+               const char *tag = j_get(j, "hwID");
+               if (!tag)
+                  continue;
+               log_t *l = find(tag);
+               if ((v = j_get(j, "tC")))
+                  logval("temp", &l->temp, v);
+            }
+         } else if (!strncmp(topic, "state/", 6) && !strcmp(type, "data"))
+         {                      // Env
+            log_t *l = find(tag);
             if ((v = j_get(data, "ts")))
             {
                time_t t = j_time(v);
@@ -196,8 +217,8 @@ int main(int argc, const char *argv[])
                free(l->fan);
                l->fan = NULL;
             }
-            j_delete(&data);
          }
+         j_delete(&data);
       }
    }
    mosquitto_connect_callback_set(mqtt, connect);
