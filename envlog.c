@@ -108,6 +108,12 @@ int main(int argc, const char *argv[])
          errx(1, "MQTT subscribe failed %s (%s)", mosquitto_strerror(e), sub);
       if (debug)
          warnx("MQTT Sub %s", sub);
+      sub = "tele/+/SENSOR";
+      e = mosquitto_subscribe(mqtt, NULL, sub, 0);
+      if (e)
+         errx(1, "MQTT subscribe failed %s (%s)", mosquitto_strerror(e), sub);
+      if (debug)
+         warnx("MQTT Sub %s", sub);
       asprintf(&sub, "command/%s/*/send", mqttappname);
       e = mosquitto_publish(mqtt, NULL, sub, 0, NULL, 1, 0);
       if (e)
@@ -189,13 +195,26 @@ int main(int argc, const char *argv[])
             }
          }
          const char *v;
+         if (!strcmp(type, "SENSOR"))
+	 { // Tasmota
+            for (j_t j = j_first(data); j; j = j_next(j))if(!strncmp(j_name(j),"DS18B20-",8)&&j_get(j,"Id"))
+            {
+               char *tasmota;
+               if (asprintf(&tasmota, "%s-%d", tag, atoi(j_name(j)+8)) < 0)
+                  errx(1, "malloc");
+               log_t *l = find(tasmota);
+               if ((v = j_get(j, "Temperature")))
+               {
+                  logval("temp", &l->temp, v);
+                  done(l);
+               }
+               free(tasmota);
+	    }
+	 }else
          if (!strcmp(type, "ext_temperatures"))
          {                      // Shelly
-            for (j_t j = j_first(data); j; j = j_next(j))
+            for (j_t j = j_first(data); j; j = j_next(j))if(j_get(j,"hwID"))
             {
-               const char *hwid = j_get(j, "hwID");
-               if (!hwid)
-                  continue;
                char *shelly;
                if (asprintf(&shelly, "%s-%d", tag, atoi(j_name(j)) + 1) < 0)
                   errx(1, "malloc");
