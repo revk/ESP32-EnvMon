@@ -197,7 +197,7 @@ int main(int argc, const char *argv[])
                if (!hwid)
                   continue;
                char *shelly;
-               if (asprintf(&shelly, "%s-%s", tag, j_name(j)) < 0)
+               if (asprintf(&shelly, "%s-%d", tag, atoi(j_name(j)) + 1) < 0)
                   errx(1, "malloc");
                log_t *l = find(shelly);
                if ((v = j_get(j, "tC")))
