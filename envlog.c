@@ -175,7 +175,7 @@ int main(int argc, const char *argv[])
             if (l->when != now)
             {                   // Log to SQL
                l->when = now;
-               sql_safe_query_free(&sql, sql_printf("INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T,`temp`=%#s,`rh`=%#s,`co2`=%#s,`heat`=%#s,`fan`=%#s", sqltable, tag, now, l->temp, l->rh, l->co2, l->heat, l->fan));
+               sql_safe_query_free(&sql, sql_printf("INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T,`temp`=%#s,`rh`=%#s,`co2`=%#s,`heat`=%#s,`fan`=%#s", sqltable, l->tag, now, l->temp, l->rh, l->co2, l->heat, l->fan));
                free(l->rh);
                l->rh = NULL;
                free(l->temp);
