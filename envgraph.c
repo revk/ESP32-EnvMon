@@ -28,14 +28,12 @@ int main(int argc, const char *argv[])
    double tempstep = 1;
    double co2step = 50;
    double rhstep = 3;
-   double co2base = 400;
-   double tempbase = 10;
-   double rhbase = 10;
    double co2line = 1000;
    double templine = 21;
    double rhline = 30;
    int debug = 0;
    int days = 1;
+   int spacing = 5;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
       const struct poptOption optionsTable[] = {
@@ -51,15 +49,13 @@ int main(int argc, const char *argv[])
          { "temp-step", 0, POPT_ARG_DOUBLE | POPT_ARGFLAG_SHOW_DEFAULT, &tempstep, 0, "Temp per Y step", "Celsius" },
          { "co2-step", 0, POPT_ARG_DOUBLE | POPT_ARGFLAG_SHOW_DEFAULT, &co2step, 0, "CO₂ per Y step", "ppm" },
          { "rh-step", 0, POPT_ARG_DOUBLE | POPT_ARGFLAG_SHOW_DEFAULT, &rhstep, 0, "RH per Y step", "%" },
-         { "temp-base", 0, POPT_ARG_DOUBLE | POPT_ARGFLAG_SHOW_DEFAULT, &tempbase, 0, "Temp base", "Celsius" },
-         { "co2-base", 0, POPT_ARG_DOUBLE | POPT_ARGFLAG_SHOW_DEFAULT, &co2base, 0, "CO₂ base", "ppm" },
-         { "rh-base", 0, POPT_ARG_DOUBLE | POPT_ARGFLAG_SHOW_DEFAULT, &rhbase, 0, "RH base", "%" },
          { "temp-line", 0, POPT_ARG_DOUBLE | POPT_ARGFLAG_SHOW_DEFAULT, &templine, 0, "Temp line", "Celsius" },
          { "co2-line", 0, POPT_ARG_DOUBLE | POPT_ARGFLAG_SHOW_DEFAULT, &co2line, 0, "CO₂ line", "ppm" },
          { "rh-line", 0, POPT_ARG_DOUBLE | POPT_ARGFLAG_SHOW_DEFAULT, &rhline, 0, "RH line", "%" },
          { "tag", 'i', POPT_ARG_STRING, &tag, 0, "Device ID", "tag" },
          { "date", 'D', POPT_ARG_STRING, &date, 0, "Date", "YYYY-MM-DD" },
          { "days", 'N', POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &days, 0, "Days", "N" },
+         { "spacing", 0, POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &spacing, 0, "Spacing", "N" },
          { "debug", 'V', POPT_ARG_NONE, &debug, 0, "Debug" },
          POPT_AUTOHELP { }
       };
@@ -123,10 +119,11 @@ int main(int argc, const char *argv[])
       char m2;
       int lastx;
       int lasty;
+      int count;
    } data[MAX] = {
-    { arg: "co2", secondary: "fan", colour: "green", scale: ysize / co2step, min: co2base, max: co2base, line: co2line, unit:"ppm" },
-    { arg: "temp", secondary: "heat", colour: "red", scale: ysize / tempstep, min: tempbase, max: tempbase, line: templine, unit:"℃" },
-    { arg: "rh", colour: "blue", scale: ysize / rhstep, min: rhbase, max: rhbase, line: rhline, unit:"%" },
+    { arg: "co2", secondary: "fan", colour: "green", scale: ysize / co2step, line: co2line, unit:"ppm" },
+    { arg: "rh", colour: "blue", scale: ysize / rhstep, line: rhline, unit:"%" },
+    { arg: "temp", secondary: "heat", colour: "red", scale: ysize / tempstep, line: templine, unit:"℃" },
    };
    int d;
    int day = 0;
@@ -158,23 +155,23 @@ int main(int argc, const char *argv[])
       for (d = 0; d < MAX; d++)
       {
          fclose(data[d].f);
-	 if(*data[d].path)
-	 {
-         xml_t p = xml_element_add(data[d].g, "path");
-         xml_addf(p, "@opacity", "%.1f", (double) day / days);
-         xml_add(p, "@d", data[d].path);
-         free(data[d].path);
-	 }
+         if (*data[d].path)
+         {
+            xml_t p = xml_element_add(data[d].g, "path");
+            xml_addf(p, "@opacity", "%.1f", (double) day / days);
+            xml_add(p, "@d", data[d].path);
+            free(data[d].path);
+         }
          if (data[d].secondary)
          {
             fclose(data[d].f2);
-	    if(*data[d].path2)
-	    {
-            xml_t p = xml_element_add(data[d].g, "path");
-            xml_addf(p, "@opacity", "%.1f", (double) day / days);
-            xml_add(p, "@stroke-width", "2");
-            xml_add(p, "@d", data[d].path2);
-	    }
+            if (*data[d].path2)
+            {
+               xml_t p = xml_element_add(data[d].g, "path");
+               xml_addf(p, "@opacity", "%.1f", (double) day / days);
+               xml_add(p, "@stroke-width", "2");
+               xml_add(p, "@d", data[d].path2);
+            }
             free(data[d].path2);
          }
       }
@@ -192,10 +189,11 @@ int main(int argc, const char *argv[])
             if (!val)
                continue;
             double v = strtod(val, NULL);
-            if (data[d].min > v)
+            if (!data[d].count || data[d].min > v)
                data[d].min = v;
-            if (data[d].max < v)
+            if (!data[d].count || data[d].max < v)
                data[d].max = v;
+            data[d].count++;
             int x = (xml_time(when) - start) * xsize / 3600;
             if (x > maxx)
                maxx = x;
@@ -242,17 +240,21 @@ int main(int argc, const char *argv[])
    maxx = floor((maxx + xsize - 1) / xsize) * xsize;
    int maxy = 0;
    // Normalise min and work out y size
+   int offset = 0;
    for (d = 0; d < MAX; d++)
-   {
-      data[d].min = floor(data[d].min * data[d].scale / ysize) * ysize / data[d].scale;
-      data[d].max = floor(data[d].max * data[d].scale / ysize + 1) * ysize / data[d].scale;
-      double v = data[d].max - data[d].min;
-      int y = v * data[d].scale;
-      if (y > maxy)
-         maxy = y;
-   }
+      if (data[d].count)
+      {
+         data[d].min = floor(data[d].min * data[d].scale / ysize - 1 + offset) * ysize / data[d].scale;
+         data[d].max = floor(data[d].max * data[d].scale / ysize + 1 + offset) * ysize / data[d].scale;
+         double v = data[d].max - data[d].min;
+         int y = v * data[d].scale - (offset - 1) * ysize;
+         if (y > maxy)
+            maxy = y;
+         offset -= spacing;
+      }
    for (d = 0; d < MAX; d++)
-      data[d].max = data[d].min + (double) maxy / data[d].scale;
+      if (data[d].count)
+         data[d].max = data[d].min + (double) maxy / data[d].scale;
    // Grid
    xml_add(grid, "@stroke", "black");
    xml_add(grid, "@fill", "none");
@@ -270,33 +272,36 @@ int main(int argc, const char *argv[])
    // Axis
    xml_add(axis, "@opacity", "0.5");
    xml_add(top, "@font-family", "sans-serif");
+   int x = 0;
    for (d = 0; d < MAX; d++)
-   {
-      xml_t g = xml_element_add(data[d].g, "g");
-      xml_add(g, "@opacity", "0.5");
-      xml_add(g, "@text-anchor", "end");
-      xml_add(g, "@fill", data[d].colour);
-      for (double v = data[d].min + ysize / data[d].scale; v < data[d].max; v += ysize / data[d].scale)
+      if (data[d].count)
       {
-         if (d == RH && v < 0)
-            continue;
-         if (d == RH && v > 100)
-            break;
-         if (d == CO2 && v < 0)
-            continue;
-         xml_t t = xml_addf(g, "+text", d == TEMP ? "%.1f" : "%.0f", v);
-         xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", d * 40 + 40, (int) (v * data[d].scale));
-         xml_add(t, "@alignment-baseline", "middle");
+         xml_t g = xml_element_add(data[d].g, "g");
+         xml_add(g, "@opacity", "0.5");
+         xml_add(g, "@text-anchor", "end");
+         xml_add(g, "@fill", data[d].colour);
+         for (double v = data[d].min + ysize / data[d].scale; v < data[d].max; v += ysize / data[d].scale)
+         {
+            if (d == RH && v < 0)
+               continue;
+            if (d == RH && v > 100)
+               break;
+            if (d == CO2 && v < 0)
+               continue;
+            xml_t t = xml_addf(g, "+text", d == TEMP ? "%.1f" : "%.0f", v);
+            xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) (v * data[d].scale));
+            xml_add(t, "@alignment-baseline", "middle");
+         }
+         xml_t t = xml_add(g, "+text", data[d].unit);
+         xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) (data[d].max * data[d].scale));
+         xml_add(t, "@alignment-baseline", "hanging");
+         // Reference line
+         int y = data[d].line * data[d].scale;
+         xml_t l = xml_element_add(g, "path");
+         xml_addf(l, "@d", "M0,%dL%d,%d", y, maxx, y);
+         xml_add(l, "@stroke-dasharray", "1");
+         x++;
       }
-      xml_t t = xml_add(g, "+text", data[d].unit);
-      xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", d * 40 + 40, (int) (data[d].max * data[d].scale));
-      xml_add(t, "@alignment-baseline", "hanging");
-      // Reference line
-      int y = data[d].line * data[d].scale;
-      xml_t l = xml_element_add(g, "path");
-      xml_addf(l, "@d", "M0,%dL%d,%d", y, maxx, y);
-      xml_add(l, "@stroke-dasharray", "1");
-   }
    for (int x = xsize; x < maxx; x += xsize)
    {
       xml_t t = xml_addf(axis, "+text", "%02d", (int) (x / xsize) % 24);
@@ -308,7 +313,8 @@ int main(int argc, const char *argv[])
    xml_addf(svg, "@height", "%d", maxy + 1);
    // Position and invert
    for (d = 0; d < MAX; d++)
-      xml_addf(data[d].g, "@transform", "translate(0,%.1f)scale(1,-1)", data[d].scale * data[d].max);
+      if (data[d].count)
+         xml_addf(data[d].g, "@transform", "translate(0,%.1f)scale(1,-1)", data[d].scale * data[d].max);
    // Write out
    xml_write(stdout, svg);
    xml_tree_delete(svg);
