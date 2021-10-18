@@ -293,7 +293,7 @@ int main(int argc, const char *argv[])
             xml_add(t, "@alignment-baseline", "middle");
          }
          xml_t t = xml_add(g, "+text", data[d].unit);
-         xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) (data[d].max * data[d].scale));
+         xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) ((data[d].max - 0.1) * data[d].scale));
          xml_add(t, "@alignment-baseline", "hanging");
          // Reference line
          int y = data[d].line * data[d].scale;
@@ -306,7 +306,7 @@ int main(int argc, const char *argv[])
    {
       xml_t t = xml_addf(axis, "+text", "%02d", (int) (x / xsize) % 24);
       xml_addf(t, "@x", "%d", x);
-      xml_addf(t, "@y", "%d", maxy);
+      xml_addf(t, "@y", "%d", maxy - 2);
       xml_add(axis, "@text-anchor", "middle");
    }
    xml_addf(svg, "@width", "%d", maxx + 1);
