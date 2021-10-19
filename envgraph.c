@@ -95,8 +95,8 @@ int main(int argc, const char *argv[])
                                                        sqltable, tag, date, edate));
    enum {
       CO2,
-      TEMP,
       RH,
+      TEMP,
       MAX,
    };
    struct data_s {
@@ -288,7 +288,7 @@ int main(int argc, const char *argv[])
                break;
             if (d == CO2 && v < 0)
                continue;
-            xml_t t = xml_addf(g, "+text", d == TEMP ? "%.1f" : "%.0f", v);
+            xml_t t = xml_addf(g, "+text", "%.0f", v);
             xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) (v * data[d].scale));
             xml_add(t, "@alignment-baseline", "middle");
          }
