@@ -198,13 +198,22 @@ int main(int argc, const char *argv[])
          if (!strcmp(type, "SENSOR"))
          {                      // Tasmota
             for (j_t j = j_first(data); j; j = j_next(j))
-               if (!strncmp(j_name(j), "DS18B20-", 8) && j_get(j, "Id"))
+            {
+               const char *name = j_name(j);
+               if (!strncmp(name, "DS18B20", 7) && j_get(j, "Id"))
                {
-                  int i = atoi(j_name(j) + 8);
+                  int i = 1;
                   char *tasmota;
-                  if (asprintf(&tasmota, i == 1 ? "%s" : "%s-%d", tag, i) < 0)
-                     errx(1, "malloc");
+                  if (name[7] == '-')
+                  {
+                     i = atoi(name + 8);
+                     if (asprintf(&tasmota, "%s-%d", tag, i) < 0)
+                        errx(1, "malloc");
+                  } else
+                     tasmota = strdup(tag);
                   log_t *l = find(tasmota);
+                  if (i == 1)
+                     logval("heat", &l->heat, j_test(j, "Switch1", 0) ? "true" : "false");
                   if ((v = j_get(j, "Temperature")))
                   {
                      logval("temp", &l->temp, v);
@@ -212,6 +221,7 @@ int main(int argc, const char *argv[])
                   }
                   free(tasmota);
                }
+            }
          } else if (!strcmp(type, "ext_temperatures"))
          {                      // Shelly
             for (j_t j = j_first(data); j; j = j_next(j))
