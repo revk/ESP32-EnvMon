@@ -215,7 +215,7 @@ int main(int argc, const char *argv[])
                   if (i == 1)
                   {
                      const char *sw = j_get(j, "Switch1");
-                     logval("heat", &l->heat, (sw && *sw == 'O') ? "true" : "false");
+                     logval("heat", &l->heat, (sw && !strcmp(sw,"ON")) ? "true" : "false");
                   }
                   if ((v = j_get(j, "Temperature")))
                   {
