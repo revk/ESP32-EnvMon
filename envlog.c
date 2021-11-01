@@ -214,7 +214,7 @@ int main(int argc, const char *argv[])
                   log_t *l = find(tasmota);
                   if (i == 1)
                   {
-                     const char *sw = j_get(j, "Switch1");
+                     const char *sw = j_get(data, "Switch1");
                      logval("heat", &l->heat, (sw && !strcmp(sw,"ON")) ? "true" : "false");
                   }
                   if ((v = j_get(j, "Temperature")))
