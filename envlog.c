@@ -196,36 +196,39 @@ int main(int argc, const char *argv[])
          }
          const char *v;
          if (!strcmp(type, "SENSOR"))
-	 { // Tasmota
-            for (j_t j = j_first(data); j; j = j_next(j))if(!strncmp(j_name(j),"DS18B20-",8)&&j_get(j,"Id"))
-            {
-               char *tasmota;
-               if (asprintf(&tasmota, "%s-%d", tag, atoi(j_name(j)+8)) < 0)
-                  errx(1, "malloc");
-               log_t *l = find(tasmota);
-               if ((v = j_get(j, "Temperature")))
+         {                      // Tasmota
+            for (j_t j = j_first(data); j; j = j_next(j))
+               if (!strncmp(j_name(j), "DS18B20-", 8) && j_get(j, "Id"))
                {
-                  logval("temp", &l->temp, v);
-                  done(l);
+                  int i = atoi(j_name(j) + 8);
+                  char *tasmota;
+                  if (asprintf(&tasmota, i == 1 ? "%s" : "%s-%d", tag, i) < 0)
+                     errx(1, "malloc");
+                  log_t *l = find(tasmota);
+                  if ((v = j_get(j, "Temperature")))
+                  {
+                     logval("temp", &l->temp, v);
+                     done(l);
+                  }
+                  free(tasmota);
                }
-               free(tasmota);
-	    }
-	 }else
-         if (!strcmp(type, "ext_temperatures"))
+         } else if (!strcmp(type, "ext_temperatures"))
          {                      // Shelly
-            for (j_t j = j_first(data); j; j = j_next(j))if(j_get(j,"hwID"))
-            {
-               char *shelly;
-               if (asprintf(&shelly, "%s-%d", tag, atoi(j_name(j)) + 1) < 0)
-                  errx(1, "malloc");
-               log_t *l = find(shelly);
-               if ((v = j_get(j, "tC")))
+            for (j_t j = j_first(data); j; j = j_next(j))
+               if (j_get(j, "hwID"))
                {
-                  logval("temp", &l->temp, v);
-                  done(l);
+                  char *shelly;
+                  int i = atoi(j_name(j));
+                  if (asprintf(&shelly, i ? "%s-%d" : "%s", tag, i + 1) < 0)
+                     errx(1, "malloc");
+                  log_t *l = find(shelly);
+                  if ((v = j_get(j, "tC")))
+                  {
+                     logval("temp", &l->temp, v);
+                     done(l);
+                  }
+                  free(shelly);
                }
-               free(shelly);
-            }
          } else if (!strncmp(topic, "state/", 6) && !strcmp(type, "data"))
          {                      // Env
             log_t *l = find(tag);
