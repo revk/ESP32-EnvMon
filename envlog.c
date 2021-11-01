@@ -213,7 +213,10 @@ int main(int argc, const char *argv[])
                      tasmota = strdup(tag);
                   log_t *l = find(tasmota);
                   if (i == 1)
-                     logval("heat", &l->heat, j_test(j, "Switch1", 0) ? "true" : "false");
+                  {
+                     const char *sw = j_get(j, "Switch1");
+                     logval("heat", &l->heat, (sw && *sw == 'O') ? "true" : "false");
+                  }
                   if ((v = j_get(j, "Temperature")))
                   {
                      logval("temp", &l->temp, v);
