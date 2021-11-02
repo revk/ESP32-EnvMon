@@ -114,6 +114,12 @@ int main(int argc, const char *argv[])
          errx(1, "MQTT subscribe failed %s (%s)", mosquitto_strerror(e), sub);
       if (debug)
          warnx("MQTT Sub %s", sub);
+      sub = "tele/+/STATUS10";
+      e = mosquitto_subscribe(mqtt, NULL, sub, 0);
+      if (e)
+         errx(1, "MQTT subscribe failed %s (%s)", mosquitto_strerror(e), sub);
+      if (debug)
+         warnx("MQTT Sub %s", sub);
       asprintf(&sub, "command/%s/*/send", mqttappname);
       e = mosquitto_publish(mqtt, NULL, sub, 0, NULL, 1, 0);
       if (e)
@@ -195,7 +201,7 @@ int main(int argc, const char *argv[])
             }
          }
          const char *v;
-         if (!strcmp(type, "SENSOR"))
+         if (!strcmp(type, "SENSOR")||!strcmp(type,"STATUS10"))
          {                      // Tasmota
             for (j_t j = j_first(data); j; j = j_next(j))
             {
