@@ -201,8 +201,10 @@ int main(int argc, const char *argv[])
             }
          }
          const char *v;
-         if (!strcmp(type, "SENSOR")||!strcmp(type,"STATUS10"))
+         if (!strcmp(type, "SENSOR") || !strcmp(type, "STATUS10"))
          {                      // Tasmota
+            if (!strcmp(type, "STATUS10"))
+               data = j_find(data, "StatusSNS");
             for (j_t j = j_first(data); j; j = j_next(j))
             {
                const char *name = j_name(j);
@@ -221,7 +223,7 @@ int main(int argc, const char *argv[])
                   if (i == 1)
                   {
                      const char *sw = j_get(data, "Switch1");
-                     logval("heat", &l->heat, (sw && !strcmp(sw,"ON")) ? "true" : "false");
+                     logval("heat", &l->heat, (sw && !strcmp(sw, "ON")) ? "true" : "false");
                   }
                   if ((v = j_get(j, "Temperature")))
                   {
