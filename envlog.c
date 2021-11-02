@@ -12,16 +12,31 @@
 #include <mosquitto.h>
 #include <ajl.h>
 
+typedef struct vals_s vals_t;
+struct vals_s {
+   unsigned char set:1;
+   double latest;
+   double high;
+   double low;
+};
+
+typedef struct bools_s bools_t;
+struct bools_s {
+   unsigned char set:1;
+   unsigned char t:1;
+   unsigned char f:1;
+};
+
 typedef struct log_s log_t;
 struct log_s {
    log_t *next;
    char *tag;
    time_t when;
-   char *co2;
-   char *rh;
-   char *temp;
-   char *heat;
-   char *fan;
+   vals_t co2;
+   vals_t rh;
+   vals_t temp;
+   bools_t heat;
+   bools_t fan;
 };
 log_t *logs = NULL;
 
@@ -170,12 +185,23 @@ int main(int argc, const char *argv[])
       if (debug)
          warnx("Tag [%s] Type [%s] Val [%.*s]", tag, type, msg->payloadlen, (char *) msg->payload);
       time_t now = (time(0) / interval) * interval;
-      void logval(const char *type, char **p, const char *val) {        // Store value
-         free(*p);
+      void logval(const char *type, vals_t * v, const char *val) {      // Store value
+         if (!val)
+            return;
+         double value = strtod(val, NULL);
+         v->latest = value;
+         if (!v->set || v->high < value)
+            v->high = value;
+         if (!v->set || v->low > value)
+            v->low = value;
+         v->set = 1;
+      }
+      void logbool(const char *type, bools_t * b, int val) {
+         b->set = 1;
          if (val)
-            *p = strdup((char *) val);
+            b->t = 1;
          else
-            *p = NULL;
+            b->f = 1;
       }
       j_t data = j_create();
       const char *e = j_read_mem(data, msg->payload, msg->payloadlen);
@@ -187,17 +213,24 @@ int main(int argc, const char *argv[])
             if (l->when != now)
             {                   // Log to SQL
                l->when = now;
-               sql_safe_query_free(&sql, sql_printf("INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T,`temp`=%#s,`rh`=%#s,`co2`=%#s,`heat`=%#s,`fan`=%#s", sqltable, l->tag, now, l->temp, l->rh, l->co2, l->heat, l->fan));
-               free(l->rh);
-               l->rh = NULL;
-               free(l->temp);
-               l->temp = NULL;
-               free(l->co2);
-               l->co2 = NULL;
-               free(l->heat);
-               l->heat = NULL;
-               free(l->fan);
-               l->fan = NULL;
+               sql_string_t s = { };
+               sql_sprintf(&s, "INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T", sqltable, l->tag, now);
+               if (l->temp.set)
+                  sql_sprintf(&s, ",`temp`=%lf,`temph`=%lf,`templ`=%lf", l->temp.latest,l->temp.high,l->temp.low);
+               if (l->rh.set)
+                  sql_sprintf(&s, ",`rh`=%lf,`rhh`=%lf,`rhl`=%lf", l->rh.latest,l->rh.high,l->rh.low);
+               if (l->co2.set)
+                  sql_sprintf(&s, ",`co2`=%lf,`co2h`=%lf,`co2l`=%lf", l->co2.latest,l->co2.high,l->co2.low);
+               if (l->heat.set)
+                  sql_sprintf(&s, ",`heat`=%#s", l->heat.t ? "true" : "false");
+               if (l->fan.set)
+                  sql_sprintf(&s, ",`fan`=%#s", l->fan.t ? "true" : "false");
+	       l->temp.set=0;
+	       l->rh.set=0;
+	       l->co2.set=0;
+	       l->heat.set=0;
+	       l->fan.set=0;
+               sql_safe_query_s(&sql, &s);
             }
          }
          const char *v;
@@ -223,7 +256,7 @@ int main(int argc, const char *argv[])
                   if (i == 1)
                   {
                      const char *sw = j_get(data, "Switch1");
-                     logval("heat", &l->heat, (sw && !strcmp(sw, "ON")) ? "true" : "false");
+                     logbool("heat", &l->heat, (sw && !strcmp(sw, "ON")));
                   }
                   if ((v = j_get(j, "Temperature")))
                   {
@@ -265,10 +298,10 @@ int main(int argc, const char *argv[])
                logval("rh", &l->rh, v);
             if ((v = j_get(data, "co2")))
                logval("co2", &l->co2, v);
-            if ((v = j_get(data, "heat")) && (*v == 't' || !l->heat))
-               logval("heat", &l->heat, v);     // True latches
-            if ((v = j_get(data, "fan")) && (*v == 't' || !l->fan))
-               logval("fan", &l->fan, v);       // True latches
+            if ((v = j_get(data, "heat")))
+               logbool("heat", &l->heat, v && *v == 't');
+            if ((v = j_get(data, "fan")))
+               logbool("fan", &l->fan, v && *v == 't');
             done(l);
          }
          j_delete(&data);
