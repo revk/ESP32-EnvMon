@@ -196,12 +196,20 @@ int main(int argc, const char *argv[])
             v->low = value;
          v->set = 1;
       }
+      void clearval(vals_t * v) {
+         v->set = 0;
+      }
       void logbool(const char *type, bools_t * b, int val) {
          b->set = 1;
          if (val)
             b->t = 1;
          else
             b->f = 1;
+      }
+      void clearbool(bools_t * b) {
+         b->set = 0;
+         b->f = 0;
+         b->t = 0;
       }
       j_t data = j_create();
       const char *e = j_read_mem(data, msg->payload, msg->payloadlen);
@@ -216,20 +224,20 @@ int main(int argc, const char *argv[])
                sql_string_t s = { };
                sql_sprintf(&s, "INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T", sqltable, l->tag, now);
                if (l->temp.set)
-                  sql_sprintf(&s, ",`temp`=%lf,`temph`=%lf,`templ`=%lf", l->temp.latest,l->temp.high,l->temp.low);
+                  sql_sprintf(&s, ",`temp`=%lf,`temph`=%lf,`templ`=%lf", l->temp.latest, l->temp.high, l->temp.low);
                if (l->rh.set)
-                  sql_sprintf(&s, ",`rh`=%lf,`rhh`=%lf,`rhl`=%lf", l->rh.latest,l->rh.high,l->rh.low);
+                  sql_sprintf(&s, ",`rh`=%lf,`rhh`=%lf,`rhl`=%lf", l->rh.latest, l->rh.high, l->rh.low);
                if (l->co2.set)
-                  sql_sprintf(&s, ",`co2`=%lf,`co2h`=%lf,`co2l`=%lf", l->co2.latest,l->co2.high,l->co2.low);
+                  sql_sprintf(&s, ",`co2`=%lf,`co2h`=%lf,`co2l`=%lf", l->co2.latest, l->co2.high, l->co2.low);
                if (l->heat.set)
                   sql_sprintf(&s, ",`heat`=%#s", l->heat.t ? "true" : "false");
                if (l->fan.set)
                   sql_sprintf(&s, ",`fan`=%#s", l->fan.t ? "true" : "false");
-	       l->temp.set=0;
-	       l->rh.set=0;
-	       l->co2.set=0;
-	       l->heat.set=0;
-	       l->fan.set=0;
+               clearval(&l->temp);
+               clearval(&l->co2);
+               clearval(&l->rh);
+               clearbool(&l->heat);
+               clearbool(&l->fan);
                sql_safe_query_s(&sql, &s);
             }
          }
