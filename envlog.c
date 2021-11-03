@@ -135,6 +135,12 @@ int main(int argc, const char *argv[])
          errx(1, "MQTT subscribe failed %s (%s)", mosquitto_strerror(e), sub);
       if (debug)
          warnx("MQTT Sub %s", sub);
+      sub = "stat/+/RESULT";
+      e = mosquitto_subscribe(mqtt, NULL, sub, 0);
+      if (e)
+         errx(1, "MQTT subscribe failed %s (%s)", mosquitto_strerror(e), sub);
+      if (debug)
+         warnx("MQTT Sub %s", sub);
       asprintf(&sub, "command/%s/*/send", mqttappname);
       e = mosquitto_publish(mqtt, NULL, sub, 0, NULL, 1, 0);
       if (e)
@@ -242,8 +248,14 @@ int main(int argc, const char *argv[])
             }
          }
          const char *v;
-         if (!strcmp(type, "SENSOR") || !strcmp(type, "STATUS10"))
-         {                      // Tasmota
+         if (!strcmp(type, "RESULT"))
+         {                      // Tasmota (power control) - log as heat
+            log_t *l = find(tag);
+            const char *p = j_get(data, "POWER");
+            if (p)
+               logbool("heat", &l->heat, !strcmp(p, "ON"));
+         } else if (!strcmp(type, "SENSOR") || !strcmp(type, "STATUS10"))
+         {                      // Tasmota - temp reporting
             if (!strcmp(type, "STATUS10"))
                data = j_find(data, "StatusSNS");
             for (j_t j = j_first(data); j; j = j_next(j))
@@ -261,11 +273,6 @@ int main(int argc, const char *argv[])
                   } else
                      tasmota = strdup(tag);
                   log_t *l = find(tasmota);
-                  if (i == 1)
-                  {
-                     const char *sw = j_get(data, "Switch1");
-                     logbool("heat", &l->heat, (sw && !strcmp(sw, "ON")));
-                  }
                   if ((v = j_get(j, "Temperature")))
                   {
                      logval("temp", &l->temp, v);
