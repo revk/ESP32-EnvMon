@@ -321,9 +321,9 @@ int main(int argc, const char *argv[])
                logval("rh", &l->rh, v);
             if ((v = j_get(data, "co2")))
                logval("co2", &l->co2, v);
-            if ((v = j_get(data, "heat")))
+            v = j_get(data, "heat");
                logbool("heat", &l->heat, v && *v == 't');
-            if ((v = j_get(data, "fan")))
+            v = j_get(data, "fan");
                logbool("fan", &l->fan, v && *v == 't');
             done(l, 0);
          }
