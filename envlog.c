@@ -250,10 +250,24 @@ int main(int argc, const char *argv[])
          const char *v;
          if (!strcmp(type, "RESULT"))
          {                      // Tasmota (power control) - log as heat
-            log_t *l = find(tag);
-            const char *p = j_get(data, "POWER");
-            if (p)
-               logbool("heat", &l->heat, !strcmp(p, "ON"));
+            j_t j = j_first(data);
+            if (j)
+            {
+               const char *name = j_name(j);
+               if (!strncmp(name, "POWER", 5))
+               {
+                  char *tasmota;
+                  if (!name[5])
+                     tasmota = strdup(tag);
+                  else if (asprintf(&tasmota, "%s-%s", tag, name + 5) < 0)
+                     errx(1, "malloc");
+                  log_t *l = find(tasmota);
+                  const char *p = j_val(j);
+                  if (p)
+                     logbool("heat", &l->heat, !strcmp(p, "ON"));
+                  free(tasmota);
+               }
+            }
          } else if (!strcmp(type, "SENSOR") || !strcmp(type, "STATUS10"))
          {                      // Tasmota - temp reporting
             if (!strcmp(type, "STATUS10"))
