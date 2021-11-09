@@ -129,7 +129,7 @@ int main(int argc, const char *argv[])
          errx(1, "MQTT subscribe failed %s (%s)", mosquitto_strerror(e), sub);
       if (debug)
          warnx("MQTT Sub %s", sub);
-      sub = "tele/+/STATUS10";
+      sub = "stat/+/STATUS10";
       e = mosquitto_subscribe(mqtt, NULL, sub, 0);
       if (e)
          errx(1, "MQTT subscribe failed %s (%s)", mosquitto_strerror(e), sub);
@@ -223,8 +223,8 @@ int main(int argc, const char *argv[])
          warnx("Bad JSON [%s] Type [%s] Val [%.*s]", tag, type, msg->payloadlen, (char *) msg->payload);
       else
       {
-         void done(log_t * l) {
-            if (l->when != now)
+         void done(log_t * l, int force) {
+            if (l->when != now || force)
             {                   // Log to SQL
                l->when = now;
                sql_string_t s = { };
@@ -272,6 +272,7 @@ int main(int argc, const char *argv[])
          {                      // Tasmota - temp reporting
             if (!strcmp(type, "STATUS10"))
                data = j_find(data, "StatusSNS");
+            now = j_time(j_get(data, "Time"));
             for (j_t j = j_first(data); j; j = j_next(j))
             {
                const char *name = j_name(j);
@@ -290,7 +291,7 @@ int main(int argc, const char *argv[])
                   if ((v = j_get(j, "Temperature")))
                   {
                      logval("temp", &l->temp, v);
-                     done(l);
+                     done(l, 1);
                   }
                   free(tasmota);
                }
@@ -308,7 +309,7 @@ int main(int argc, const char *argv[])
                   if ((v = j_get(j, "tC")))
                   {
                      logval("temp", &l->temp, v);
-                     done(l);
+                     done(l, 0);
                   }
                   free(shelly);
                }
@@ -331,7 +332,7 @@ int main(int argc, const char *argv[])
                logbool("heat", &l->heat, v && *v == 't');
             if ((v = j_get(data, "fan")))
                logbool("fan", &l->fan, v && *v == 't');
-            done(l);
+            done(l, 0);
          }
          j_delete(&data);
       }
