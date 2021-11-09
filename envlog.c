@@ -23,8 +23,7 @@ struct vals_s {
 typedef struct bools_s bools_t;
 struct bools_s {
    unsigned char set:1;
-   unsigned char t:1;
-   unsigned char f:1;
+   unsigned char val:1;
 };
 
 typedef struct log_s log_t;
@@ -207,15 +206,9 @@ int main(int argc, const char *argv[])
       }
       void logbool(const char *type, bools_t * b, int val) {
          b->set = 1;
-         if (val)
-            b->t = 1;
-         else
-            b->f = 1;
+         b->val = (val ? 1 : 0);
       }
       void clearbool(bools_t * b) {
-         b->set = 0;
-         b->f = 0;
-         b->t = 0;
       }
       j_t data = j_create();
       const char *e = j_read_mem(data, msg->payload, msg->payloadlen);
@@ -236,9 +229,9 @@ int main(int argc, const char *argv[])
                if (l->co2.set)
                   sql_sprintf(&s, ",`co2`=%lf,`co2h`=%lf,`co2l`=%lf", l->co2.latest, l->co2.high, l->co2.low);
                if (l->heat.set)
-                  sql_sprintf(&s, ",`heat`=%#s", l->heat.t ? "true" : "false");
+                  sql_sprintf(&s, ",`heat`=%#s", l->heat.val ? "true" : "false");
                if (l->fan.set)
-                  sql_sprintf(&s, ",`fan`=%#s", l->fan.t ? "true" : "false");
+                  sql_sprintf(&s, ",`fan`=%#s", l->fan.val ? "true" : "false");
                clearval(&l->temp);
                clearval(&l->co2);
                clearval(&l->rh);
