@@ -273,6 +273,7 @@ int main(int argc, const char *argv[])
    }
    // Axis
    xml_add(axis, "@opacity", "0.5");
+   xml_add(top, "@stroke-linejoin", "round");
    xml_add(top, "@font-family", "sans-serif");
    xml_add(top, "@font-size", "15");
    int x = 0;
