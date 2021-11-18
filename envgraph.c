@@ -22,6 +22,7 @@ int main(int argc, const char *argv[])
    const char *sqlconffile = NULL;
    const char *sqltable = "env";
    const char *tag = NULL;
+   const char *title = NULL;
    char *date = NULL;
    double xsize = 36;
    double ysize = 36;
@@ -54,6 +55,7 @@ int main(int argc, const char *argv[])
          { "rh-line", 0, POPT_ARG_DOUBLE | POPT_ARGFLAG_SHOW_DEFAULT, &rhline, 0, "RH line", "%" },
          { "tag", 'i', POPT_ARG_STRING, &tag, 0, "Device ID", "tag" },
          { "date", 'D', POPT_ARG_STRING, &date, 0, "Date", "YYYY-MM-DD" },
+         { "title", 'T', POPT_ARG_STRING, &title, 0, "Title", "text" },
          { "days", 'N', POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &days, 0, "Days", "N" },
          { "spacing", 0, POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &spacing, 0, "Spacing", "N" },
          { "debug", 'V', POPT_ARG_NONE, &debug, 0, "Debug" },
@@ -272,6 +274,7 @@ int main(int argc, const char *argv[])
    // Axis
    xml_add(axis, "@opacity", "0.5");
    xml_add(top, "@font-family", "sans-serif");
+   xml_add(top, "@font-size", "15");
    int x = 0;
    for (d = 0; d < MAX; d++)
       if (data[d].count)
@@ -308,6 +311,30 @@ int main(int argc, const char *argv[])
       xml_addf(t, "@x", "%d", x);
       xml_addf(t, "@y", "%d", maxy - 2);
       xml_add(axis, "@text-anchor", "middle");
+   }
+   if (title)
+   {
+      char *txt = strdupa(title);
+      int y = 0;
+      while (txt && *txt)
+      {
+         char *e = strchr(txt, '/');
+         if (e)
+            *e++ = 0;
+         xml_t t = xml_element_add(top, "text");
+         if (*txt == '-')
+         {
+            y += 9;
+            txt++;
+            xml_add(t, "@font-size", "7");
+         } else
+            y += 17;
+         xml_element_set_content(t, txt);
+         xml_addf(t, "@x", "%d", maxx);
+         xml_addf(t, "@y", "%d", y);
+         xml_add(t, "@text-anchor", "end");
+         txt = e;
+      }
    }
    xml_addf(svg, "@width", "%d", maxx + 1);
    xml_addf(svg, "@height", "%d", maxy + 1);
