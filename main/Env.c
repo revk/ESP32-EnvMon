@@ -41,6 +41,7 @@ const char TAG[] = "Env";
 	s8(rhplaces,0)	\
 	u32(rhdamp,10)	\
 	s8(ds18b20,4)	\
+	s32(ds18b20mC,0)	\
 	s8(oleddin,23)	\
 	s8(oledclk,18)	\
 	s8(oledcs,5)	\
@@ -483,8 +484,7 @@ void ds18b20_task(void *p)
       for (int i = 0; i < num_owb; ++i)
          errors[i] = ds18b20_read_temp(ds18b20s[i], &readings[i]);
       if (!errors[0])
-         lasttemp = report("temp", lasttemp, thistemp = readings[0], tempplaces);
-      /* Use temp here as no DS18B20 */
+         lasttemp = report("temp", lasttemp, thistemp = readings[0] + ((float) ds18b20mC) / 1000.0, tempplaces);
       if (num_owb > 1 && !errors[1])
          lastotemp = report("otemp", lastotemp, readings[1], tempplaces);
    }
