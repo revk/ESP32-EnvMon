@@ -23,6 +23,7 @@ int main(int argc, const char *argv[])
    const char *sqltable = "env";
    const char *tag = NULL;
    const char *title = NULL;
+   const char *control = NULL;
    char *date = NULL;
    double xsize = 36;
    double ysize = 36;
@@ -35,6 +36,8 @@ int main(int argc, const char *argv[])
    int debug = 0;
    int days = 1;
    int spacing = 5;
+   int only = 0;
+   int back = 0;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
       const struct poptOption optionsTable[] = {
@@ -57,6 +60,8 @@ int main(int argc, const char *argv[])
          { "date", 'D', POPT_ARG_STRING, &date, 0, "Date", "YYYY-MM-DD" },
          { "title", 'T', POPT_ARG_STRING, &title, 0, "Title", "text" },
          { "days", 'N', POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &days, 0, "Days", "N" },
+         { "back", 0, POPT_ARG_INT, &back, 0, "Back days", "N" },
+         { "control", 'C', POPT_ARG_STRING, &control, 0, "Control", "[-]N[T/C/R]" },
          { "spacing", 0, POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &spacing, 0, "Spacing", "N" },
          { "debug", 'V', POPT_ARG_NONE, &debug, 0, "Debug" },
          POPT_AUTOHELP { }
@@ -76,31 +81,15 @@ int main(int argc, const char *argv[])
       }
       poptFreeContext(optCon);
    }
-   SQL sql;
-   sql_real_connect(&sql, sqlhostname, sqlusername, sqlpassword, sqldatabase, 0, NULL, 0, 1, sqlconffile);
-   char *edate = NULL;
-   {
-      struct tm t;
-      time_t now = time(0);
-      if (date)
-         now = xml_time(date);
-      localtime_r(&now, &t);
-      t.tm_mday -= days - 1;
-      mktime(&t);
-      asprintf(&date, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
-      t.tm_mday += days;
-      mktime(&t);
-      asprintf(&edate, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
-   }
-   SQL_RES *res = sql_safe_query_store_free(&sql,
-                                            sql_printf("SELECT * FROM `%#S` WHERE `tag`=%#s AND `when`>=%#s AND `when`<%#s ORDER BY `when`",
-                                                       sqltable, tag, date, edate));
    enum {
       CO2,
       RH,
       TEMP,
       MAX,
    };
+#define	ONLY_CO2	(1<<CO2)
+#define	ONLY_RH		(1<<RH)
+#define	ONLY_TEMP	(1<<TEMP)
    struct data_s {
       const char *arg;
       const char *secondary;
@@ -127,6 +116,64 @@ int main(int argc, const char *argv[])
     { arg: "rh", colour: "blue", scale: ysize / rhstep, line: rhline, unit:"%" },
     { arg: "temp", secondary: "heat", colour: "red", scale: ysize / tempstep, line: templine, unit:"℃" },
    };
+
+   if (control)
+   {
+      if (*control == '-')
+      {
+         control++;
+         days = 1;
+         if (isdigit(*control))
+         {
+            back = 0;
+            while (isdigit(*control))
+               back = back * 10 + *control++ - '0';
+         }
+
+      }
+      if (isdigit(*control))
+      {
+         days = 0;
+         while (isdigit(*control))
+            days = days * 10 + *control++ - '0';
+      }
+      while (isalpha(*control))
+      {
+         if (tolower(*control) == 't')
+            only |= ONLY_TEMP;
+         if (tolower(*control) == 'c')
+            only |= ONLY_CO2;
+         if (tolower(*control) == 'r')
+            only |= ONLY_RH;
+         control++;
+      }
+   }
+   SQL sql;
+   sql_real_connect(&sql, sqlhostname, sqlusername, sqlpassword, sqldatabase, 0, NULL, 0, 1, sqlconffile);
+   char *edate = NULL;
+   char *ldate = NULL;
+   {
+      struct tm t;
+      time_t now = time(0);
+      if (date)
+         now = xml_time(date);
+      localtime_r(&now, &t);
+      if (back)
+         t.tm_mday -= back - 1;
+      else
+         t.tm_mday -= days - 1;
+      mktime(&t);
+      asprintf(&date, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
+      t.tm_mday += days;
+      mktime(&t);
+      asprintf(&edate, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
+      t.tm_mday--;
+      mktime(&t);
+      asprintf(&ldate, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
+   }
+   SQL_RES *res = sql_safe_query_store_free(&sql,
+                                            sql_printf("SELECT * FROM `%#S` WHERE `tag`=%#s AND `when`>=%#s AND `when`<%#s ORDER BY `when`",
+                                                       sqltable, tag, date, edate));
    int d;
    int day = 0;
    xml_t svg = xml_tree_new("svg");
@@ -187,6 +234,8 @@ int main(int argc, const char *argv[])
       void add(void) {
          for (d = 0; d < MAX; d++)
          {
+            if (only && !(only & (1 << d)))
+               continue;
             const char *val = sql_col(res, data[d].arg);
             if (!val)
                continue;
@@ -336,6 +385,17 @@ int main(int argc, const char *argv[])
          xml_add(t, "@text-anchor", "end");
          txt = e;
       }
+      y += 17;
+      xml_t t = xml_element_add(top, "text");
+      if (strcmp(date, ldate))
+         asprintf(&txt, "%s-%s", date, ldate);
+      else
+         asprintf(&txt, "%s", date);
+      xml_element_set_content(t, txt);
+      xml_addf(t, "@x", "%d", maxx);
+      xml_addf(t, "@y", "%d", y);
+      xml_add(t, "@text-anchor", "end");
+      free(txt);
    }
    xml_addf(svg, "@width", "%d", maxx + 1);
    xml_addf(svg, "@height", "%d", maxy + 1);
