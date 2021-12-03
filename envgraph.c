@@ -150,6 +150,7 @@ int main(int argc, const char *argv[])
    }
    SQL sql;
    sql_real_connect(&sql, sqlhostname, sqlusername, sqlpassword, sqldatabase, 0, NULL, 0, 1, sqlconffile);
+   char *sdate = NULL;
    char *edate = NULL;
    char *ldate = NULL;
    {
@@ -164,6 +165,7 @@ int main(int argc, const char *argv[])
          t.tm_mday -= days - 1;
       mktime(&t);
       asprintf(&date, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
+      sdate=strdup(date);
       t.tm_mday += days;
       mktime(&t);
       asprintf(&edate, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
@@ -387,8 +389,8 @@ int main(int argc, const char *argv[])
       }
       y += 17;
       xml_t t = xml_element_add(top, "text");
-      if (strcmp(date, ldate))
-         asprintf(&txt, "%s-%s", date, ldate);
+      if (strcmp(sdate, ldate))
+         asprintf(&txt, "%s⇒%s", sdate, ldate);
       else
          asprintf(&txt, "%s", date);
       xml_element_set_content(t, txt);
