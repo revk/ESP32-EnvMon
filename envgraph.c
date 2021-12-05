@@ -31,7 +31,7 @@ int main(int argc, const char *argv[])
    double co2step = 50;
    double rhstep = 3;
    double co2line = 1000;
-   double templine = 21;
+   double templine = 0;
    double rhline = 30;
    int debug = 0;
    int days = 1;
@@ -93,28 +93,33 @@ int main(int argc, const char *argv[])
    struct data_s {
       const char *arg;
       const char *secondary;
+      const char *target;
       const char *unit;
       const char *colour;
       xml_t g;
       char *path;               // Main path
       char *path2;              // Secondary path
+      char *path3;              // Target path
       size_t size;
       size_t size2;
+      size_t size3;
       FILE *f;
       FILE *f2;
+      FILE *f3;
       double line;
       double min;
       double max;
       double scale;
       char m;
       char m2;
+      char m3;
       int lastx;
       int lasty;
       int count;
    } data[MAX] = {
     { arg: "co2", secondary: "fan", colour: "green", scale: ysize / co2step, line: co2line, unit:"ppm" },
     { arg: "rh", colour: "blue", scale: ysize / rhstep, line: rhline, unit:"%" },
-    { arg: "temp", secondary: "heat", colour: "red", scale: ysize / tempstep, line: templine, unit:"℃" },
+    { arg: "temp", secondary: "heat", target: "tempt", colour: "red", scale: ysize / tempstep, line: templine, unit:"℃" },
    };
 
    if (control)
@@ -165,7 +170,7 @@ int main(int argc, const char *argv[])
          t.tm_mday -= days - 1;
       mktime(&t);
       asprintf(&date, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
-      sdate=strdup(date);
+      sdate = strdup(date);
       t.tm_mday += days;
       mktime(&t);
       asprintf(&edate, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
@@ -195,9 +200,14 @@ int main(int argc, const char *argv[])
          data[d].f = open_memstream(&data[d].path, &data[d].size);
          data[d].m = 'M';
          if (data[d].secondary)
-         {                      // Heating trace
+         {                      // Control trace
             data[d].f2 = open_memstream(&data[d].path2, &data[d].size2);
             data[d].m2 = 'M';
+         }
+         if (data[d].target)
+         {                      // Target trace
+            data[d].f3 = open_memstream(&data[d].path3, &data[d].size3);
+            data[d].m3 = 'M';
          }
       }
    }
@@ -205,6 +215,18 @@ int main(int argc, const char *argv[])
       day++;
       for (d = 0; d < MAX; d++)
       {
+         if (data[d].target)
+         {
+            fclose(data[d].f3);
+            if (*data[d].path3)
+            {
+               xml_t p = xml_element_add(data[d].g, "path");
+               xml_addf(p, "@opacity", "%.1f", (double) day / days);
+	       xml_add(p, "@stroke-dasharray", "1");
+               xml_add(p, "@d", data[d].path3);
+            }
+            free(data[d].path3);
+         }
          fclose(data[d].f);
          if (*data[d].path)
          {
@@ -254,11 +276,18 @@ int main(int argc, const char *argv[])
             fprintf(data[d].f, "%c%d,%d", data[d].m, x, y);
             data[d].m = 'L';
             if (data[d].secondary)
-            {                   // Heating is secondary trace
+            {                   // Control trace
                char on = (*sql_colz(res, data[d].secondary) == 't');
                if (on || data[d].m2 == 'L')
                   fprintf(data[d].f2, "%c%d,%d", data[d].m2, x, y);
                data[d].m2 = (on ? 'L' : 'M');;
+            }
+            if (data[d].target)
+            {                   // Target trace
+               char on = (*sql_colz(res, data[d].target) == 't');
+               if (on || data[d].m3 == 'L')
+                  fprintf(data[d].f3, "%c%d,%d", data[d].m3, x, y);
+               data[d].m3 = (on ? 'L' : 'M');;
             }
             data[d].lastx = x;
             data[d].lasty = y;
@@ -350,11 +379,14 @@ int main(int argc, const char *argv[])
          xml_t t = xml_add(g, "+text", data[d].unit);
          xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) ((data[d].max - 0.1) * data[d].scale));
          xml_add(t, "@alignment-baseline", "hanging");
+	 if(data[d].line)
+	 {
          // Reference line
          int y = data[d].line * data[d].scale;
          xml_t l = xml_element_add(g, "path");
          xml_addf(l, "@d", "M0,%dL%d,%d", y, maxx, y);
          xml_add(l, "@stroke-dasharray", "1");
+	 }
          x++;
       }
    for (int x = xsize; x < maxx; x += xsize)
