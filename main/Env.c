@@ -262,6 +262,8 @@ const char *app_callback(int client, const char *prefix, const char *target, con
       return NULL;
    if (!strcmp(suffix, "send") || !strcmp(suffix, "connect"))
    {
+      fanlast = -1;
+      heatlast = -1;
       sendall();
       return "";
    }
@@ -694,11 +696,8 @@ void app_main()
          if (fan && *fan)
          {
             fanwait = up + fanswitch;
-            if (!revk_link_down())
-            {
-               fantime = up + fanresend;
-               revk_mqtt_send_str(fan);
-            }
+            fantime = up + fanresend;
+            revk_mqtt_send_str(fan);
             if (fanlast > fanmax)
                fanmax = fanlast;
          }
@@ -731,11 +730,8 @@ void app_main()
             if (heat && *heat)
             {
                heatwait = up + heatswitch;
-               if (!revk_link_down())
-               {
-                  heattime = up + heatresend;
-                  revk_mqtt_send_str(heat);
-               }
+               heattime = up + heatresend;
+               revk_mqtt_send_str(heat);
                if (heatlast > heatmax)
                   heatmax = heatlast;
             }
