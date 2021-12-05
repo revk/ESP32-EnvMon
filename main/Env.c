@@ -701,7 +701,7 @@ void app_main()
          }
       }
       static uint32_t heatwait = 0;
-      if (heatwait < up && (heatnightmC || heatdaymC || heatratemC || temp_target))
+      if (heatwait < up && (heatnightmC || heatdaymC || heatratemC || temp_target || heatgpio >= 0 || heaton || heatoff))
       {                         /* Heat control */
          if (temp_target || heatlast == 1)
          {                      /* We have a reference temp to work with or we left on */
