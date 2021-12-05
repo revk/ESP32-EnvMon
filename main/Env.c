@@ -63,6 +63,8 @@ const char TAG[] = "Env";
 	u32(fanresend,600)	\
 	s(heaton)	\
 	s(heatoff)	\
+	s32(heatratemC,0)\
+	s32a(heathourmC,24)\
 	u8(heatswitch,30)	\
 	u32(heatresend,600)	\
 	s8(heatgpio,-1)	\
@@ -76,6 +78,7 @@ const char TAG[] = "Env";
 #define u32(n,d)	uint32_t n;
 #define u16(n,d)	uint16_t n;
 #define s32(n,d)	int32_t n;
+#define s32a(n,q)	int32_t n[q];
 #define s8(n,d)	int8_t n;
 #define u8(n,d)	uint8_t n;
 #define b(n) uint8_t n;
@@ -84,6 +87,7 @@ settings
 #undef u32
 #undef u16
 #undef s32
+#undef s32a
 #undef s8
 #undef u8
 #undef b
@@ -155,9 +159,11 @@ static void reportall(time_t now)
       }
       for (v = values; v; v = v->next)
       {
+#if 0
          if (!v->value)
             jo_null(j, v->tag);
          else
+#endif
             add(v->tag, v->value, v->places);
       }
       if (heatmax >= 0)
@@ -510,6 +516,7 @@ void app_main()
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define u16(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define s32(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
+#define s32a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,SETTING_SIGNED);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define s(n) revk_register(#n,0,0,&n,NULL,0);
@@ -517,6 +524,7 @@ void app_main()
 #undef u32
 #undef u16
 #undef s32
+#undef s32a
 #undef s8
 #undef u8
 #undef b
@@ -653,6 +661,15 @@ void app_main()
       }
       // References
       int32_t temp_target = (oled_dark ? heatnightmC : heatdaymC);
+      if (!temp_target)
+      {
+         temp_target = (heathourmC[t.tm_hour] * (60 - t.tm_min) + heathourmC[(t.tm_hour + 1) % 24] * t.tm_min) / 60;
+         int32_t min;
+         if (heatratemC)
+            for (int h = 1; h < 23; h++)
+               if ((min = heathourmC[(t.tm_hour + h) % 24] - heatratemC * h) > temp_target)
+                  temp_target = min;
+      }
       report("temp-target", -10000, ((float) temp_target) / 1000.0, tempplaces);
       // Report
       reportall(now);
