@@ -667,7 +667,7 @@ void app_main()
          int32_t min;
          if (heatratemC)
             for (int h = 1; h < 23; h++)
-               if ((min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * h) > temp_target)
+               if ((min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * (h * 60 - t.tm_min) / 60) > temp_target)
                   temp_target = min;
       }
       if (temp_target)
