@@ -663,17 +663,18 @@ void app_main()
       int32_t temp_target = (oled_dark ? heatnightmC : heatdaymC);
       if (!temp_target)
       {
-         temp_target = (temphourmC[t.tm_hour] * (60 - t.tm_min) + temphourmC[(t.tm_hour + 1) % 24] * t.tm_min) / 60;
+         int sec = t.tm_min * 60 + t.tm_sec;
+         temp_target = (temphourmC[t.tm_hour] * (3600 - sec) + temphourmC[(t.tm_hour + 1) % 24] * sec) / 3600;
          int32_t min;
          if (heatratemC)
             for (int h = 1; h < 23; h++)
-               if ((min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * (h * 60 - t.tm_min) / 60) > temp_target)
+               if ((min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * (h * 3600 - sec) / 3600) > temp_target)
                   temp_target = min;
       }
       if (temp_target)
          report("temp-target", -10000.0, ((float) temp_target) / 1000.0, 3);
       else
-         report("temp-target", -10000.0, -10000.0, 3); // No target
+         report("temp-target", -10000.0, -10000.0, 3);  // No target
       // Report
       reportall(now);
       static uint32_t fanwait = 0;
