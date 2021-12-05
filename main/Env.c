@@ -158,14 +158,8 @@ static void reportall(time_t now)
          jo_stringf(j, "ts", "%04d-%02d-%02dT%02d:%02d:%02dZ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
       }
       for (v = values; v; v = v->next)
-      {
-#if 0
-         if (!v->value)
-            jo_null(j, v->tag);
-         else
-#endif
+         if (v->value > -10000)
             add(v->tag, v->value, v->places);
-      }
       if (heatmax >= 0)
          jo_bool(j, "heat", heatmax);
       if (fanmax >= 0)
@@ -515,8 +509,8 @@ void app_main()
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define u16(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define s32(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
-#define s32a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,SETTING_SIGNED);
+#define s32(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED|SETTING_LIVE);
+#define s32a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,SETTING_SIGNED|SETTING_LIVE);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define s(n) revk_register(#n,0,0,&n,NULL,0);
@@ -670,7 +664,10 @@ void app_main()
                if ((min = heathourmC[(t.tm_hour + h) % 24] - heatratemC * h) > temp_target)
                   temp_target = min;
       }
-      report("temp-target", -10000, ((float) temp_target) / 1000.0, tempplaces);
+      if (temp_target)
+         report("temp-target", -10000.0, ((float) temp_target) / 1000.0, tempplaces);
+      else
+         report("temp-target", -10000.0, -10000.0, tempplaces); // No target
       // Report
       reportall(now);
       static uint32_t fanwait = 0;
