@@ -64,7 +64,7 @@ const char TAG[] = "Env";
 	s(heaton)	\
 	s(heatoff)	\
 	s32(heatratemC,0)\
-	s32a(heathourmC,24)\
+	s32a(temphourmC,24)\
 	u8(heatswitch,30)	\
 	u32(heatresend,600)	\
 	s8(heatgpio,-1)	\
@@ -657,11 +657,11 @@ void app_main()
       int32_t temp_target = (oled_dark ? heatnightmC : heatdaymC);
       if (!temp_target)
       {
-         temp_target = (heathourmC[t.tm_hour] * (60 - t.tm_min) + heathourmC[(t.tm_hour + 1) % 24] * t.tm_min) / 60;
+         temp_target = (temphourmC[t.tm_hour] * (60 - t.tm_min) + temphourmC[(t.tm_hour + 1) % 24] * t.tm_min) / 60;
          int32_t min;
          if (heatratemC)
             for (int h = 1; h < 23; h++)
-               if ((min = heathourmC[(t.tm_hour + h) % 24] - heatratemC * h) > temp_target)
+               if ((min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * h) > temp_target)
                   temp_target = min;
       }
       if (temp_target)
