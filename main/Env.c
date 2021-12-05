@@ -31,7 +31,7 @@ const char TAG[] = "Env";
 
 #define settings	\
 	u32(reporting,300)	\
-	u8(lag,3)	\
+	u8(lag,5)	\
 	s8(co2sda,25)	\
 	s8(co2scl,26)	\
 	s8(co2address,0x61)	\
@@ -136,7 +136,7 @@ time_t reportlast = 0,
 static void reportall(time_t now)
 {
    //Do reporting of values
-   if ((!reportchange || now < reportchange + lag) && now < reportlast + reporting && now >= reportlast)
+   if ((!reportchange || now < reportchange + lag) && (!reporting || now / reporting <= reportlast / reporting))
       return;
    //Slight delay on changes
    if (values)
