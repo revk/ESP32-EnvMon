@@ -34,6 +34,7 @@ struct log_s {
    vals_t co2;
    vals_t rh;
    vals_t temp;
+   vals_t tempt;
    bools_t heat;
    bools_t fan;
 };
@@ -224,6 +225,8 @@ int main(int argc, const char *argv[])
                sql_sprintf(&s, "INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T", sqltable, l->tag, now);
                if (l->temp.set)
                   sql_sprintf(&s, ",`temp`=%lf,`temph`=%lf,`templ`=%lf", l->temp.latest, l->temp.high, l->temp.low);
+               if (l->tempt.set)
+                  sql_sprintf(&s, ",`tempt`=%lf", l->tempt.latest);
                if (l->rh.set)
                   sql_sprintf(&s, ",`rh`=%lf,`rhh`=%lf,`rhl`=%lf", l->rh.latest, l->rh.high, l->rh.low);
                if (l->co2.set)
@@ -233,6 +236,7 @@ int main(int argc, const char *argv[])
                if (l->fan.set)
                   sql_sprintf(&s, ",`fan`=%#s", l->fan.val ? "true" : "false");
                clearval(&l->temp);
+               clearval(&l->tempt);
                clearval(&l->co2);
                clearval(&l->rh);
                clearbool(&l->heat);
@@ -315,6 +319,8 @@ int main(int argc, const char *argv[])
                if (t)
                   now = (t / interval) * interval;
             }
+            if ((v = j_get(data, "temp-target")))
+               logval("tempt", &l->tempt, v);
             if ((v = j_get(data, "temp")))
                logval("temp", &l->temp, v);
             if ((v = j_get(data, "rh")))
@@ -322,9 +328,9 @@ int main(int argc, const char *argv[])
             if ((v = j_get(data, "co2")))
                logval("co2", &l->co2, v);
             v = j_get(data, "heat");
-               logbool("heat", &l->heat, v && *v == 't');
+            logbool("heat", &l->heat, v && *v == 't');
             v = j_get(data, "fan");
-               logbool("fan", &l->fan, v && *v == 't');
+            logbool("fan", &l->fan, v && *v == 't');
             done(l, 0);
          }
          j_delete(&data);
