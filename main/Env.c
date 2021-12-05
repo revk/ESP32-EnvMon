@@ -136,7 +136,7 @@ time_t reportlast = 0,
 static void reportall(time_t now)
 {
    //Do reporting of values
-   if ((!reportchange || now < reportchange + lag) && (!reporting || now / reporting <= reportlast / reporting))
+   if ((!reportchange || now < reportchange + lag) && (!reporting || now / reporting == reportlast / reporting))
       return;
    //Slight delay on changes
    if (values)
