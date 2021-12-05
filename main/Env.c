@@ -174,26 +174,6 @@ static void reportall(time_t now)
 
 static float report(const char *tag, float last, float this, int places)
 {
-   float mag = powf(10.0, -places);
-   if (last > -10000)
-   {
-      if (this < last)
-      {
-         this += mag * 0.4;     // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
-         if (this >= last)
-            return last;
-      } else if (this > last)
-      {
-         this -= mag * 0.4;     // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
-         if (this <= last)
-            return last;
-      }
-   }
-   // Rounding
-   this = roundf(this / mag) * mag;
-   if (this == last)
-      return last;
-   // Different, record the value
    value_t *v;
    for (v = values; v && v->tag != tag; v = v->next);
    if (!v)
@@ -204,6 +184,25 @@ static float report(const char *tag, float last, float this, int places)
       v->next = values;
       values = v;
    }
+   float mag = powf(10.0, -places);
+   if (last == -10000.0)
+      last = v->value;
+   if (this < last)
+   {
+      this += mag * 0.4;        // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
+      if (this >= last)
+         return last;
+   } else if (this > last)
+   {
+      this -= mag * 0.4;        // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
+      if (this <= last)
+         return last;
+   }
+   // Rounding
+   this = roundf(this / mag) * mag;
+   if (this == last)
+      return last;
+   // Different, record the value
    if (!reportchange)
       reportchange = time(0);
    v->value = this;
