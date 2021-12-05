@@ -92,14 +92,15 @@ settings
 #undef u8
 #undef b
 #undef s
+#define	NOTSET	-10000.0
 static uint8_t logo[LOGOW * LOGOH / 2];
-static float lastco2 = -10000;
-static float lastrh = -10000;
-static float lasttemp = -10000;
-static float lastotemp = -10000;
-static float thisco2 = -10000;
-static float thistemp = -10000;
-static float thisrh = -10000;
+static float lastco2 = NOTSET;
+static float lastrh = NOTSET;
+static float lasttemp = NOTSET;
+static float lastotemp = NOTSET;
+static float thisco2 = NOTSET;
+static float thistemp = NOTSET;
+static float thisrh = NOTSET;
 static int8_t co2port = -1;
 static int8_t num_owb = 0;
 static OneWireBus *owb = NULL;
@@ -158,7 +159,7 @@ static void reportall(time_t now)
          jo_stringf(j, "ts", "%04d-%02d-%02dT%02d:%02d:%02dZ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
       }
       for (v = values; v; v = v->next)
-         if (v->value > -10000)
+         if (v->value > NOTSET)
             add(v->tag, v->value, v->places);
       if (heatmax >= 0)
          jo_bool(j, "heat", heatmax);
@@ -185,25 +186,26 @@ static float report(const char *tag, float last, float this, int places)
       values = v;
    }
    float mag = powf(10.0, -places);
-   if (last == -10000.0)
-      last = v->value;
-   if (this < last)
+   if (last > NOTSET)
    {
-      this += mag * 0.4;        // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
-      if (this >= last)
-         return last;
-   } else if (this > last)
-   {
-      this -= mag * 0.4;        // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
-      if (this <= last)
-         return last;
+      if (this < last)
+      {
+         this += mag * 0.4;     // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
+         if (this >= last)
+            return last;
+      } else if (this > last)
+      {
+         this -= mag * 0.4;     // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
+         if (this <= last)
+            return last;
+      }
    }
    // Rounding
    this = roundf(this / mag) * mag;
    if (this == last)
       return last;
    // Different, record the value
-   if (!reportchange)
+   if (!reportchange && last > NOTSET)
       reportchange = time(0);
    v->value = this;
    return this;
@@ -629,16 +631,16 @@ void app_main()
    /* Main task... */
    time_t showtime = 0;
    char showlogo = 1;
-   float showco2 = -10000;
-   float showtemp = -10000;
-   float showrh = -10000;
+   float showco2 = NOTSET;
+   float showtemp = NOTSET;
+   float showrh = NOTSET;
    void reset(void) {           /* re display all */
       oled_clear(0);
       showlogo = 1;
       showtime = 0;
-      showco2 = -10000;
-      showtemp = -10000;
-      showrh = -10000;
+      showco2 = NOTSET;
+      showtemp = NOTSET;
+      showrh = NOTSET;
    };
    while (1)
    {
@@ -672,9 +674,9 @@ void app_main()
                   temp_target = min;
       }
       if (temp_target)
-         report("temp-target", -10000.0, ((float) temp_target) / 1000.0, 3);
+         report("temp-target", NOTSET, ((float) temp_target) / 1000.0, 3);
       else
-         report("temp-target", -10000.0, -10000.0, 3);  // No target
+         report("temp-target", NOTSET, NOTSET, 3);      // No target
       // Report
       reportall(now);
       static uint32_t fanwait = 0;
@@ -837,7 +839,7 @@ void app_main()
          oled_colour(showco2 < 200 ? 'K' : showco2 > (fanco2on ? : 1000) ? 'R' : showco2 > (fanco2off ? : 750) ? 'Y' : 'G');
          if (showco2 < 200)
             strcpy(s, "?LOW");
-         else if (showco2 >= 10000)
+         else if (showco2 >= 10000.0)
             strcpy(s, "HIGH");
          else
             sprintf(s, "%4d", (int) showco2);
@@ -858,7 +860,7 @@ void app_main()
          showtemp = thistemp;
          int32_t reftemp = temp_target ? : 21000;
          int32_t thismC = thistemp * 1000;
-         if (showtemp == -10000)
+         if (showtemp == NOTSET)
             oled_colour('K');
          else if (reftemp)
             oled_colour(thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');
