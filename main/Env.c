@@ -260,7 +260,12 @@ const char *app_callback(int client, const char *prefix, const char *target, con
 {
    if (client || !prefix || target || strcmp(prefix, "command") || !suffix)
       return NULL;
-   if (!strcmp(suffix, "send") || !strcmp(suffix, "connect"))
+   if (!strcmp(suffix, "send"))
+   {
+      sendall();
+      return "";
+   }
+   if (!strcmp(suffix, "connect"))
    {
       fanlast = -1;
       heatlast = -1;
