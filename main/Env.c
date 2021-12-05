@@ -671,9 +671,9 @@ void app_main()
                   temp_target = min;
       }
       if (temp_target)
-         report("temp-target", -10000.0, ((float) temp_target) / 1000.0, tempplaces);
+         report("temp-target", -10000.0, ((float) temp_target) / 1000.0, 3);
       else
-         report("temp-target", -10000.0, -10000.0, tempplaces); // No target
+         report("temp-target", -10000.0, -10000.0, 3); // No target
       // Report
       reportall(now);
       static uint32_t fanwait = 0;
