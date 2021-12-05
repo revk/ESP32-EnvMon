@@ -694,8 +694,11 @@ void app_main()
          if (fan && *fan)
          {
             fanwait = up + fanswitch;
-            fantime = up + fanresend;
-            revk_mqtt_send_str(fan);
+            if (!revk_link_down())
+            {
+               fantime = up + fanresend;
+               revk_mqtt_send_str(fan);
+            }
             if (fanlast > fanmax)
                fanmax = fanlast;
          }
@@ -728,8 +731,11 @@ void app_main()
             if (heat && *heat)
             {
                heatwait = up + heatswitch;
-               heattime = up + heatresend;
-               revk_mqtt_send_str(heat);
+               if (!revk_link_down())
+               {
+                  heattime = up + heatresend;
+                  revk_mqtt_send_str(heat);
+               }
                if (heatlast > heatmax)
                   heatmax = heatlast;
             }
