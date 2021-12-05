@@ -121,7 +121,8 @@ typedef struct value_s value_t;
 struct value_s {
    value_t *next;
    const char *tag;
-   char value[10];
+   int8_t places;
+   float value;
 };
 value_t *values = NULL;
 time_t reportlast = 0,
@@ -138,6 +139,12 @@ static void reportall(time_t now)
    {
       value_t *v;
       jo_t j = jo_object_alloc();
+      void add(const char *tag, float value, int8_t places) {
+         if (places <= 0)
+            jo_litf(j, tag, "%d", (int) value);
+         else
+            jo_litf(j, tag, "%.*f", places, value);
+      }
       if (now < 1000000000)
          jo_litf(j, "ts", "%ld", now);
       else
@@ -148,10 +155,10 @@ static void reportall(time_t now)
       }
       for (v = values; v; v = v->next)
       {
-         if (!*v->value)
+         if (!v->value)
             jo_null(j, v->tag);
          else
-            jo_lit(j, v->tag, v->value);
+            add(v->tag, v->value, v->places);
       }
       if (heatmax >= 0)
          jo_bool(j, "heat", heatmax);
@@ -168,16 +175,19 @@ static void reportall(time_t now)
 static float report(const char *tag, float last, float this, int places)
 {
    float mag = powf(10.0, -places);
-   if (this < last)
+   if (last > -10000)
    {
-      this += mag * 0.4;        // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
-      if (this >= last)
-         return last;
-   } else if (this > last)
-   {
-      this -= mag * 0.4;        // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
-      if (this <= last)
-         return last;
+      if (this < last)
+      {
+         this += mag * 0.4;     // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
+         if (this >= last)
+            return last;
+      } else if (this > last)
+      {
+         this -= mag * 0.4;     // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
+         if (this <= last)
+            return last;
+      }
    }
    // Rounding
    this = roundf(this / mag) * mag;
@@ -190,15 +200,13 @@ static float report(const char *tag, float last, float this, int places)
    {
       v = malloc(sizeof(*v));
       v->tag = tag;
+      v->places = places;
       v->next = values;
       values = v;
    }
    if (!reportchange)
       reportchange = time(0);
-   if (places <= 0)
-      snprintf(v->value, sizeof(v->value), "%d", (int) this);
-   else
-      snprintf(v->value, sizeof(v->value), "%.*f", places, this);
+   v->value = this;
    return this;
 }
 
@@ -613,16 +621,16 @@ void app_main()
    /* Main task... */
    time_t showtime = 0;
    char showlogo = 1;
-   float showco2 = -1000;
-   float showtemp = -1000;
-   float showrh = -1000;
+   float showco2 = -10000;
+   float showtemp = -10000;
+   float showrh = -10000;
    void reset(void) {           /* re display all */
       oled_clear(0);
       showlogo = 1;
       showtime = 0;
-      showco2 = -1000;
-      showtemp = -1000;
-      showrh = -1000;
+      showco2 = -10000;
+      showtemp = -10000;
+      showrh = -10000;
    };
    while (1)
    {
@@ -632,7 +640,6 @@ void app_main()
       localtime_r(&now, &t);
       uint32_t hhmm = t.tm_hour * 100 + t.tm_min;
       uint32_t up = uptime();
-      reportall(now);
       if (!reportconfig && up > 10)
          sendconfig();
       if (hhmmnight || hhmmday)
@@ -644,6 +651,11 @@ void app_main()
          else if (hhmm >= hhmmnight)
             oled_dark = 1;
       }
+      // References
+      int32_t temp_target = (oled_dark ? heatnightmC : heatdaymC);
+      report("temp-target", -10000, ((float) temp_target) / 1000.0, tempplaces);
+      // Report
+      reportall(now);
       static uint32_t fanwait = 0;
       if (fanwait < up && (fanco2on || fanco2off || fanrhon || fanrhoff))
       {                         /* Fan control */
@@ -678,14 +690,13 @@ void app_main()
       static uint32_t heatwait = 0;
       if (heatwait < up && (heatnightmC || heatdaymC))
       {                         /* Heat control */
-         int32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
-         if (heattemp || heatlast == 1)
+         if (temp_target || heatlast == 1)
          {                      /* We have a reference temp to work with or we left on */
             if (heatresend && heattime < up)
                heatlast = -1;
             const char *heat = NULL;
             int32_t thismC = thistemp * 1000;
-            if (!heattemp || thismC > heattemp)
+            if (!temp_target || thismC > temp_target)
             {                   // Heat off
                if (heatlast != 0)
                {                // Change
@@ -824,16 +835,12 @@ void app_main()
       if (thistemp != showtemp)
       {
          showtemp = thistemp;
-         int32_t heattemp = (oled_dark ? heatnightmC : heatdaymC);
-         if (!heattemp)
-            heattemp = (oled_dark ? heatdaymC : heatnightmC);   /* back up for when only one set so we show colour */
-         if (!heattemp)
-            heattemp = 21000;   // Back up for colour
+         int32_t reftemp = temp_target ? : 21000;
          int32_t thismC = thistemp * 1000;
          if (showtemp == -10000)
             oled_colour('K');
-         else if (heattemp)
-            oled_colour(thismC > heattemp + 500 ? 'R' : thismC > heattemp - 500 ? 'G' : 'B');
+         else if (reftemp)
+            oled_colour(thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');
          else
             oled_colour('W');
          oled_pos(10, y, OLED_T | OLED_L | OLED_H);
