@@ -278,7 +278,7 @@ int main(int argc, const char *argv[])
             // Extra
             if (data[d].secondary)
             {                   // Control trace
-               char on = (*sql_col(res, data[d].secondary) == 't');
+               char on = (*sql_colz(res, data[d].secondary) == 't');
                if (on || data[d].m2 == 'L')
                   fprintf(data[d].f2, "%c%d,%d", data[d].m2, x, y);
                data[d].m2 = (on ? 'L' : 'M');
