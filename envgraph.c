@@ -179,7 +179,7 @@ int main(int argc, const char *argv[])
       asprintf(&ldate, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
    }
    SQL_RES *res = sql_safe_query_store_free(&sql,
-                                            sql_printf("SELECT * FROM `%#S` WHERE `tag`=%#s AND `when`>=%#s AND `when`<%#s ORDER BY `when`",
+                                            sql_printf("SELECT * FROM `%#S` WHERE `tag`=%#s AND `when`>=%#s AND `when`<=%#s ORDER BY `when`",
                                                        sqltable, tag, date, edate));
    int d;
    int day = 0;
@@ -322,7 +322,7 @@ int main(int argc, const char *argv[])
    sql_close(&sql);
    eod();
    for (d = 0; d < MAX; d++)
-      if (data[d].lastx)
+      if (data[d].lastx && data[d].lastx < 24 * xsize)
       {
          xml_t c = xml_element_add(data[d].g, "circle");
          xml_addf(c, "@cx", "%d", data[d].lastx);
