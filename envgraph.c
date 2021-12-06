@@ -222,7 +222,7 @@ int main(int argc, const char *argv[])
             {
                xml_t p = xml_element_add(data[d].g, "path");
                xml_addf(p, "@opacity", "%.1f", (double) day / days);
-               xml_add(p, "@stroke-dasharray", "1");
+               xml_add(p, "@stroke-dasharray", "1 2");
                xml_add(p, "@d", data[d].path3);
             }
             free(data[d].path3);
@@ -273,18 +273,21 @@ int main(int argc, const char *argv[])
             if (x > maxx)
                maxx = x;
             int y = v * data[d].scale;
-            fprintf(data[d].f, "%c%d,%d", data[d].m, x, y);
-            data[d].m = 'L';
             data[d].lastx = x;
             data[d].lasty = y;
             // Extra
             if (data[d].secondary)
             {                   // Control trace
-               char on = (*sql_colz(res, data[d].secondary) == 't');
+               char on = (*sql_col(res, data[d].secondary) == 't');
                if (on || data[d].m2 == 'L')
                   fprintf(data[d].f2, "%c%d,%d", data[d].m2, x, y);
-               data[d].m2 = (on ? 'L' : 'M');;
+               data[d].m2 = (on ? 'L' : 'M');
             }
+            fprintf(data[d].f, "%c%d,%d", data[d].m, x, y);
+            if (data[d].m2 == 'L')
+               data[d].m = 'M';
+            else
+               data[d].m = 'L';
             if (data[d].target)
             {                   // Target trace
                const char *val = sql_col(res, data[d].target);
@@ -363,6 +366,7 @@ int main(int argc, const char *argv[])
    }
    // Axis
    xml_add(axis, "@opacity", "0.5");
+   xml_add(top, "@stroke-linecap", "round");
    xml_add(top, "@stroke-linejoin", "round");
    xml_add(top, "@font-family", "sans-serif");
    xml_add(top, "@font-size", "15");
@@ -383,19 +387,19 @@ int main(int argc, const char *argv[])
             if (d == CO2 && v < 0)
                continue;
             xml_t t = xml_addf(g, "+text", "%.0f", v);
-            xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) (v * data[d].scale));
-            xml_add(t, "@alignment-baseline", "middle");
+            xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) (v * data[d].scale - 5));
+            //xml_add(t, "@alignment-baseline", "middle"); // Does not convert to pdf, hence -5
          }
          xml_t t = xml_add(g, "+text", data[d].unit);
-         xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) ((data[d].max - 0.1) * data[d].scale));
-         xml_add(t, "@alignment-baseline", "hanging");
+         xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) ((data[d].max - 0.1) * data[d].scale - 10));
+         //xml_add(t, "@alignment-baseline", "hanging"); // Does not convert to pdf, hence -10
          if (data[d].line)
          {
             // Reference line
             int y = data[d].line * data[d].scale;
             xml_t l = xml_element_add(g, "path");
             xml_addf(l, "@d", "M0,%dL%d,%d", y, maxx, y);
-            xml_add(l, "@stroke-dasharray", "1");
+            xml_add(l, "@stroke-dasharray", "1 2");
          }
          x++;
       }
