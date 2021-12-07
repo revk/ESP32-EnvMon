@@ -189,7 +189,7 @@ static float report(const char *tag, float last, float this, int places)
    }
    float mag = powf(10.0, -places);
    if (last > NOTSET)
-   {
+   {                            // Hysteresis
       if (this < last)
       {
          this += mag * 0.4;     // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
@@ -202,13 +202,15 @@ static float report(const char *tag, float last, float this, int places)
             return last;
       }
    }
-   // Rounding
-   this = roundf(this / mag) * mag;
-   if (this == last)
-      return last;
-   // Different, record the value
-   if (!reportchange && last > NOTSET)
-      reportchange = time(0);
+   this = roundf(this / mag) * mag;     // Rounding
+   if (last > NOTSET)
+   {
+      if (this == last)
+         return last;
+      // Different, record the value
+      if (!reportchange)
+         reportchange = time(0);
+   }
    v->value = this;
    return this;
 }
