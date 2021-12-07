@@ -203,11 +203,9 @@ static float report(const char *tag, float last, float this, int places)
       }
    }
    if (this > NOTSET)
-   {
       this = roundf(this / mag) * mag;  // Rounding
-      if (this != last && !reportchange)
-         reportchange = time(0);
-   }
+   if (last > NOTSET && this != last && !reportchange)
+      reportchange = time(0);
    v->value = this;
    return this;
 }
