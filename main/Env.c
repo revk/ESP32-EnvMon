@@ -6,6 +6,7 @@ const char TAG[] = "Env";
 #include <driver/i2c.h>
 #include <hal/spi_types.h>
 #include <math.h>
+#include <sntp.h>
 
 #include "owb.h"
 #include "owb_rmt.h"
@@ -137,10 +138,10 @@ time_t reportlast = 0,
 
 static void reportall(time_t now)
 {
-   //Do reporting of values
+   // Do reporting of values
    if ((!reportchange || now < reportchange + lag) && (!reporting || now / reporting == reportlast / reporting))
       return;
-   //Slight delay on changes
+   // Slight delay on changes
    if (values)
    {
       value_t *v;
@@ -686,7 +687,8 @@ void app_main()
       else
          report("temp-target", NOTSET, NOTSET, 3);      // No target
       // Report
-      reportall(now);
+      if (up > 600 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
+         reportall(now);        // Don't report if clock duff
       static uint32_t fanwait = 0;
       if (fanwait < up && (fanco2on || fanco2off || fanrhon || fanrhoff))
       {                         /* Fan control */
