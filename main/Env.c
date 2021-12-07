@@ -649,6 +649,7 @@ void app_main()
       time_t now = time(0);
       struct tm t;
       localtime_r(&now, &t);
+      int sec = t.tm_min * 60 + t.tm_sec;
       uint32_t hhmm = t.tm_hour * 100 + t.tm_min;
       uint32_t up = uptime();
       if (!reportconfig && up > 10)
@@ -663,19 +664,20 @@ void app_main()
             oled_dark = 1;
       }
       // References
+      // Temp should either use a day/night temp, or a temphourmC (setting temp on the hour for 00:00 to 23:00). Zero meaning not set
+      // heatratemC allows for getting to some future temphourmC. heatminmC applies anyway
       int32_t temp_target = (oled_dark ? heatnightmC : heatdaymC);
       if (!temp_target)
       {
-         int sec = t.tm_min * 60 + t.tm_sec;
-         if (temphourmC[t.tm_hour] || temphourmC[(t.tm_hour + 1) % 24])
+         if (temphourmC[t.tm_hour] && temphourmC[(t.tm_hour + 1) % 24])
             temp_target = (temphourmC[t.tm_hour] * (3600 - sec) + temphourmC[(t.tm_hour + 1) % 24] * sec) / 3600;
-         if (heatratemC)
-         {                      // Allow time to get to a target temperature
-            int32_t min;
-            for (int h = 1; h < 23; h++)
-               if (temphourmC[(t.tm_hour + h) % 24] && (min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * (h * 3600 - sec) / 3600) > temp_target)
-                  temp_target = min;
-         }
+      }
+      if (heatratemC)
+      {                         // Allow time to get to a target temperature if any hour temps are set
+         int32_t min;
+         for (int h = 1; h < 23; h++)
+            if (temphourmC[(t.tm_hour + h) % 24] && (min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * (h * 3600 - sec) / 3600) > temp_target)
+               temp_target = min;
       }
       if (temp_target < heatminmC)
          temp_target = heatminmC;
