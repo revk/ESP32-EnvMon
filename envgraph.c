@@ -294,10 +294,12 @@ int main(int argc, const char *argv[])
                if (val)
                {
                   double v = strtod(val, NULL);
+#if 0	// Can rather distort temp scale, and is not really needed - the issue is when it slopes to zero, etc.
                   if (!data[d].count || data[d].min > v)
                      data[d].min = v;
                   if (!data[d].count || data[d].max < v)
                      data[d].max = v;
+#endif
                   int y = v * data[d].scale;
                   fprintf(data[d].f3, "%c%d,%d", data[d].m3, x, y);
                   data[d].m3 = 'L';

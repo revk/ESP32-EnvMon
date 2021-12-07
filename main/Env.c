@@ -70,6 +70,7 @@ const char TAG[] = "Env";
 	s8(heatgpio,-1)	\
 	s32(heatdaymC,0)	\
 	s32(heatnightmC,0)	\
+	s32(heatminmC,0)	\
 	u16(hhmmnight,0)	\
 	u16(hhmmday,0)		\
 	b(nologo)	\
@@ -666,13 +667,18 @@ void app_main()
       if (!temp_target)
       {
          int sec = t.tm_min * 60 + t.tm_sec;
-         temp_target = (temphourmC[t.tm_hour] * (3600 - sec) + temphourmC[(t.tm_hour + 1) % 24] * sec) / 3600;
-         int32_t min;
+         if (temphourmC[t.tm_hour] || temphourmC[(t.tm_hour + 1) % 24])
+            temp_target = (temphourmC[t.tm_hour] * (3600 - sec) + temphourmC[(t.tm_hour + 1) % 24] * sec) / 3600;
          if (heatratemC)
+         {                      // Allow time to get to a target temperature
+            int32_t min;
             for (int h = 1; h < 23; h++)
-               if ((min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * (h * 3600 - sec) / 3600) > temp_target)
+               if (temphourmC[(t.tm_hour + h) % 24] && (min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * (h * 3600 - sec) / 3600) > temp_target)
                   temp_target = min;
+         }
       }
+      if (temp_target < heatminmC)
+         temp_target = heatminmC;
       if (temp_target)
          report("temp-target", NOTSET, ((float) temp_target) / 1000.0, 3);
       else
