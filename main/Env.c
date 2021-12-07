@@ -202,9 +202,12 @@ static float report(const char *tag, float last, float this, int places)
             return last;
       }
    }
-   this = roundf(this / mag) * mag;     // Rounding
-   if (this > NOTSET && this != last && !reportchange)
-      reportchange = time(0);
+   if (this > NOTSET)
+   {
+      this = roundf(this / mag) * mag;  // Rounding
+      if (this != last && !reportchange)
+         reportchange = time(0);
+   }
    v->value = this;
    return this;
 }
@@ -683,8 +686,8 @@ void app_main()
       else
          report("temp-target", NOTSET, NOTSET, 3);      // No target
       // Report
-      if (up > 600 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
-         reportall(now);        // Don't report if clock duff
+      if (up > 60 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
+         reportall(now);        // Don't report right away if clock may be duff
       static uint32_t fanwait = 0;
       if (fanwait < up && (fanco2on || fanco2off || fanrhon || fanrhoff))
       {                         /* Fan control */
