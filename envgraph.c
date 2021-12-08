@@ -24,6 +24,9 @@ int main(int argc, const char *argv[])
    const char *tag = NULL;
    const char *title = NULL;
    const char *control = NULL;
+   char *tempcol = "#f00";
+   char *co2col = "#080";
+   char *rhcol = "#00f";
    char *date = NULL;
    double xsize = 36;
    double ysize = 36;
@@ -39,6 +42,8 @@ int main(int argc, const char *argv[])
    int only = 0;
    int back = 0;
    int temptop = 0;
+   int co2top = 0;
+   int rhtop = 0;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
       const struct poptOption optionsTable[] = {
@@ -62,6 +67,8 @@ int main(int argc, const char *argv[])
          { "title", 'T', POPT_ARG_STRING, &title, 0, "Title", "text" },
          { "days", 'N', POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &days, 0, "Days", "N" },
          { "temp-top", 0, POPT_ARG_INT, &temptop, 0, "Top temp", "C" },
+         { "co2-top", 0, POPT_ARG_INT, &co2top, 0, "Top co2", "PPM" },
+         { "rh-top", 0, POPT_ARG_INT, &rhtop, 0, "Top rh", "%" },
          { "back", 0, POPT_ARG_INT, &back, 0, "Back days", "N" },
          { "control", 'C', POPT_ARG_STRING, &control, 0, "Control", "[-]N[T/C/R]" },
          { "spacing", 0, POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &spacing, 0, "Spacing", "N" },
@@ -119,9 +126,9 @@ int main(int argc, const char *argv[])
       int lasty;
       int count;
    } data[MAX] = {
-    { arg: "co2", secondary: "fan", colour: "green", scale: ysize / co2step, line: co2line, unit:"ppm" },
-    { arg: "rh", colour: "blue", scale: ysize / rhstep, line: rhline, unit:"%" },
-    { arg: "temp", secondary: "heat", target: "tempt", colour: "red", scale: ysize / tempstep, line: templine, unit:"℃" },
+    { arg: "co2", secondary: "fan", scale: ysize / co2step, line: co2line, unit:"ppm" },
+    { arg: "rh", scale: ysize / rhstep, line: rhline, unit:"%" },
+    { arg: "temp", secondary: "heat", target: "tempt", scale: ysize / tempstep, line: templine, unit:"℃" },
    };
 
    if (control)
@@ -146,23 +153,49 @@ int main(int argc, const char *argv[])
       }
       while (isalpha(*control))
       {
-         if (tolower(*control) == 't')
-            only |= ONLY_TEMP;
-         if (tolower(*control) == 'c')
-            only |= ONLY_CO2;
-         if (tolower(*control) == 'r')
-            only |= ONLY_RH;
-         control++;
-      }
-      if (isdigit(*control) && (only == ONLY_TEMP))
-      {
-         temptop = 0;
+         char t = tolower(*control++);
+         int v = 0;
          while (isdigit(*control))
-            temptop = temptop * 10 + *control++ - '0';
+            v = v * 10 + *control++ - '0';
+         char *col = NULL;
+         if (*control == '=')
+         {
+            control++;
+            col = (char *) control;
+            while (isxdigit(*control))
+               control++;
+            col = strndup(col-1, control+1 - col);
+	    *col='#';
+         }
+         if (t == 't')
+         {
+            only |= ONLY_TEMP;
+            temptop = v;
+            tempcol = col;
+         }
+         if (t == 'c')
+         {
+            only |= ONLY_CO2;
+            co2top = v;
+            co2col = col;
+         }
+         if (t == 'r')
+         {
+            only |= ONLY_RH;
+            rhtop = v;
+            rhcol = col;
+         }
       }
    }
    if (temptop)
       data[TEMP].max = temptop;
+   data[TEMP].colour = tempcol;
+   if (co2top)
+      data[CO2].max = co2top;
+   data[CO2].colour = co2col;
+   if (rhtop)
+      data[RH].max = rhtop;
+   data[RH].colour = rhcol;
    SQL sql;
    sql_real_connect(&sql, sqlhostname, sqlusername, sqlpassword, sqldatabase, 0, NULL, 0, 1, sqlconffile);
    char *sdate = NULL;
@@ -276,7 +309,7 @@ int main(int argc, const char *argv[])
             double v = strtod(val, NULL);
             if (!data[d].count || data[d].min > v)
                data[d].min = v;
-            if ((!data[d].count &&!data[d].max)|| data[d].max < v)
+            if ((!data[d].count && !data[d].max) || data[d].max < v)
                data[d].max = v;
             data[d].count++;
             int x = (xml_time(when) - start) * xsize / 3600;
