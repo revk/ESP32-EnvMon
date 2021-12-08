@@ -38,6 +38,7 @@ int main(int argc, const char *argv[])
    int spacing = 5;
    int only = 0;
    int back = 0;
+   int temptop = 0;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
       const struct poptOption optionsTable[] = {
@@ -60,6 +61,7 @@ int main(int argc, const char *argv[])
          { "date", 'D', POPT_ARG_STRING, &date, 0, "Date", "YYYY-MM-DD" },
          { "title", 'T', POPT_ARG_STRING, &title, 0, "Title", "text" },
          { "days", 'N', POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &days, 0, "Days", "N" },
+         { "temp-top", 0, POPT_ARG_INT, &temptop, 0, "Top temp", "C" },
          { "back", 0, POPT_ARG_INT, &back, 0, "Back days", "N" },
          { "control", 'C', POPT_ARG_STRING, &control, 0, "Control", "[-]N[T/C/R]" },
          { "spacing", 0, POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &spacing, 0, "Spacing", "N" },
@@ -152,7 +154,15 @@ int main(int argc, const char *argv[])
             only |= ONLY_RH;
          control++;
       }
+      if (isdigit(*control) && (only == ONLY_TEMP))
+      {
+         temptop = 0;
+         while (isdigit(*control))
+            temptop = temptop * 10 + *control++ - '0';
+      }
    }
+   if (temptop)
+      data[TEMP].max = temptop;
    SQL sql;
    sql_real_connect(&sql, sqlhostname, sqlusername, sqlpassword, sqldatabase, 0, NULL, 0, 1, sqlconffile);
    char *sdate = NULL;
@@ -266,7 +276,7 @@ int main(int argc, const char *argv[])
             double v = strtod(val, NULL);
             if (!data[d].count || data[d].min > v)
                data[d].min = v;
-            if (!data[d].count || data[d].max < v)
+            if ((!data[d].count &&!data[d].max)|| data[d].max < v)
                data[d].max = v;
             data[d].count++;
             int x = (xml_time(when) - start) * xsize / 3600;
@@ -294,7 +304,7 @@ int main(int argc, const char *argv[])
                if (val)
                {
                   double v = strtod(val, NULL);
-#if 0	// Can rather distort temp scale, and is not really needed - the issue is when it slopes to zero, etc.
+#if 0                           // Can rather distort temp scale, and is not really needed - the issue is when it slopes to zero, etc.
                   if (!data[d].count || data[d].min > v)
                      data[d].min = v;
                   if (!data[d].count || data[d].max < v)
