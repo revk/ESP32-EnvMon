@@ -171,19 +171,19 @@ int main(int argc, const char *argv[])
          {
             only |= ONLY_TEMP;
             temptop = v;
-            tempcol = col;
+            if(col)tempcol = col;
          }
          if (t == 'c')
          {
             only |= ONLY_CO2;
             co2top = v;
-            co2col = col;
+            if(col)co2col = col;
          }
          if (t == 'r')
          {
             only |= ONLY_RH;
             rhtop = v;
-            rhcol = col;
+            if(col)rhcol = col;
          }
       }
    }
