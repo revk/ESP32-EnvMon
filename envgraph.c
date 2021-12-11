@@ -37,6 +37,9 @@ int main(int argc, const char *argv[])
    double templine = 0;
    double rhline = 30;
    int debug = 0;
+   int nogrid = 0;
+   int noaxis = 0;
+   int nodate = 0;
    int days = 1;
    int spacing = 5;
    int only = 0;
@@ -72,6 +75,9 @@ int main(int argc, const char *argv[])
          { "back", 0, POPT_ARG_INT, &back, 0, "Back days", "N" },
          { "control", 'C', POPT_ARG_STRING, &control, 0, "Control", "[-]N[T/C/R]" },
          { "spacing", 0, POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &spacing, 0, "Spacing", "N" },
+         { "no-grid", 0, POPT_ARG_NONE, &nogrid, 0, "No grid" },
+         { "no-axis", 0, POPT_ARG_NONE, &noaxis, 0, "No axis" },
+         { "no-date", 0, POPT_ARG_NONE, &nodate, 0, "No date" },
          { "debug", 'V', POPT_ARG_NONE, &debug, 0, "Debug" },
          POPT_AUTOHELP { }
       };
@@ -164,26 +170,29 @@ int main(int argc, const char *argv[])
             col = (char *) control;
             while (isxdigit(*control))
                control++;
-            col = strndup(col-1, control+1 - col);
-	    *col='#';
+            col = strndup(col - 1, control + 1 - col);
+            *col = '#';
          }
          if (t == 't')
          {
             only |= ONLY_TEMP;
             temptop = v;
-            if(col)tempcol = col;
+            if (col)
+               tempcol = col;
          }
          if (t == 'c')
          {
             only |= ONLY_CO2;
             co2top = v;
-            if(col)co2col = col;
+            if (col)
+               co2col = col;
          }
          if (t == 'r')
          {
             only |= ONLY_RH;
             rhtop = v;
-            if(col)rhcol = col;
+            if (col)
+               rhcol = col;
          }
       }
    }
@@ -395,65 +404,69 @@ int main(int argc, const char *argv[])
    for (d = 0; d < MAX; d++)
       if (data[d].count)
          data[d].max = data[d].min + (double) maxy / data[d].scale;
-   // Grid
-   xml_add(grid, "@stroke", "black");
-   xml_add(grid, "@fill", "none");
-   xml_add(grid, "@opacity", "0.1");
-   for (int y = 0; y <= maxy; y += ysize)
-   {
-      xml_t l = xml_element_add(grid, "path");
-      xml_addf(l, "@d", "M0,%dL%d,%d", y, maxx, y);
-   }
-   for (int x = 0; x <= maxx; x += xsize)
-   {
-      xml_t l = xml_element_add(grid, "path");
-      xml_addf(l, "@d", "M%d,0L%d,%d", x, x, maxy);
-   }
-   // Axis
-   xml_add(axis, "@opacity", "0.5");
-   xml_add(top, "@stroke-linecap", "round");
-   xml_add(top, "@stroke-linejoin", "round");
-   xml_add(top, "@font-family", "sans-serif");
-   xml_add(top, "@font-size", "15");
-   int x = 0;
-   for (d = 0; d < MAX; d++)
-      if (data[d].count)
+   if (!nogrid)
+   {                            // Grid
+      xml_add(grid, "@stroke", "black");
+      xml_add(grid, "@fill", "none");
+      xml_add(grid, "@opacity", "0.1");
+      for (int y = 0; y <= maxy; y += ysize)
       {
-         xml_t g = xml_element_add(data[d].g, "g");
-         xml_add(g, "@opacity", "0.5");
-         xml_add(g, "@text-anchor", "end");
-         xml_add(g, "@fill", data[d].colour);
-         for (double v = data[d].min + ysize / data[d].scale; v < data[d].max; v += ysize / data[d].scale)
-         {
-            if (d == RH && v < 0)
-               continue;
-            if (d == RH && v > 100)
-               break;
-            if (d == CO2 && v < 0)
-               continue;
-            xml_t t = xml_addf(g, "+text", "%.0f", v);
-            xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) (v * data[d].scale - 5));
-            //xml_add(t, "@alignment-baseline", "middle"); // Does not convert to pdf, hence -5
-         }
-         xml_t t = xml_add(g, "+text", data[d].unit);
-         xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) ((data[d].max - 0.1) * data[d].scale - 10));
-         //xml_add(t, "@alignment-baseline", "hanging"); // Does not convert to pdf, hence -10
-         if (data[d].line)
-         {
-            // Reference line
-            int y = data[d].line * data[d].scale;
-            xml_t l = xml_element_add(g, "path");
-            xml_addf(l, "@d", "M0,%dL%d,%d", y, maxx, y);
-            xml_add(l, "@stroke-dasharray", "1 2");
-         }
-         x++;
+         xml_t l = xml_element_add(grid, "path");
+         xml_addf(l, "@d", "M0,%dL%d,%d", y, maxx, y);
       }
-   for (int x = xsize; x < maxx; x += xsize)
-   {
-      xml_t t = xml_addf(axis, "+text", "%02d", (int) (x / xsize) % 24);
-      xml_addf(t, "@x", "%d", x);
-      xml_addf(t, "@y", "%d", maxy - 2);
-      xml_add(axis, "@text-anchor", "middle");
+      for (int x = 0; x <= maxx; x += xsize)
+      {
+         xml_t l = xml_element_add(grid, "path");
+         xml_addf(l, "@d", "M%d,0L%d,%d", x, x, maxy);
+      }
+   }
+   if (!noaxis)
+   {                            // Axis
+      xml_add(axis, "@opacity", "0.5");
+      xml_add(top, "@stroke-linecap", "round");
+      xml_add(top, "@stroke-linejoin", "round");
+      xml_add(top, "@font-family", "sans-serif");
+      xml_add(top, "@font-size", "15");
+      int x = 0;
+      for (d = 0; d < MAX; d++)
+         if (data[d].count)
+         {
+            xml_t g = xml_element_add(data[d].g, "g");
+            xml_add(g, "@opacity", "0.5");
+            xml_add(g, "@text-anchor", "end");
+            xml_add(g, "@fill", data[d].colour);
+            for (double v = data[d].min + ysize / data[d].scale; v < data[d].max; v += ysize / data[d].scale)
+            {
+               if (d == RH && v < 0)
+                  continue;
+               if (d == RH && v > 100)
+                  break;
+               if (d == CO2 && v < 0)
+                  continue;
+               xml_t t = xml_addf(g, "+text", "%.0f", v);
+               xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) (v * data[d].scale - 5));
+               //xml_add(t, "@alignment-baseline", "middle"); // Does not convert to pdf, hence -5
+            }
+            xml_t t = xml_add(g, "+text", data[d].unit);
+            xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) ((data[d].max - 0.1) * data[d].scale - 10));
+            //xml_add(t, "@alignment-baseline", "hanging"); // Does not convert to pdf, hence -10
+            if (data[d].line)
+            {
+               // Reference line
+               int y = data[d].line * data[d].scale;
+               xml_t l = xml_element_add(g, "path");
+               xml_addf(l, "@d", "M0,%dL%d,%d", y, maxx, y);
+               xml_add(l, "@stroke-dasharray", "1 2");
+            }
+            x++;
+         }
+      for (int x = xsize; x < maxx; x += xsize)
+      {
+         xml_t t = xml_addf(axis, "+text", "%02d", (int) (x / xsize) % 24);
+         xml_addf(t, "@x", "%d", x);
+         xml_addf(t, "@y", "%d", maxy - 2);
+         xml_add(axis, "@text-anchor", "middle");
+      }
    }
    if (title)
    {
@@ -478,17 +491,21 @@ int main(int argc, const char *argv[])
          xml_add(t, "@text-anchor", "end");
          txt = e;
       }
-      y += 17;
-      xml_t t = xml_element_add(top, "text");
-      if (strcmp(sdate, ldate))
-         asprintf(&txt, "%s⇒%s", sdate, ldate);
-      else
-         asprintf(&txt, "%s", date);
-      xml_element_set_content(t, txt);
-      xml_addf(t, "@x", "%d", maxx);
-      xml_addf(t, "@y", "%d", y);
-      xml_add(t, "@text-anchor", "end");
       free(txt);
+      if (!nodate)
+      {
+         y += 17;
+         xml_t t = xml_element_add(top, "text");
+         if (strcmp(sdate, ldate))
+            asprintf(&txt, "%s⇒%s", sdate, ldate);
+         else
+            asprintf(&txt, "%s", date);
+         xml_element_set_content(t, txt);
+         xml_addf(t, "@x", "%d", maxx);
+         xml_addf(t, "@y", "%d", y);
+         xml_add(t, "@text-anchor", "end");
+         free(txt);
+      }
    }
    xml_addf(svg, "@width", "%d", maxx + 1);
    xml_addf(svg, "@height", "%d", maxy + 1);
