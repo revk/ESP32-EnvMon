@@ -5,7 +5,7 @@
 
 PROJECT_NAME := Env
 
-all:	envlog envgraph
+all:	envlog envgraph taspowerlog taspowersvg
 	idf.py build
 
 flash:
@@ -59,10 +59,16 @@ CCOPTS=${SQLINC} -I. -I/usr/local/ssl/include -D_GNU_SOURCE -g -Wall -funsigned-
 OPTS=-L/usr/local/ssl/lib ${SQLLIB} ${CCOPTS}
 
 envlog: envlog.c SQLlib/sqllib.o AJL/ajl.o
-	cc -O -o $@ $< ${OPTS} -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAJL AJL/ajl.o
+	cc -O -o $@ $< -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAJL AJL/ajl.o ${OPTS}
 
 envgraph: envgraph.c SQLlib/sqllib.o AXL/axl.o
-	cc -O -o $@ $< ${OPTS} -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAXL AXL/axl.o -lcurl
+	cc -O -o $@ $< -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAXL AXL/axl.o -lcurl ${OPTS}
+
+taspowerlog: taspowerlog.c SQLlib/sqllib.o AJL/ajl.o
+	cc -O -o $@ $< -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAJL AJL/ajl.o ${OPTS}
+
+taspowersvg: taspowersvg.c SQLlib/sqllib.o AXL/axl.o
+	cc -O -o $@ $< -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAXL AXL/axl.o -lcurl ${OPTS}
 
 PCBCase/case: PCBCase/case.c
 	make -C PCBCase
