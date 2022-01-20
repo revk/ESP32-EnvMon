@@ -287,7 +287,7 @@ int main(int argc, const char *argv[])
    } else
    {
       periods = 24;             // DST causes gap or double on change...
-      q = sql_printf("SELECT *,substring(`ts`,12,8) AS `P`,sum(if(`w` is null,`power`,`w`)) AS `T`,sum(if(`w` is null,`power`,`w`/`factor`)) AS `TF` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`", sqltable, Y, M, D);
+      q = sql_printf("SELECT *,substring(`ts`,12,8) AS `P`,sum(if(`w` is null,`power`,`w`)) AS `T`,sum(if(`w` is null,`power`,`w`)/`factor`) AS `TF` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`", sqltable, Y, M, D);
    }
    SQL_RES *res = sql_safe_query_store_free(&sql, q);
    // Plot
