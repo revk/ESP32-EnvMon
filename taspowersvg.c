@@ -392,12 +392,16 @@ int main(int argc, const char *argv[])
          t = xml_element_add(g, "path");
          xml_add(t, "@fill", "none");
          colour(t, "@stroke", d->device);
-         xml_add(t, "@stroke-dasharray", "1 2");
+         if (!raw)
+            xml_add(t, "@stroke-dasharray", "1 2");
          xml_add(t, "@d", path);
-         t = xml_element_add(g, "path");
-         xml_add(t, "@fill", "none");
-         colour(t, "@stroke", d->device);
-         xml_add(t, "@d", path2);
+         if (!raw)
+         {
+            t = xml_element_add(g, "path");
+            xml_add(t, "@fill", "none");
+            colour(t, "@stroke", d->device);
+            xml_add(t, "@d", path2);
+         }
          free(path);
          free(path2);
       }
