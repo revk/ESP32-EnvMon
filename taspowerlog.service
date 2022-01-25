@@ -1,0 +1,15 @@
+[Unit]
+Description=Tasmota Power logging
+After=mysql.service
+
+[Service]
+Type=simple
+User=adrian
+Group=adrian
+WorkingDirectory=/tmp
+ExecStart=/projects/github/ESP32-EnvMon/taspowerlog
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -11,3 +11,5 @@ build/*
 sdkconfig
 envlog
 envgraph
+taspowerlog
+taspowersvg
