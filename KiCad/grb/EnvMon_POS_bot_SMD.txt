@@ -1,0 +1,15 @@
+### Module positions - created on 2022-01-25 11:14
+### Printed by pcb_positions plugin
+## Unit = mm, Angle = deg.
+## Pcb Height 37.050mm, Pcb Width 44.550mm [based on Edge bounding box]
+## Side : bottom
+## Board Aux Origin: 0.000mm ,0.000mm
+# Ref         Val                 Package                       PosX       PosY       Pin1_PosX  Pin1_PosY    Rot     Side      Type
+R8            NF                  R_1206_3216Metric_Pad1.30x1.. 111.5500   -96.9500   111.5500   -95.4000    -90.0    bottom    SMD
+R9            NF                  R_1206_3216Metric_Pad1.30x1.. 114.0500   -96.9500   114.0500   -95.4000    -90.0    bottom    SMD
+R10           NF                  R_1206_3216Metric_Pad1.30x1.. 116.5500   -96.9500   116.5500   -95.4000    -90.0    bottom    SMD
+R11           NF                  R_1206_3216Metric_Pad1.30x1.. 119.0500   -96.9500   119.0500   -95.4000    -90.0    bottom    SMD
+R12           NF                  R_1206_3216Metric_Pad1.30x1.. 121.5500   -96.9500   121.5500   -95.4000    -90.0    bottom    SMD
+R13           NF                  R_1206_3216Metric_Pad1.30x1.. 124.0500   -96.9500   124.0500   -95.4000    -90.0    bottom    SMD
+R14           NF                  R_1206_3216Metric_Pad1.30x1.. 126.5500   -96.9500   126.5500   -95.4000    -90.0    bottom    SMD
+## End
