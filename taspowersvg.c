@@ -287,7 +287,7 @@ int main(int argc, const char *argv[])
    } else
    {
       periods = 24;             // DST causes gap or double on change...
-      q = sql_printf("SELECT *,substring(`ts`,12,8) AS `P`,sum(if(`w` is null,`power`,`w`)) AS `T`,sum(if(`w` is null,`power`,`w`)%s) AS `TF` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`",factor, sqltable, Y, M, D);
+      q = sql_printf("SELECT *,substring(`ts`,12,8) AS `P`,sum(if(`w` is null,`power`,`w`)) AS `T`,sum(if(`w` is null,`power`,`w`)%s) AS `TF` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`", factor, sqltable, Y, M, D);
    }
    SQL_RES *res = sql_safe_query_store_free(&sql, q);
    // Plot
@@ -346,10 +346,13 @@ int main(int argc, const char *argv[])
          if (trace)
          {
             double TF = strtod(sql_colz(res, "TF"), NULL);
-            const char *P = sql_colz(res, "P");
-            double x = atoi(P) * xsize + xsize / 2;
-            if (D && strlen(P) == 8)
-               x = (double) (atoi(P) * 3600 + atoi(P + 3) * 60 + atoi(P + 6)) * xsize / 3600;
+            const char *PS = sql_colz(res, "P");
+            int P = atoi(PS);
+            if (Y && !D)
+               P--;
+            double x = P * xsize + xsize / 2;
+            if (D && strlen(PS) == 8)
+               x = (double) (atoi(PS) * 3600 + atoi(PS + 3) * 60 + atoi(PS + 6)) * xsize / 3600;
             fprintf(o, "%c%f,%f", tag, x, T * ysize / 1000);
             fprintf(o2, "%c%f,%f", tag, x, TF * ysize / 1000);
             tag = 'L';
@@ -360,6 +363,8 @@ int main(int argc, const char *argv[])
          } else
          {
             int P = atoi(sql_colz(res, "P"));
+            if (Y && !D)
+               P--;
             if (P < 0 || P >= periods)
                continue;
             xml_t path = t;
@@ -435,7 +440,10 @@ int main(int argc, const char *argv[])
             t = xml_element_add(t, "a");
             xml_addf(t, "@href", "%s/%s-%02d%s", href, date, x, dlist);
          }
-         t = xml_addf(t, "+text", "%02d", x);
+         if (Y && !D)
+            t = xml_addf(t, "+text", "%2d", x + 1);
+         else
+            t = xml_addf(t, "+text", "%02d", x);
          xml_addf(t, "@x", "%d", left + x * xsize + (trace ? 0 : xsize / 2));
          xml_addf(t, "@y", "%d", top - 1);
          xml_add(g, "@text-anchor", "middle");
