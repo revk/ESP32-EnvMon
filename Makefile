@@ -6,7 +6,7 @@
 PROJECT_NAME := Env
 SUFFIX := $(shell components/ESP32-RevK/suffix)
 
-build/$(PROJECT_NAME)$(SUFFIX).bin: envlog envgraph taspowerlog taspowersvg
+all: envlog envgraph taspowerlog taspowersvg
 	idf.py build
 	cp build/$(PROJECT_NAME).bin build/$(PROJECT_NAME)$(SUFFIX).bin
 
