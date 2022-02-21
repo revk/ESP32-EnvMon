@@ -4,9 +4,11 @@
 #
 
 PROJECT_NAME := Env
+SUFFIX := $(shell components/ESP32-RevK/suffix)
 
-all:	envlog envgraph taspowerlog taspowersvg
+build/$(PROJECT_NAME)$(SUFFIX).bin: envlog envgraph taspowerlog taspowersvg
 	idf.py build
+	cp build/$(PROJECT_NAME).bin build/$(PROJECT_NAME)$(SUFFIX).bin
 
 flash:
 	idf.py flash
@@ -27,7 +29,7 @@ pull:
 	git submodule update --recursive
 
 update:
-	git submodule update --init --remote --merge
+	git submodule update --init --remote --merge --recursive
 	git commit -a -m "Library update"
 
 # Set GPIO low (whichever CBUS is set to mode 8/GPIO)
