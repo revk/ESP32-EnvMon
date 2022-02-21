@@ -7,8 +7,10 @@ PROJECT_NAME := Env
 SUFFIX := $(shell components/ESP32-RevK/suffix)
 
 all: envlog envgraph taspowerlog taspowersvg
-	idf.py build
-	cp build/$(PROJECT_NAME).bin build/$(PROJECT_NAME)$(SUFFIX).bin
+	@echo Make: build/$(PROJECT_NAME)$(SUFFIX).bin
+	@idf.py build
+	@cp build/$(PROJECT_NAME).bin build/$(PROJECT_NAME)$(SUFFIX).bin
+	@echo Done: build/$(PROJECT_NAME)$(SUFFIX).bin
 
 flash:
 	idf.py flash
