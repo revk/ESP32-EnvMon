@@ -265,7 +265,7 @@ int main(int argc, const char *argv[])
       ysize *= 5;
    if (control && !M)
       ydiv *= 20;
-   if (ysize * 1000 < 3 * ydiv)
+   while (ysize * ystep * 1000 < 3 * ydiv)
       ystep = 10;
    int periods = 0;
    const char *factor = (raw ? "" : "/if(`factor`=0,1,`factor`)");
