@@ -84,7 +84,8 @@ int main(int argc, const char *argv[])
    int xsize = 40,
        ysize = 10,
        tsize = 9,
-       ystep = 1;
+       ystep = 1,
+       ydiv = 1000;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
       const struct poptOption optionsTable[] = {
@@ -263,8 +264,8 @@ int main(int argc, const char *argv[])
    if (control && D)
       ysize *= 5;
    if (control && !M)
-      ysize = (ysize / 30) ? : 1;
-   if (ysize < 3)
+      ydiv *= 20;
+   if (ysize * 1000 < 3 * ydiv)
       ystep = 10;
    int periods = 0;
    const char *factor = (raw ? "" : "/if(`factor`=0,1,`factor`)");
@@ -356,8 +357,8 @@ int main(int argc, const char *argv[])
             double x = P * xsize + xsize / 2;
             if (D && strlen(PS) == 8)
                x = (double) (atoi(PS) * 3600 + atoi(PS + 3) * 60 + atoi(PS + 6)) * xsize / 3600;
-            fprintf(o, "%c%f,%f", tag, x, T * ysize / 1000);
-            fprintf(o2, "%c%f,%f", tag, x, TF * ysize / 1000);
+            fprintf(o, "%c%f,%f", tag, x, T * ysize / ydiv);
+            fprintf(o2, "%c%f,%f", tag, x, TF * ysize / ydiv);
             tag = 'L';
             if (T > max)
                max = T;
@@ -383,10 +384,10 @@ int main(int argc, const char *argv[])
             xml_addf(path, "title", "%s %.2fkW%s", d->device, T / 1000, D ? "" : "h");
             double new = hwm[P] + T;
             xml_addf(path, "@d", "M%d,%fL%d,%fL%d,%fL%d,%fZ",   //
-                     P * xsize, hwm[P] * ysize / 1000,  //
-                     (P + 1) * xsize, hwm[P] * ysize / 1000,    //
-                     (P + 1) * xsize, new * ysize / 1000,       //
-                     P * xsize, new * ysize / 1000);
+                     P * xsize, hwm[P] * ysize / ydiv,  //
+                     (P + 1) * xsize, hwm[P] * ysize / ydiv,    //
+                     (P + 1) * xsize, new * ysize / ydiv,       //
+                     P * xsize, new * ysize / ydiv);
             if (new > max)
                max = new;
             if (!background || d != devices)
@@ -419,7 +420,7 @@ int main(int argc, const char *argv[])
    sql_free_result(res);
    int kwh = ceil(max / 1000);
    int bottom = tsize + 2;
-   int top = bottom + kwh * ysize + 1;
+   int top = bottom + kwh * ysize * 1000 / ydiv + 1;
    // Axis
    xml_add(g, "@stroke-linecap", "round");
    xml_add(g, "@stroke-linejoin", "round");
@@ -452,13 +453,16 @@ int main(int argc, const char *argv[])
          xml_add(g, "@text-anchor", "middle");
       }
       g = xml_element_add(axis, "g");
+      int l = 0;
       for (int y = 0; y < kwh; y += ystep)
       {
-         if ((ysize * ystep) < tsize && (y % (tsize / (ysize * ystep))))
-            continue;
+         int q = y * ysize * 1000 / ydiv;
+         if (y && q - l <= tsize)
+            continue;           // Too close
+         l = q;
          xml_t t = xml_addf(g, "+text", "%d", y);
          xml_addf(t, "@x", "%d", left - 2);
-         xml_addf(t, "@y", "%d", top - bottom - y * ysize + tsize / 2 - 1);
+         xml_addf(t, "@y", "%d", top - bottom - q + tsize / 2 - 1);
          xml_add(g, "@text-anchor", "end");
       }
       xml_t t = xml_add(axis, "+text", D ? "kW" : "kWh");
@@ -475,12 +479,12 @@ int main(int argc, const char *argv[])
       for (int x = 0; x <= periods; x++)
       {
          xml_t l = xml_element_add(grid, "path");
-         xml_addf(l, "@d", "M%d,%dL%d,%d", left + x * xsize, top - bottom, left + x * xsize, top - bottom - kwh * ysize);
+         xml_addf(l, "@d", "M%d,%dL%d,%d", left + x * xsize, top - bottom, left + x * xsize, top - bottom - kwh * ysize * 1000 / ydiv);
       }
       for (int y = 0; y <= kwh; y += ystep)
       {
          xml_t l = xml_element_add(grid, "path");
-         xml_addf(l, "@d", "M%d,%dL%d,%d", left, top - bottom - y * ysize, left + periods * xsize, top - bottom - y * ysize);
+         xml_addf(l, "@d", "M%d,%dL%d,%d", left, top - bottom - y * ysize * 1000 / ydiv, left + periods * xsize, top - bottom - y * ysize * 1000 / ydiv);
       }
    }
    int y = 0;
