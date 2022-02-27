@@ -1,0 +1,10 @@
+### Module positions - created on 2022-02-23 18:41
+### Printed by pcb_positions plugin
+## Unit = mm, Angle = deg.
+## Pcb Height 37.050mm, Pcb Width 34.050mm [based on Edge bounding box]
+## Side : top
+## Board Aux Origin: 0.000mm ,0.000mm
+# Ref         Val                 Package                       PosX       PosY       Pin1_PosX  Pin1_PosY    Rot     Side      Type
+U4            DS18B20             TO-92_Inline                  120.7700   -110.6400  120.7700   -110.6400   180.0    top       THD
+J2            DC                  Molex_MiniSPOX_H2RA           144.7500   -107.1500  143.5000   -107.1500     0.0    top       THD
+## End
