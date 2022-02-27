@@ -83,7 +83,8 @@ int main(int argc, const char *argv[])
        raw = 0;
    int xsize = 40,
        ysize = 10,
-       tsize = 9;
+       tsize = 9,
+       ystep = 1;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
       const struct poptOption optionsTable[] = {
@@ -262,7 +263,9 @@ int main(int argc, const char *argv[])
    if (control && D)
       ysize *= 5;
    if (control && !M)
-      ysize /= 3;
+      ysize = (ysize / 30) ? : 1;
+   if (ysize < 3)
+      ystep = 10;
    int periods = 0;
    const char *factor = (raw ? "" : "/if(`factor`=0,1,`factor`)");
    char *q = NULL;
@@ -449,9 +452,9 @@ int main(int argc, const char *argv[])
          xml_add(g, "@text-anchor", "middle");
       }
       g = xml_element_add(axis, "g");
-      for (int y = 0; y < kwh; y++)
+      for (int y = 0; y < kwh; y += ystep)
       {
-         if (ysize < tsize && (y % (tsize / ysize)))
+         if ((ysize * ystep) < tsize && (y % (tsize / (ysize * ystep))))
             continue;
          xml_t t = xml_addf(g, "+text", "%d", y);
          xml_addf(t, "@x", "%d", left - 2);
@@ -474,7 +477,7 @@ int main(int argc, const char *argv[])
          xml_t l = xml_element_add(grid, "path");
          xml_addf(l, "@d", "M%d,%dL%d,%d", left + x * xsize, top - bottom, left + x * xsize, top - bottom - kwh * ysize);
       }
-      for (int y = 0; y <= kwh; y++)
+      for (int y = 0; y <= kwh; y += ystep)
       {
          xml_t l = xml_element_add(grid, "path");
          xml_addf(l, "@d", "M%d,%dL%d,%d", left, top - bottom - y * ysize, left + periods * xsize, top - bottom - y * ysize);
