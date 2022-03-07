@@ -6,11 +6,25 @@
 PROJECT_NAME := Env
 SUFFIX := $(shell components/ESP32-RevK/suffix)
 
-all: envlog envgraph taspowerlog taspowersvg
-	@echo Make: build/$(PROJECT_NAME)$(SUFFIX).bin
+all:
+	@echo Make: $(PROJECT_NAME)$(SUFFIX).bin
 	@idf.py build
-	@cp build/$(PROJECT_NAME).bin build/$(PROJECT_NAME)$(SUFFIX).bin
-	@echo Done: build/$(PROJECT_NAME)$(SUFFIX).bin
+	@cp build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
+	@echo Done: $(PROJECT_NAME)$(SUFFIX).bin
+
+tools: envlog envgraph taspowerlog taspowersvg
+
+set:    wroom pico
+
+pico:
+	@sed -e 's/# CONFIG_ESP32_SPIRAM_SUPPORT is not set/CONFIG_ESP32_SPIRAM_SUPPORT=y/' -e 's/# CONFIG_ESPTOOLPY_FLASHSIZE_8MB is not set/CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y/' -e 's/CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y/# CONFIG_ESPTOOLPY_FLASHSIZE_4MB is not set/' -e 's/CONFIG_FREERTOS_UNICORE=y/# CONFIG_FREERTOS_UNICORE is not set/' sdkconfig > sdkconfig.new
+	@mv -f sdkconfig.new sdkconfig
+	@make
+
+wroom:
+	@sed -e 's/CONFIG_ESP32_SPIRAM_SUPPORT=y/# CONFIG_ESP32_SPIRAM_SUPPORT is not set/' -e 's/# CONFIG_ESPTOOLPY_FLASHSIZE_4MB is not set/CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y/' -e 's/CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y/# CONFIG_ESPTOOLPY_FLASHSIZE_8MB is not set/' -e 's/CONFIG_FREERTOS_UNICORE=y/# CONFIG_FREERTOS_UNICORE is not set/' sdkconfig > sdkconfig.new
+	@mv -f sdkconfig.new sdkconfig
+	@make
 
 flash:
 	idf.py flash
@@ -86,10 +100,10 @@ stl: KiCad/EnvMon2.stl KiCad/EnvMon2-nooled.stl KiCad/EnvMon.stl KiCad/EnvMon-no
 	echo "Made $@"
 
 KiCad/EnvMon2.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=3 --user-edge
+	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=3 --user-edge --ignore=J3
 
 KiCad/EnvMon2-nooled.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=4 --base=3 --user-edge --ignore=M1
+	PCBCase/case -o $@ $< --base=8 --top=4 --base=3 --user-edge --ignore=M1,J3
 
 KiCad/EnvMon.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=8 --top=10.4 --ignore=M1.2,M2.1,D1
