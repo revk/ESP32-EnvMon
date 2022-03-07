@@ -295,16 +295,17 @@ const char *app_callback(int client, const char *prefix, const char *target, con
       oled_set_contrast(jo_read_int(j));
       return "";                /* OK */
    }
+	char scd41=(co2address==0x62?1:0);
    if (!strcmp(suffix, "co2autocal"))
-      return co2_setting(0x5306, 1);
+      return co2_setting(scd41?0x2416:0x5306, 1);
    if (!strcmp(suffix, "co2nocal"))
-      return co2_setting(0x5306, 0);
+      return co2_setting(scd41?0x2416:0x5306, 0);
    if (!strcmp(suffix, "co2cal"))
-      return co2_setting(0x5204, jo_read_int(j));
+      return co2_setting(scd41?0x362f:0x5204, jo_read_int(j));
    if (!strcmp(suffix, "co2tempoffset"))
-      return co2_setting(0x5403, jo_read_int(j));
+      return co2_setting(scd41?0x241d:0x5403, jo_read_int(j));
    if (!strcmp(suffix, "co2alt"))
-      return co2_setting(0x5102, jo_read_int(j));
+      return co2_setting(scd41?0x2427:0x5102, jo_read_int(j));
    return NULL;
 }
 
@@ -358,13 +359,14 @@ static const char *co2_setting(uint16_t cmd, uint16_t val)
 
 void co2_task(void *p)
 {
+	char scd41=(co2address==0x62?1:0);
    p = p;
    ESP_LOGI(TAG, "CO2 start");
    int try = 10;
    esp_err_t e;
    while (try--)
    {
-      i2c_cmd_handle_t i = co2_cmd(0x0010);
+      i2c_cmd_handle_t i = co2_cmd(scd41?0x21b1:0x0010);
       /* Start measurement */
       co2_add(i, 0);            /* 0 = unknown */
       i2c_master_stop(i);
@@ -413,7 +415,7 @@ void co2_task(void *p)
             ESP_LOGI(TAG, "Rx GetReady CRC error %02X %02X", co2_crc(buf[0], buf[1]), buf[2]);
          else if ((buf[0] << 8) + buf[1] == 1)
          {
-            i2c_cmd_handle_t i = co2_cmd(0x0300);
+            i2c_cmd_handle_t i = co2_cmd(scd41?0xec05:0x0300);
             /* Read data */
             i2c_master_stop(i);
             esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
