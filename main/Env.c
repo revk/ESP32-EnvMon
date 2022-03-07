@@ -33,21 +33,21 @@ const char TAG[] = "Env";
 #define settings	\
 	u32(reporting,300)	\
 	u8(lag,5)	\
-	s8(co2sda,25)	\
-	s8(co2scl,26)	\
+	s8(co2sda,-1)	\
+	s8(co2scl,-1)	\
 	s8(co2address,0x61)	\
 	s8(co2places,-1)	\
 	u32(co2damp,100)	\
 	s8(tempplaces,1)	\
 	s8(rhplaces,0)	\
 	u32(rhdamp,10)	\
-	s8(ds18b20,4)	\
+	s8(ds18b20,-1)	\
 	s32(ds18b20mC,0)	\
-	s8(oleddin,23)	\
-	s8(oledclk,18)	\
-	s8(oledcs,5)	\
-	s8(oleddc,21)	\
-	s8(oledrst,19)	\
+	s8(oleddin,-1)	\
+	s8(oledclk,-1)	\
+	s8(oledcs,-1)	\
+	s8(oleddc,-1)	\
+	s8(oledrst,-1)	\
 	u8(oledcontrast,255)	\
 	u32(oledmsgtime,30)	\
 	b(oledflip)	\

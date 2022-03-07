@@ -58,7 +58,7 @@ zap:    bootmode flash
 
 # Program the FTDI
 ftdi: ftdizap/ftdizap
-	./ftdizap/ftdizap --serial="RevK" --description="ESP32-EnvMon" --cbus0-mode=8 --cbus1-mode=4 --cbus2-mode=13 --cbus3-mode=5
+	./ftdizap/ftdizap --serial="RevK" --description="ESP32-EnvMon" --cbus3-mode=17 --self-powered=1
 
 ftdizap/ftdizap: ftdizap/ftdizap.c
 	make -C ftdizap
