@@ -546,7 +546,6 @@ void co2_task(void *p)
             ESP_LOGI(TAG, "Rx bad CRC");
             continue;
          }
-         ESP_LOGI(TAG, "Data %02X%02X %02X%02X %02X%02X", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
          thisco2 = (float) ((buf[0] << 8) + buf[1]);
          float t = -45.0 + 175.0 * (float) ((buf[3] << 8) + buf[4]) / 65536.0;
          thisrh = 100.0 * (float) ((buf[6] << 8) + buf[7]) / 65536.0;
@@ -556,7 +555,6 @@ void co2_task(void *p)
             lastrh = report("rh", lastrh, thisrh, rhplaces);
          if (!num_owb)
             lasttemp = report("itemp", lasttemp, thistemp = t, tempplaces);
-         ESP_LOGI(TAG, "CO2 %f RH %f T %f", thisco2, thisrh, t);
       } else
       {                         // Wait for data to be ready
          i = co2_cmd(0x0300);
@@ -720,13 +718,16 @@ void app_main()
             i2c_set_timeout(co2port, 80000 * 5);        /* 5 ms ? allow for clock stretching */
       }
    }
-   const char *e = oled_start(HSPI_HOST, oledcs, oledclk, oleddin, oleddc, oledrst, 1 - oledflip);
-   if (e)
+   if (oleddin >= 0)
    {
-      jo_t j = jo_object_alloc();
-      jo_string(j, "error", "Failed to start");
-      jo_string(j, "description", e);
-      revk_error("OLED", &j);
+      const char *e = oled_start(HSPI_HOST, oledcs, oledclk, oleddin, oleddc, oledrst, 1 - oledflip);
+      if (e)
+      {
+         jo_t j = jo_object_alloc();
+         jo_string(j, "error", "Failed to start");
+         jo_string(j, "description", e);
+         revk_error("OLED", &j);
+      }
    }
    oled_lock();
    oled_set_contrast(oledcontrast);
