@@ -95,6 +95,7 @@ settings
 #undef b
 #undef s
 #define	NOTSET	-10000.0
+static uint8_t scd41 = 0;
 static uint8_t logo[LOGOW * LOGOH / 2];
 static float lastco2 = NOTSET;
 static float lastrh = NOTSET;
@@ -105,6 +106,8 @@ static float thistemp = NOTSET;
 static float thisrh = NOTSET;
 static int8_t co2port = -1;
 static int8_t num_owb = 0;
+static volatile uint16_t do_co2_cmd = 0;
+static volatile int do_co2_value = -1;
 static OneWireBus *owb = NULL;
 static owb_rmt_driver_info rmt_driver_info;
 static DS18B20_Info *ds18b20s[MAX_OWB] = { 0 };
@@ -122,7 +125,7 @@ static volatile uint8_t oled_dark = 0;
 static volatile uint32_t oled_msg_time = 0;     /* message timer */
 static char oled_msg[100];      /* message text */
 
-static const char *co2_setting(uint16_t cmd, uint16_t val);
+static const char *co2_setting(uint16_t cmd, int val);
 
 typedef struct value_s value_t;
 struct value_s {
@@ -295,17 +298,18 @@ const char *app_callback(int client, const char *prefix, const char *target, con
       oled_set_contrast(jo_read_int(j));
       return "";                /* OK */
    }
-	char scd41=(co2address==0x62?1:0);
+   if (!strcmp(suffix, "co2factory") && scd41)
+      return co2_setting(0x3632, -1);
    if (!strcmp(suffix, "co2autocal"))
-      return co2_setting(scd41?0x2416:0x5306, 1);
+      return co2_setting(scd41 ? 0x2416 : 0x5306, 1);
    if (!strcmp(suffix, "co2nocal"))
-      return co2_setting(scd41?0x2416:0x5306, 0);
+      return co2_setting(scd41 ? 0x2416 : 0x5306, 0);
    if (!strcmp(suffix, "co2cal"))
-      return co2_setting(scd41?0x362f:0x5204, jo_read_int(j));
+      return co2_setting(scd41 ? 0x362f : 0x5204, jo_read_int(j));      // ppm
    if (!strcmp(suffix, "co2tempoffset"))
-      return co2_setting(scd41?0x241d:0x5403, jo_read_int(j));
+      return co2_setting(scd41 ? 0x241d : 0x5403, jo_read_int(j));      // Use T*65536/175
    if (!strcmp(suffix, "co2alt"))
-      return co2_setting(scd41?0x2427:0x5102, jo_read_int(j));
+      return co2_setting(scd41 ? 0x2427 : 0x5102, jo_read_int(j));      // m
    return NULL;
 }
 
@@ -345,44 +349,107 @@ static void co2_add(i2c_cmd_handle_t i, uint16_t v)
    i2c_master_write_byte(i, co2_crc(v >> 8, v), true);
 }
 
-static const char *co2_setting(uint16_t cmd, uint16_t val)
+static esp_err_t co2_stop(void)
 {
-   i2c_cmd_handle_t i = co2_cmd(cmd);
-   co2_add(i, val);
+   ESP_LOGI(TAG, "CO2 stop");
+   i2c_cmd_handle_t i = co2_cmd(0x3f86);        // Stop measurement (SCD41)
    i2c_master_stop(i);
-   esp_err_t e = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+   esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
    i2c_cmd_link_delete(i);
-   if (e)
-      return esp_err_to_name(e);
+   if (!err)
+      usleep(500000);           // Takes time
+   return err;
+}
+
+static esp_err_t co2_start(void)
+{
+   ESP_LOGI(TAG, "CO2 start");
+   i2c_cmd_handle_t i = co2_cmd(0x21b1);        // Start measurement (SCD41)
+   i2c_master_stop(i);
+   esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+   i2c_cmd_link_delete(i);
+   return err;
+}
+
+static const char *co2_setting(uint16_t cmd, int val)
+{
+   do_co2_cmd = 0;
+   do_co2_value = val;
+   do_co2_cmd = cmd;
    return "";
 }
 
 void co2_task(void *p)
 {
-	char scd41=(co2address==0x62?1:0);
    p = p;
    ESP_LOGI(TAG, "CO2 start");
    int try = 10;
-   esp_err_t e;
+   esp_err_t err = 0;
+   i2c_cmd_handle_t i;
    while (try--)
    {
-      i2c_cmd_handle_t i = co2_cmd(scd41?0x21b1:0x0010);
-      /* Start measurement */
-      co2_add(i, 0);            /* 0 = unknown */
-      i2c_master_stop(i);
-      e = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-      i2c_cmd_link_delete(i);
-      if (!e)
-         break;
+      if (scd41)
+      {
+         err = co2_stop();
+         if (!err)
+         {
+            i = co2_cmd(0x3646);        // Re init
+            i2c_master_stop(i);
+            err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+            i2c_cmd_link_delete(i);
+            if (!err)
+               usleep(20000);
+         }
+         if (!err)
+         {
+            i = co2_cmd(0x3682);        // Get serial number
+            i2c_master_stop(i);
+            err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+            i2c_cmd_link_delete(i);
+         }
+         if (!err)
+         {                      // Read
+            uint8_t buf[9];
+            i = i2c_cmd_link_create();
+            i2c_master_start(i);
+            i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
+            i2c_master_read(i, buf, sizeof(buf) - 1, ACK_VAL);
+            i2c_master_read_byte(i, buf + sizeof(buf) - 1, NACK_VAL);
+            i2c_master_stop(i);
+            err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+            i2c_cmd_link_delete(i);
+            if (!err)
+            {                   // OK
+               if (co2_crc(buf[0], buf[1]) == buf[2] && co2_crc(buf[3], buf[4]) == buf[5] && co2_crc(buf[6], buf[7]) == buf[8])
+               {
+                  ESP_LOGI(TAG, "CO2 serial %02X%02X%02X%02X%02X%02X", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
+                  jo_t j = jo_object_alloc();
+                  jo_stringf(j, "serial", "%02X%02X%02X%02X%02X%02X", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
+                  revk_info("CO2", &j);
+                  break;
+               }
+            }
+
+         }
+      } else
+      {                         // Just try starting measurement
+         i = co2_cmd(0x0010);   // Start measurement
+         co2_add(i, 0);         /* 0 = unknown */
+         i2c_master_stop(i);
+         err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+         i2c_cmd_link_delete(i);
+         if (!err)
+            break;
+      }
       ESP_LOGI(TAG, "CO2 retry");
       sleep(1);
    }
-   if (e)
+   if (err)
    {                            /* failed */
       jo_t j = jo_object_alloc();
       jo_string(j, "error", "Config fail");
-      jo_int(j, "code", e);
-      jo_string(j, "description", esp_err_to_name(e));
+      jo_int(j, "code", err);
+      jo_string(j, "description", esp_err_to_name(err));
       revk_error("CO2", &j);
       vTaskDelete(NULL);
       return;
@@ -391,97 +458,175 @@ void co2_task(void *p)
    while (1)
    {
       usleep(100000);
-      i2c_cmd_handle_t i = co2_cmd(0x0202);
-      /* Get ready state */
-      i2c_master_stop(i);
-      esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-      i2c_cmd_link_delete(i);
-      if (err)
-         ESP_LOGI(TAG, "Tx GetReady %s", esp_err_to_name(err));
-      else
+      {                         // Ready status
+         i = co2_cmd(scd41 ? 0xe4b8 : 0x0202);
+         /* Get ready state */
+         i2c_master_stop(i);
+         err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+         i2c_cmd_link_delete(i);
+         if (err)
+         {
+            ESP_LOGI(TAG, "Tx GetReady %s", esp_err_to_name(err));
+            continue;
+         }
+         {
+            uint8_t buf[3];
+            i = i2c_cmd_link_create();
+            i2c_master_start(i);
+            i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
+            i2c_master_read(i, buf, sizeof(buf) - 1, ACK_VAL);
+            i2c_master_read_byte(i, buf + sizeof(buf) - 1, NACK_VAL);
+            i2c_master_stop(i);
+            err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+            i2c_cmd_link_delete(i);
+            if (err)
+            {
+               ESP_LOGI(TAG, "Rx GetReady %s", esp_err_to_name(err));
+               continue;
+            }
+            if (co2_crc(buf[0], buf[1]) != buf[2])
+            {
+               ESP_LOGI(TAG, "Rx GetReady CRC error %02X %02X", co2_crc(buf[0], buf[1]), buf[2]);
+               continue;
+            }
+            if (scd41 && !(buf[0] & 0x80))
+               co2_start();     // Undocumented but top bit 8 if not running
+            if (!scd41 && (buf[0] << 8) + buf[1] != 1)
+               continue;        // Not ready (1 means ready)
+            if (scd41 && !(buf[0] & 7) && !buf[1])
+               continue;        // Not ready (least 11 bits 0 means not ready)
+         }
+      }
+      if (do_co2_cmd)
+      {                         // Do a command from mqtt
+         if (scd41)
+            co2_stop();
+         ESP_LOGI(TAG, "CO2 cmd %04X", do_co2_cmd);
+         int val = do_co2_value;
+         i2c_cmd_handle_t i = co2_cmd(do_co2_cmd);
+         do_co2_cmd = 0;
+         do_co2_value = -1;
+         if (val >= 0)
+            co2_add(i, val);
+         i2c_master_stop(i);
+         err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+         i2c_cmd_link_delete(i);
+         if (err)
+            ESP_LOGI(TAG, "CMD failed %s", esp_err_to_name(err));
+         continue;
+      }
+      // Data
+      if (scd41)
       {
-         uint8_t buf[3];
+         i = co2_cmd(0xec05);   // read data
+         i2c_master_stop(i);
+         err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+         i2c_cmd_link_delete(i);
+         if (err)
+         {
+            ESP_LOGI(TAG, "Tx GetData %s", esp_err_to_name(err));
+            continue;
+         }
+         uint8_t buf[9];
          i = i2c_cmd_link_create();
          i2c_master_start(i);
          i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
-         i2c_master_read(i, buf, 2, ACK_VAL);
-         i2c_master_read_byte(i, buf + 2, NACK_VAL);
+         i2c_master_read(i, buf, sizeof(buf) - 1, ACK_VAL);
+         i2c_master_read_byte(i, buf + sizeof(buf) - 1, NACK_VAL);
          i2c_master_stop(i);
-         esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+         err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
          i2c_cmd_link_delete(i);
          if (err)
-            ESP_LOGI(TAG, "Rx GetReady %s", esp_err_to_name(err));
-         else if (co2_crc(buf[0], buf[1]) != buf[2])
-            ESP_LOGI(TAG, "Rx GetReady CRC error %02X %02X", co2_crc(buf[0], buf[1]), buf[2]);
-         else if ((buf[0] << 8) + buf[1] == 1)
          {
-            i2c_cmd_handle_t i = co2_cmd(scd41?0xec05:0x0300);
-            /* Read data */
+            ESP_LOGI(TAG, "Rx Data %s", esp_err_to_name(err));
+            continue;
+         }
+         if (co2_crc(buf[0], buf[1]) != buf[2] || co2_crc(buf[3], buf[4]) != buf[5] || co2_crc(buf[6], buf[7]) != buf[8])
+         {
+            ESP_LOGI(TAG, "Rx bad CRC");
+            continue;
+         }
+         ESP_LOGI(TAG, "Data %02X%02X %02X%02X %02X%02X", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
+         thisco2 = (float) ((buf[0] << 8) + buf[1]);
+         float t = -45.0 + 175.0 * (float) ((buf[3] << 8) + buf[4]) / 65536.0;
+         thisrh = 100.0 * (float) ((buf[6] << 8) + buf[7]) / 65536.0;
+         if (thisco2)
+            lastco2 = report("co2", lastco2, thisco2, co2places);
+         if (thisrh)
+            lastrh = report("rh", lastrh, thisrh, rhplaces);
+         if (!num_owb)
+            lasttemp = report("itemp", lasttemp, thistemp = t, tempplaces);
+         ESP_LOGI(TAG, "CO2 %f RH %f T %f", thisco2, thisrh, t);
+      } else
+      {                         // Wait for data to be ready
+         i = co2_cmd(0x0300);
+         /* Read data */
+         i2c_master_stop(i);
+         err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+         i2c_cmd_link_delete(i);
+         if (err)
+         {
+            ESP_LOGI(TAG, "Tx GetData %s", esp_err_to_name(err));
+            continue;
+         }
+         {
+            uint8_t buf[18];
+            i = i2c_cmd_link_create();
+            i2c_master_start(i);
+            i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
+            i2c_master_read(i, buf, sizeof(buf) - 1, ACK_VAL);
+            i2c_master_read_byte(i, buf + sizeof(buf) - 1, NACK_VAL);
             i2c_master_stop(i);
-            esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+            err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
             i2c_cmd_link_delete(i);
             if (err)
-               ESP_LOGI(TAG, "Tx GetData %s", esp_err_to_name(err));
-            else
             {
-               uint8_t buf[18];
-               i = i2c_cmd_link_create();
-               i2c_master_start(i);
-               i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
-               i2c_master_read(i, buf, 17, ACK_VAL);
-               i2c_master_read_byte(i, buf + 17, NACK_VAL);
-               i2c_master_stop(i);
-               esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-               i2c_cmd_link_delete(i);
-               if (err)
-                  ESP_LOGI(TAG, "Rx Data %s", esp_err_to_name(err));
-               else
-               {
-                  //ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, 18, ESP_LOG_INFO);
-                  uint8_t d[4];
-                  d[3] = buf[0];
-                  d[2] = buf[1];
-                  d[1] = buf[3];
-                  d[0] = buf[4];
-                  float co2 = *(float *) d;
-                  if (co2_crc(buf[0], buf[1]) != buf[2] || co2_crc(buf[3], buf[4]) != buf[5])
-                     co2 = -1;
-                  d[3] = buf[6];
-                  d[2] = buf[7];
-                  d[1] = buf[9];
-                  d[0] = buf[10];
-                  float t = *(float *) d;
-                  if (co2_crc(buf[6], buf[7]) != buf[8] || co2_crc(buf[9], buf[10]) != buf[11])
-                     t = -1000;
-                  d[3] = buf[12];
-                  d[2] = buf[13];
-                  d[1] = buf[15];
-                  d[0] = buf[16];
-                  float rh = *(float *) d;
-                  if (co2_crc(buf[12], buf[13]) != buf[14] || co2_crc(buf[15], buf[16]) != buf[17])
-                     rh = -1000;
-                  if (co2 > 100)
-                  {
-                     /* Sanity check */
-                     if (thisco2 < 0)
-                        thisco2 = co2;  /* First */
-                     else
-                        thisco2 = (thisco2 * co2damp + co2) / (co2damp + 1);
-                  }
-                  if (rh > 0)
-                  {
-                     if (thisrh < 0)
-                        thisrh = rh;    /* First */
-                     else
-                        thisrh = (thisrh * rhdamp + rh) / (rhdamp + 1);
-                  }
-                  if (!num_owb && t >= -1000)
-                     lasttemp = report("itemp", lasttemp, thistemp = t, tempplaces);
-                  /* Use temp here as no DS18B20 */
-                  lastco2 = report("co2", lastco2, thisco2, co2places);
-                  lastrh = report("rh", lastrh, thisrh, rhplaces);
-               }
+               ESP_LOGI(TAG, "Rx Data %s", esp_err_to_name(err));
+               continue;
             }
+            //ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, 18, ESP_LOG_INFO);
+            uint8_t d[4];
+            d[3] = buf[0];
+            d[2] = buf[1];
+            d[1] = buf[3];
+            d[0] = buf[4];
+            float co2 = *(float *) d;
+            if (co2_crc(buf[0], buf[1]) != buf[2] || co2_crc(buf[3], buf[4]) != buf[5])
+               co2 = -1;
+            d[3] = buf[6];
+            d[2] = buf[7];
+            d[1] = buf[9];
+            d[0] = buf[10];
+            float t = *(float *) d;
+            if (co2_crc(buf[6], buf[7]) != buf[8] || co2_crc(buf[9], buf[10]) != buf[11])
+               t = -1000;
+            d[3] = buf[12];
+            d[2] = buf[13];
+            d[1] = buf[15];
+            d[0] = buf[16];
+            float rh = *(float *) d;
+            if (co2_crc(buf[12], buf[13]) != buf[14] || co2_crc(buf[15], buf[16]) != buf[17])
+               rh = -1000;
+            if (co2 > 100)
+            {
+               /* Sanity check */
+               if (thisco2 < 0)
+                  thisco2 = co2;        /* First */
+               else
+                  thisco2 = (thisco2 * co2damp + co2) / (co2damp + 1);
+            }
+            if (rh > 0)
+            {
+               if (thisrh < 0)
+                  thisrh = rh;  /* First */
+               else
+                  thisrh = (thisrh * rhdamp + rh) / (rhdamp + 1);
+            }
+            if (!num_owb && t >= -1000)
+               lasttemp = report("itemp", lasttemp, thistemp = t, tempplaces);
+            /* Use temp here as no DS18B20 */
+            lastco2 = report("co2", lastco2, thisco2, co2places);
+            lastrh = report("rh", lastrh, thisrh, rhplaces);
          }
       }
    }
@@ -546,6 +691,7 @@ void app_main()
    }
    if (co2sda >= 0 && co2scl >= 0)
    {
+      scd41 = (co2address == 0x62 ? 1 : 0);
       co2port = 0;
       if (i2c_driver_install(co2port, I2C_MODE_MASTER, 0, 0, 0))
       {
