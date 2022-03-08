@@ -2188,6 +2188,10 @@
     )
   )
 
+  (gr_line (start 144.5 100) (end 100 100) (layer "Cmts.User") (width 0.1) (tstamp 86988a1c-729e-41fc-a1af-45f141dca1b0))
+  (gr_line (start 100 100) (end 100 63) (layer "Cmts.User") (width 0.1) (tstamp 942bb509-0865-4ee6-a623-811abdc04cfe))
+  (gr_line (start 144.5 63) (end 144.5 100) (layer "Cmts.User") (width 0.1) (tstamp bde06726-cef4-4003-a1b5-ea6b7a6034a0))
+  (gr_line (start 100 63) (end 144.5 63) (layer "Cmts.User") (width 0.1) (tstamp dd792a1f-5f61-4685-b19e-ee5d59c531f5))
   (gr_line (start 99 74) (end 87.5 74) (layer "Edge.Cuts") (width 0.05) (tstamp 0c5278ab-0202-4c39-8abd-f2c2a2674779))
   (gr_arc (start 97.5 64.5) (mid 98.5 63.5) (end 99.5 64.5) (layer "Edge.Cuts") (width 0.05) (tstamp 291a95a3-41ee-4c07-86c5-daa7f580d890))
   (gr_line (start 134.5 67.25) (end 134.5 63) (layer "Edge.Cuts") (width 0.05) (tstamp 2a8488ef-9ec8-46b7-8103-a8e009ea0406))
