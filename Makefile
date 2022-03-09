@@ -91,8 +91,8 @@ taspowersvg: taspowersvg.c SQLlib/sqllib.o AXL/axl.o
 PCBCase/case: PCBCase/case.c
 	make -C PCBCase
 
-scad: KiCad/EnvMon2.scad KiCad/EnvMon2-noco2.scad KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad KiCad/EnvMon-flush.scad KiCad/EnvMon-flush-noco2.scad KiCad/EnvMon-flush-nooled.scad KiCad/EnvMon-nooled-noco2.scad
-stl: KiCad/EnvMon2.stl KiCad/EnvMon2-noco2.stl KiCad/EnvMon.stl KiCad/EnvMon-noco2.stl KiCad/EnvMon-nooled.stl KiCad/EnvMon-flush.stl KiCad/EnvMon-flush-noco2.stl KiCad/EnvMon-flush-nooled.stl KiCad/EnvMon-nooled-noco2.stl
+scad: KiCad/EnvMon2.scad KiCad/EnvMon2-noco2.scad KiCad/EnvMon2-nooled.scad
+stl: KiCad/EnvMon2.stl KiCad/EnvMon2-noco2.stl KiCad/EnvMon2-nooled.stl
 
 %.stl: %.scad
 	echo "Making $@"
@@ -100,10 +100,15 @@ stl: KiCad/EnvMon2.stl KiCad/EnvMon2-noco2.stl KiCad/EnvMon.stl KiCad/EnvMon-noc
 	echo "Made $@"
 
 KiCad/EnvMon2.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=2 --ignore=D3
+	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=2 --ignore=D3,M1.1
 
 KiCad/EnvMon2-noco2.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=2 --ignore=D3 --edge2
+	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=2 --ignore=D3,M1.1 --edge2
+
+KiCad/EnvMon2-nooled.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
+	PCBCase/case -o $@ $< --base=8 --top=5 --base=2 --ignore=M1 --edge2
+
+# Old board
 
 KiCad/EnvMon.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=8 --top=10.4 --ignore=M1.2,M2.1,D1
