@@ -100,7 +100,7 @@ stl: KiCad/EnvMon2.stl KiCad/EnvMon2-noco2.stl KiCad/EnvMon.stl KiCad/EnvMon-noc
 	echo "Made $@"
 
 KiCad/EnvMon2.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=2 --ignore=D3 --edge1
+	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=2 --ignore=D3
 
 KiCad/EnvMon2-noco2.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=2 --ignore=D3 --edge2
