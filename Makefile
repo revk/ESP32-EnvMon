@@ -91,8 +91,8 @@ taspowersvg: taspowersvg.c SQLlib/sqllib.o AXL/axl.o
 PCBCase/case: PCBCase/case.c
 	make -C PCBCase
 
-scad: KiCad/EnvMon2.scad KiCad/EnvMon2-noco2.scad KiCad/EnvMon2-nooled.scad
-stl: KiCad/EnvMon2.stl KiCad/EnvMon2-noco2.stl KiCad/EnvMon2-nooled.stl
+scad: KiCad/EnvMon2.scad KiCad/EnvMon2-noco2.scad KiCad/EnvMon2-nooled.scad KiCad/EnvMon2-flush.scad KiCad/EnvMon2-flush-nooled.scad
+stl: KiCad/EnvMon2.stl KiCad/EnvMon2-noco2.stl KiCad/EnvMon2-nooled.stl KiCad/EnvMon2-flush.stl KiCad/EnvMon2-flush-nooled.stl
 
 %.stl: %.scad
 	echo "Making $@"
@@ -100,16 +100,24 @@ stl: KiCad/EnvMon2.stl KiCad/EnvMon2-noco2.stl KiCad/EnvMon2-nooled.stl
 	echo "Made $@"
 
 KiCad/EnvMon2.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=2 --ignore=D3,M1.1
+	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1
 
 KiCad/EnvMon2-noco2.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=2 --ignore=D3,M1.1 --edge2
+	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1 --edge2
 
 KiCad/EnvMon2-nooled.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=5 --base=2 --ignore=M1 --edge2
+	PCBCase/case -o $@ $< --top=5 --base=2 --ignore=M1 --edge2
 
 KiCad/EnvMon2-flush.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=2 --ignore=D3,M1.1 --spacing=80
-	echo 'difference(){translate([62,-23.75,0])' >> $@
+	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1 --spacing=100
+	echo 'difference(){translate([spacing-6,-5,0])' >> $@
 	cat PCBCase/models/blankplate.scad >> $@
-	echo 'pcb(10);}' >> $@
+	echo 'translate([spacing,0,0])translate([casewall,pcblength+casewall,height])rotate([180,0,0])pcb(height+1,1);' >> $@
+	echo '}' >> $@
+
+KiCad/EnvMon2-flush-nooled.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
+	PCBCase/case -o $@ $< --top=5 --base=2 --ignore=M1 --spacing=100
+	echo 'difference(){translate([spacing-6,-5,0])' >> $@
+	cat PCBCase/models/blankplate.scad >> $@
+	echo 'translate([spacing,0,0])translate([casewall,pcblength+casewall,height])rotate([180,0,0])pcb(height+1,1);' >> $@
+	echo '}' >> $@
