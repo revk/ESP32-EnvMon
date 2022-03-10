@@ -110,6 +110,6 @@ KiCad/EnvMon2-nooled.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
 
 KiCad/EnvMon2-flush.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=2 --ignore=D3,M1.1 --spacing=80
-	echo 'translate([62,-23.75,0])difference(){' >> $@
+	echo 'difference(){translate([62,-23.75,0])' >> $@
 	cat PCBCase/models/blankplate.scad >> $@
-	echo '}' >> $@
+	echo 'pcb(10);}' >> $@
