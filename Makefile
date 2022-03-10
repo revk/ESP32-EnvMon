@@ -116,8 +116,8 @@ KiCad/EnvMon2-flush.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
 	echo '}' >> $@
 
 KiCad/EnvMon2-flush-nooled.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --top=6.5 --base=2 --ignore=M1 --spacing=100
-	echo 'difference(){translate([spacing+86-4,-24,0])rotate([0,0,90])' >> $@
+	PCBCase/case -o $@ $< --top=7 --base=2 --ignore=M1 --spacing=100
+	echo 'difference(){translate([spacing-6,-8,0])' >> $@
 	cat PCBCase/models/blankplate.scad >> $@
 	echo 'translate([spacing,0,0])translate([casewall,pcblength+casewall,height])rotate([180,0,0])hull()pcb(height+1,0);' >> $@
 	echo '}' >> $@
