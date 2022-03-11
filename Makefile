@@ -5,6 +5,7 @@
 
 PROJECT_NAME := Env
 SUFFIX := $(shell components/ESP32-RevK/suffix)
+MODELS := EnvMon2 EnvMon2-noco2 EnvMon2-nooled EnvMon2-flush EnvMon2-flush-nooled
 
 all:
 	@echo Make: $(PROJECT_NAME)$(SUFFIX).bin
@@ -91,8 +92,8 @@ taspowersvg: taspowersvg.c SQLlib/sqllib.o AXL/axl.o
 PCBCase/case: PCBCase/case.c
 	make -C PCBCase
 
-scad: KiCad/EnvMon2.scad KiCad/EnvMon2-noco2.scad KiCad/EnvMon2-nooled.scad KiCad/EnvMon2-flush.scad KiCad/EnvMon2-flush-nooled.scad
-stl: KiCad/EnvMon2.stl KiCad/EnvMon2-noco2.stl KiCad/EnvMon2-nooled.stl KiCad/EnvMon2-flush.stl KiCad/EnvMon2-flush-nooled.stl
+scad:	$(patsubst %,KiCad/%.scad,$(MODELS))
+stl:	$(patsubst %,KiCad/%.stl,$(MODELS))
 
 %.stl: %.scad
 	echo "Making $@"
@@ -110,14 +111,14 @@ KiCad/EnvMon2-nooled.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
 
 KiCad/EnvMon2-flush.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1 --spacing=100
-	echo 'difference(){translate([spacing+86-4,-24,0])rotate([0,0,90])' >> $@
-	cat PCBCase/models/blankplate.scad >> $@
-	echo 'translate([spacing,0,0])translate([casewall,pcblength+casewall,height])rotate([180,0,0])hull()pcb(height+1,0);' >> $@
-	echo '}' >> $@
+	@echo 'difference(){translate([spacing+86-4,-24,0])rotate([0,0,90])' >> $@
+	@cat PCBCase/models/blankplate.scad >> $@
+	@echo 'translate([spacing,0,0])translate([casewall,pcblength+casewall,height])rotate([180,0,0])hull()pcb(height+1,0);' >> $@
+	@echo '}' >> $@
 
 KiCad/EnvMon2-flush-nooled.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --top=7 --base=2 --ignore=M1 --spacing=100
-	echo 'difference(){translate([spacing-6,-8,0])' >> $@
-	cat PCBCase/models/blankplate.scad >> $@
-	echo 'translate([spacing,0,0])translate([casewall,pcblength+casewall,height])rotate([180,0,0])hull()pcb(height+1,0);' >> $@
-	echo '}' >> $@
+	@echo 'difference(){translate([spacing-6,-8,0])' >> $@
+	@cat PCBCase/models/blankplate.scad >> $@
+	@echo 'translate([spacing,0,0])translate([casewall,pcblength+casewall,height])rotate([180,0,0])hull()pcb(height+1,0);' >> $@
+	@echo '}' >> $@
