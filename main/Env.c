@@ -554,7 +554,7 @@ void co2_task(void *p)
          if (thisrh)
             lastrh = report("rh", lastrh, thisrh, rhplaces);
          if (!num_owb)
-            lasttemp = report("itemp", lasttemp, thistemp = t, tempplaces);
+            lasttemp = report("temp", lasttemp, thistemp = t, tempplaces); // Treat as temp not itemp as we trust the SCD41 to be sane
       } else
       {                         // Wait for data to be ready
          i = co2_cmd(0x0300);
