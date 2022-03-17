@@ -2971,7 +2971,7 @@
     (property "Reference" "R1" (id 0) (at 44.45 141.605 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "10M 1% or 0R" (id 1) (at 46.355 144.78 90)
+    (property "Value" "100k 1% or 0R" (id 1) (at 46.355 144.78 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "RevK:R_0603" (id 2) (at 42.545 143.383 90)
@@ -3262,7 +3262,7 @@
     (property "Reference" "R2" (id 0) (at 49.53 147.32 90)
       (effects (font (size 1.27 1.27)) (justify right))
     )
-    (property "Value" "3M 1% or NF" (id 1) (at 51.435 145.415 0)
+    (property "Value" "30k 1% or NF" (id 1) (at 51.435 145.415 0)
       (effects (font (size 1.27 1.27)) (justify right))
     )
     (property "Footprint" "RevK:R_0603" (id 2) (at 51.308 145.415 90)
@@ -3432,10 +3432,10 @@
       (reference "M1") (unit 1) (value "OLED1.5-RGB") (footprint "RevK:OLED1.5-RGB")
     )
     (path "/6324f539-5157-429d-ad08-999e5f3ad633"
-      (reference "R1") (unit 1) (value "10M 1% or 0R") (footprint "RevK:R_0603")
+      (reference "R1") (unit 1) (value "100k 1% or 0R") (footprint "RevK:R_0603")
     )
     (path "/e632df6d-ccd6-4691-adc1-89013dd5fd28"
-      (reference "R2") (unit 1) (value "3M 1% or NF") (footprint "RevK:R_0603")
+      (reference "R2") (unit 1) (value "30k 1% or NF") (footprint "RevK:R_0603")
     )
     (path "/00000000-0000-0000-0000-0000604954a7"
       (reference "R3") (unit 1) (value "5K1") (footprint "RevK:R_0603")
