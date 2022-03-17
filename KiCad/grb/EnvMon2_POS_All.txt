@@ -1,4 +1,4 @@
-### Module positions - created on 2022-03-08 12:02
+### Module positions - created on 2022-03-09 14:02
 ### Printed by pcb_positions plugin
 ## Unit = mm, Angle = deg.
 ## Pcb Height 37.050mm, Pcb Width 58.050mm [based on Edge bounding box]
@@ -29,7 +29,7 @@ R11           10k                 R_0603                        125.8500   -88.7
 R12           10k                 R_0603                        115.0000   -72.3250   115.0000   -71.5000    -90.0    top       SMD
 Logo2         AJK                 AJK                           116.2500   -87.1250   0.0000     0.0000        0.0    top       VIRTUAL
 J2            DC                  Molex_MiniSPOX_H2RA           135.4000   -93.4000   134.1500   -93.4000      0.0    top       THD
-U4            ESP32-PICO-MINI-02  ESP32-PICO-MINI-02            122.2500   -73.9433   116.3500   -69.9433      0.0    top       SMD
+U4            ESP32-PICO-MINI-02  ESP32-PICO-MINI-02            122.2500   -73.9933   116.3500   -69.9933      0.0    top       SMD
 C4            10nF                C_0603                        128.2500   -88.7250   128.2500   -87.9500    -90.0    top       SMD
 R13           4k7                 R_0603                        111.4000   -91.0000   110.5750   -91.0000      0.0    top       SMD
 R9            220R                R_0603                        137.0000   -67.4000   137.8250   -67.4000    180.0    top       SMD

@@ -11,7 +11,7 @@ const char TAG[] = "Env";
 #include "owb.h"
 #include "owb_rmt.h"
 #include "ds18b20.h"
-#include "oled.h"
+#include "gfx.h"
 
 #include "logo.h"
 #include "fan.h"
@@ -43,14 +43,14 @@ const char TAG[] = "Env";
 	u32(rhdamp,10)	\
 	s8(ds18b20,-1)	\
 	s32(ds18b20mC,0)	\
-	s8(oleddin,-1)	\
-	s8(oledclk,-1)	\
-	s8(oledcs,-1)	\
-	s8(oleddc,-1)	\
-	s8(oledrst,-1)	\
-	u8(oledcontrast,255)	\
-	u32(oledmsgtime,30)	\
-	b(oledflip)	\
+	s8(gfxdin,-1)	\
+	s8(gfxclk,-1)	\
+	s8(gfxcs,-1)	\
+	s8(gfxdc,-1)	\
+	s8(gfxrst,-1)	\
+	u8(gfxcontrast,255)	\
+	u32(gfxmsgtime,30)	\
+	b(gfxflip)	\
 	b(f)	\
 	b(ha)	\
 	s(fanon)	\
@@ -119,11 +119,11 @@ static int8_t fanlast = -1,
 static int8_t heatlast = -1,
     heatmax = -1;
 
-static volatile uint8_t oled_update = 0;
-static volatile uint8_t oled_changed = 1;
-static volatile uint8_t oled_dark = 0;
-static volatile uint32_t oled_msg_time = 0;     /* message timer */
-static char oled_msg[100];      /* message text */
+static volatile uint8_t gfx_update = 0;
+static volatile uint8_t gfx_changed = 1;
+static volatile uint8_t gfx_dark = 0;
+static volatile uint32_t gfx_msg_time = 0;     /* message timer */
+static char gfx_msg[100];      /* message text */
 
 static const char *co2_setting(uint16_t cmd, int val);
 
@@ -278,24 +278,24 @@ const char *app_callback(int client, const char *prefix, const char *target, con
    }
    if (!strcmp(suffix, "message"))
    {
-      jo_strncpy(j, oled_msg, sizeof(oled_msg));
-      if (oledmsgtime)
-         oled_msg_time = (esp_timer_get_time() / 1000000) + oledmsgtime;
+      jo_strncpy(j, gfx_msg, sizeof(gfx_msg));
+      if (gfxmsgtime)
+         gfx_msg_time = (esp_timer_get_time() / 1000000) + gfxmsgtime;
       return "";
    }
    if (!strcmp(suffix, "night"))
    {
-      oled_dark = 1;
+      gfx_dark = 1;
       return "";
    }
    if (!strcmp(suffix, "day"))
    {
-      oled_dark = 0;
+      gfx_dark = 0;
       return "";
    }
    if (!strcmp(suffix, "contrast"))
    {
-      oled_set_contrast(jo_read_int(j));
+      gfx_set_contrast(jo_read_int(j));
       return "";                /* OK */
    }
    if (!strcmp(suffix, "co2factory") && scd41)
@@ -655,7 +655,7 @@ void app_main()
    revk_boot(&app_callback);
    revk_register("heat", 0, 0, &heaton, NULL, SETTING_SECRET);
    revk_register("fan", 0, 0, &fanon, NULL, SETTING_SECRET);
-   revk_register("oled", 0, sizeof(oledflip), &oledflip, NULL, SETTING_BOOLEAN | SETTING_SECRET);
+   revk_register("gfx", 0, sizeof(gfxflip), &gfxflip, NULL, SETTING_BOOLEAN | SETTING_SECRET);
    revk_register("co2", 0, sizeof(co2places), &co2places, "-1", SETTING_SIGNED | SETTING_SECRET);
    revk_register("hhmm", 0, sizeof(hhmmday), &hhmmday, NULL, SETTING_SECRET);
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
@@ -718,22 +718,22 @@ void app_main()
             i2c_set_timeout(co2port, 80000 * 5);        /* 5 ms ? allow for clock stretching */
       }
    }
-   if (oleddin >= 0)
+   if (gfxdin >= 0)
    {
-      const char *e = oled_start(HSPI_HOST, oledcs, oledclk, oleddin, oleddc, oledrst, 1 - oledflip);
+      const char *e = gfx_init(cs:gfxcs, sck:gfxclk, mosi:gfxdin, dc:gfxdc, rst:gfxrst, flipx:gfxflip,flipy:gfxflip);
       if (e)
       {
          jo_t j = jo_object_alloc();
          jo_string(j, "error", "Failed to start");
          jo_string(j, "description", e);
-         revk_error("OLED", &j);
+         revk_error("GFX", &j);
       }
    }
-   oled_lock();
-   oled_set_contrast(oledcontrast);
-   oled_colour('B');
-   oled_box(CONFIG_OLED_WIDTH, CONFIG_OLED_HEIGHT, 255);
-   oled_unlock();
+   gfx_lock();
+   gfx_set_contrast(gfxcontrast);
+   gfx_colour('B');
+   gfx_box(CONFIG_GFX_WIDTH, CONFIG_GFX_HEIGHT, 255);
+   gfx_unlock();
    if (co2port >= 0)
       revk_task("CO2", co2_task, NULL);
    if (ds18b20 >= 0)
@@ -773,9 +773,9 @@ void app_main()
       } else
          revk_task("DS18B20", ds18b20_task, NULL);
    }
-   oled_lock();
-   oled_clear(0);
-   oled_unlock();
+   gfx_lock();
+   gfx_clear(0);
+   gfx_unlock();
    /* Main task... */
    time_t showtime = 0;
    char showlogo = 1;
@@ -783,7 +783,7 @@ void app_main()
    float showtemp = NOTSET;
    float showrh = NOTSET;
    void reset(void) {           /* re display all */
-      oled_clear(0);
+      gfx_clear(0);
       showlogo = 1;
       showtime = 0;
       showco2 = NOTSET;
@@ -804,16 +804,16 @@ void app_main()
       if (hhmmnight || hhmmday)
       {                         /* Auto day / night */
          if (hhmmnight > hhmmday && hhmm >= hhmmnight)
-            oled_dark = 1;
+            gfx_dark = 1;
          else if (hhmm >= hhmmday)
-            oled_dark = 0;
+            gfx_dark = 0;
          else if (hhmm >= hhmmnight)
-            oled_dark = 1;
+            gfx_dark = 1;
       }
       // References
       // Temp should either use a day/night temp, or a temphourmC (setting temp on the hour for 00:00 to 23:00). Zero meaning not set
       // heatratemC allows for getting to some future temphourmC. heatminmC applies anyway
-      int32_t temp_target = (oled_dark ? heatnightmC : heatdaymC);
+      int32_t temp_target = (gfx_dark ? heatnightmC : heatdaymC);
       if (!temp_target)
       {
          if (temphourmC[t.tm_hour] && temphourmC[(t.tm_hour + 1) % 24])
@@ -902,20 +902,20 @@ void app_main()
          }
       }
       /* Display */
-      oled_lock();
+      gfx_lock();
       char s[30];
-      if (oled_msg_time)
+      if (gfx_msg_time)
       {                         /* display fixed message */
-         if (oled_msg_time < (esp_timer_get_time() / 1000000))
+         if (gfx_msg_time < (esp_timer_get_time() / 1000000))
          {                      /* time up */
-            oled_msg_time = 0;
+            gfx_msg_time = 0;
             reset();
          } else
          {
-            char *m = oled_msg;
-            oled_pos(CONFIG_OLED_WIDTH / 2, 0, OLED_T | OLED_C | OLED_V);
+            char *m = gfx_msg;
+            gfx_pos(CONFIG_GFX_WIDTH / 2, 0, GFX_T | GFX_C | GFX_V);
             uint8_t size = 2;
-            ESP_LOGE(TAG, "Text %s", oled_msg);
+            ESP_LOGE(TAG, "Text %s", gfx_msg);
             while (*m)
             {
                if (*m == '[')
@@ -927,54 +927,54 @@ void app_main()
                      else if (isalpha(*m))
                      {          /* colour */
                         if ((isf++) & 1)
-                           oled_colour(*m);
+                           gfx_colour(*m);
                         else
-                           oled_background(*m);
+                           gfx_background(*m);
                      }
                   if (*m)
                      m++;
                }
-               if (!oled_y())
-                  oled_clear(0);
+               if (!gfx_y())
+                  gfx_clear(0);
                char *e = m;
                while (*e && *e != '/' && *e != '[')
                   e++;
-               oled_text(size, "%.*s", (int) (e - m), m);
+               gfx_text(size, "%.*s", (int) (e - m), m);
                m = e;
                if (*m == '/')
                   m++;
             }
-            oled_unlock();
+            gfx_unlock();
             continue;
          }
       }
-      if (oled_dark)
+      if (gfx_dark)
       {                         /* Night mode, just time */
-         oled_colour('r');
+         gfx_colour('r');
          reset();
          if (!notime)
          {
             strftime(s, sizeof(s), "%T", &t);
-            int y = CONFIG_OLED_HEIGHT - 1 - t.tm_sec * 2;
+            int y = CONFIG_GFX_HEIGHT - 1 - t.tm_sec * 2;
             if (t.tm_min & 1)
                y = 6 + t.tm_sec * 2;
             int x = t.tm_hour + t.tm_min;
             if (t.tm_hour & 1)
                x = t.tm_hour + 60 - t.tm_min;
-            oled_pos(x, y, OLED_B | OLED_L);
-            oled_text(1, s);
+            gfx_pos(x, y, GFX_B | GFX_L);
+            gfx_text(1, s);
          }
-         oled_unlock();
+         gfx_unlock();
          continue;
       }
       if (showlogo)
       {
          showlogo = 0;
-         oled_clear(0);
+         gfx_clear(0);
          if (!nologo)
          {
-            oled_pos(CONFIG_OLED_WIDTH - LOGOW, CONFIG_OLED_WIDTH - 12, OLED_B | OLED_L);
-            oled_icon16(LOGOW, LOGOH, logo);
+            gfx_pos(CONFIG_GFX_WIDTH - LOGOW, CONFIG_GFX_WIDTH - 12, GFX_B | GFX_L);
+            gfx_icon16(LOGOW, LOGOH, logo);
          }
       }
       if (now != showtime && !notime)
@@ -983,31 +983,31 @@ void app_main()
          if (t.tm_year > 100)
          {
             strftime(s, sizeof(s), "%F\004%T %Z", &t);
-            oled_pos(0, CONFIG_OLED_HEIGHT - 1, OLED_B | OLED_L);
-            oled_text(1, s);
+            gfx_pos(0, CONFIG_GFX_HEIGHT - 1, GFX_B | GFX_L);
+            gfx_text(1, s);
          }
       }
       int y = 0,
-          space = (CONFIG_OLED_HEIGHT - 28 - 35 - 21 - 9) / 3;
+          space = (CONFIG_GFX_HEIGHT - 28 - 35 - 21 - 9) / 3;
       if (thisco2 != showco2)
       {
          showco2 = thisco2;
-         oled_colour(showco2 < 200 ? 'K' : showco2 > (fanco2on ? : 1000) ? 'R' : showco2 > (fanco2off ? : 750) ? 'Y' : 'G');
+         gfx_colour(showco2 < 200 ? 'K' : showco2 > (fanco2on ? : 1000) ? 'R' : showco2 > (fanco2off ? : 750) ? 'Y' : 'G');
          if (showco2 < 200)
             strcpy(s, "?LOW");
          else if (showco2 >= 10000.0)
             strcpy(s, "HIGH");
          else
             sprintf(s, "%4d", (int) showco2);
-         oled_pos(4, y, OLED_T | OLED_L | OLED_H);
-         oled_text(4, s);
-         oled_pos(oled_x(), oled_y(), OLED_T | OLED_L | OLED_V);
-         oled_text(1, "CO2");
-         oled_text(-1, "ppm");
+         gfx_pos(4, y, GFX_T | GFX_L | GFX_H);
+         gfx_text(4, s);
+         gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
+         gfx_text(1, "CO2");
+         gfx_text(-1, "ppm");
          if (fanlast >= 0)
          {
-            oled_pos(CONFIG_OLED_WIDTH - LOGOW * 2 - 2, CONFIG_OLED_HEIGHT - 12, OLED_B | OLED_L);
-            oled_icon16(LOGOW, LOGOH, fanlast ? fan : NULL);
+            gfx_pos(CONFIG_GFX_WIDTH - LOGOW * 2 - 2, CONFIG_GFX_HEIGHT - 12, GFX_B | GFX_L);
+            gfx_icon16(LOGOW, LOGOH, fanlast ? fan : NULL);
          }
       }
       y += 28 + space;
@@ -1017,12 +1017,12 @@ void app_main()
          int32_t reftemp = temp_target ? : 21000;
          int32_t thismC = thistemp * 1000;
          if (showtemp == NOTSET)
-            oled_colour('K');
+            gfx_colour('K');
          else if (reftemp)
-            oled_colour(thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');
+            gfx_colour(thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');
          else
-            oled_colour('W');
-         oled_pos(10, y, OLED_T | OLED_L | OLED_H);
+            gfx_colour('W');
+         gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
          if (f)
          {                      /* Fahrenheit */
             int fh = (showtemp + 40.0) * 1.8 - 40.0;
@@ -1041,31 +1041,31 @@ void app_main()
             else
                sprintf(s, "%4.1f", showtemp);
          }
-         oled_text(5, s);
-         oled_text(1, "o");
-         oled_pos(oled_x(), oled_y(), OLED_T | OLED_L | OLED_V);
-         oled_text(2, f ? "F" : "C");
+         gfx_text(5, s);
+         gfx_text(1, "o");
+         gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
+         gfx_text(2, f ? "F" : "C");
          if (!num_owb)
-            oled_text(2, "~");
+            gfx_text(2, "~");
       }
       y += 35 + space;
       if (thisrh != showrh)
       {
          showrh = thisrh;
-         oled_colour(showrh < 0 ? 'K' : 'C');
-         oled_pos(3, y, OLED_T | OLED_L | OLED_H);
+         gfx_colour(showrh < 0 ? 'K' : 'C');
+         gfx_pos(3, y, GFX_T | GFX_L | GFX_H);
          if (showrh <= 0)
             strcpy(s, "__");
          else if (showrh >= 100)
             strcpy(s, "^^");
          else
             sprintf(s, "%2d", (int) showrh);
-         oled_text(3, s);
-         oled_text(2, "%%");
-         oled_text(1, "R");
-         oled_text(1, "H");
+         gfx_text(3, s);
+         gfx_text(2, "%%");
+         gfx_text(1, "R");
+         gfx_text(1, "H");
       }
       y += 21 + space;
-      oled_unlock();
+      gfx_unlock();
    }
 }

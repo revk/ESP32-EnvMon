@@ -5,6 +5,7 @@
 
 PROJECT_NAME := Env
 SUFFIX := $(shell components/ESP32-RevK/buildsuffix)
+MODELS := EnvMon2 EnvMon2-noco2 EnvMon2-nooled EnvMon2-flush EnvMon2-flush-nooled
 
 all:
 	@echo Make: $(PROJECT_NAME)$(SUFFIX).bin
@@ -93,8 +94,8 @@ taspowersvg: taspowersvg.c SQLlib/sqllib.o AXL/axl.o
 PCBCase/case: PCBCase/case.c
 	make -C PCBCase
 
-scad: KiCad/EnvMon2.scad KiCad/EnvMon.scad KiCad/EnvMon-noco2.scad KiCad/EnvMon-nooled.scad KiCad/EnvMon-flush.scad KiCad/EnvMon-flush-noco2.scad KiCad/EnvMon-flush-nooled.scad KiCad/EnvMon-nooled-noco2.scad
-stl: KiCad/EnvMon2.stl KiCad/EnvMon.stl KiCad/EnvMon-noco2.stl KiCad/EnvMon-nooled.stl KiCad/EnvMon-flush.stl KiCad/EnvMon-flush-noco2.stl KiCad/EnvMon-flush-nooled.stl KiCad/EnvMon-nooled-noco2.stl
+scad:	$(patsubst %,KiCad/%.scad,$(MODELS))
+stl:	$(patsubst %,KiCad/%.stl,$(MODELS))
 
 %.stl: %.scad
 	echo "Making $@"
@@ -102,43 +103,24 @@ stl: KiCad/EnvMon2.stl KiCad/EnvMon.stl KiCad/EnvMon-noco2.stl KiCad/EnvMon-nool
 	echo "Made $@"
 
 KiCad/EnvMon2.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=10.4 --base=3 --ignore=D3
+	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1
 
-KiCad/EnvMon.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=10.4 --ignore=M1.2,M2.1,D1
+KiCad/EnvMon2-noco2.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
+	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1 --edge2
 
-KiCad/EnvMon-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=2.5 --top=10.4 --ignore=M2.1,M1,D1
+KiCad/EnvMon2-nooled.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
+	PCBCase/case -o $@ $< --top=5 --base=2 --ignore=M1 --edge2
 
-KiCad/EnvMon-nooled.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=6 --ignore=M1.2,M2
+KiCad/EnvMon2-flush.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
+	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1 --spacing=100
+	@echo 'difference(){translate([spacing+86-4,-24,0])rotate([0,0,90])' >> $@
+	@cat PCBCase/models/blankplate.scad >> $@
+	@echo 'translate([spacing,0,0])translate([casewall,pcblength+casewall,height])rotate([180,0,0])hull()pcb(height+1,0);' >> $@
+	@echo '}' >> $@
 
-KiCad/EnvMon-nooled-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=2.5 --top=6 --ignore=M1.2,M2,M2.1,M1,D1
-
-KiCad/EnvMon-flush.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=10.4 --ignore=M2.1,M1.2,D1 --spacing=80
-	echo 'translate([62,-23.75,0])difference(){' >> $@
-	cat PCBCase/models/blankplate.scad >> $@
-	echo 'translate([50,10,5])rotate([0,90,0])hull(){cylinder(d=4,h=100,$$fn=48);translate([-10,0,0])cylinder(d=4,h=100,$$fn=48);}' >> $@
-	echo 'translate([20,25.75,-1])cube([46,38,10]);' >> $@
-	echo 'for(x=[12.85:10.05:73.15])translate([x,15,-1])cylinder(d=3,h=10,$$fn=48);' >> $@
-	echo '}' >> $@
-
-KiCad/EnvMon-flush-noco2.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=2.5 --top=10.4 --ignore=M2.1,M1,D1 --spacing=80
-	echo 'translate([62,-23.75,0])difference(){' >> $@
-	cat PCBCase/models/blankplate.scad >> $@
-	echo 'translate([50,10,5])rotate([0,90,0])hull(){cylinder(d=4,h=100,$$fn=48);translate([-10,0,0])cylinder(d=4,h=100,$$fn=48);}' >> $@
-	echo 'translate([20,25.75,-1])cube([46,38,10]);' >> $@
-	echo '}' >> $@
-
-KiCad/EnvMon-flush-nooled.scad: KiCad/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --base=8 --top=8 --ignore=M1.2,M2,D1 --spacing=80
-	echo 'translate([62,-18.75,0])difference(){' >> $@
-	cat PCBCase/models/blankplate.scad >> $@
-	echo 'translate([50,10,5])rotate([0,90,0])hull(){cylinder(d=4,h=100,$$fn=48);translate([-10,0,0])cylinder(d=4,h=100,$$fn=48);}' >> $@
-	echo 'translate([20,20.75,-1])cube([46,38,10]);' >> $@
-	echo 'for(x=[12.85:10.05:73.15])translate([x,15,-1])cylinder(d=3,h=10,$$fn=48);' >> $@
-	echo '}' >> $@
-
+KiCad/EnvMon2-flush-nooled.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
+	PCBCase/case -o $@ $< --top=7 --base=2 --ignore=M1 --spacing=100
+	@echo 'difference(){translate([spacing-6,-8,0])' >> $@
+	@cat PCBCase/models/blankplate.scad >> $@
+	@echo 'translate([spacing,0,0])translate([casewall,pcblength+casewall,height])rotate([180,0,0])hull()pcb(height+1,0);' >> $@
+	@echo '}' >> $@
