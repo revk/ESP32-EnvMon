@@ -122,8 +122,8 @@ static int8_t heatlast = -1,
 static volatile uint8_t gfx_update = 0;
 static volatile uint8_t gfx_changed = 1;
 static volatile uint8_t gfx_dark = 0;
-static volatile uint32_t gfx_msg_time = 0;     /* message timer */
-static char gfx_msg[100];      /* message text */
+static volatile uint32_t gfx_msg_time = 0;      /* message timer */
+static char gfx_msg[100];       /* message text */
 
 static const char *co2_setting(uint16_t cmd, int val);
 
@@ -554,7 +554,7 @@ void co2_task(void *p)
          if (thisrh)
             lastrh = report("rh", lastrh, thisrh, rhplaces);
          if (!num_owb)
-            lasttemp = report("temp", lasttemp, thistemp = t, tempplaces); // Treat as temp not itemp as we trust the SCD41 to be sane
+            lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);      // Treat as temp not itemp as we trust the SCD41 to be sane
       } else
       {                         // Wait for data to be ready
          i = co2_cmd(0x0300);
@@ -720,7 +720,7 @@ void app_main()
    }
    if (gfxdin >= 0)
    {
-      const char *e = gfx_init(cs:gfxcs, sck:gfxclk, mosi:gfxdin, dc:gfxdc, rst:gfxrst, flipx:gfxflip,flipy:gfxflip);
+    const char *e = gfx_init(cs: gfxcs, sck: gfxclk, mosi: gfxdin, dc: gfxdc, rst: gfxrst, flipx: gfxflip, flipy:gfxflip);
       if (e)
       {
          jo_t j = jo_object_alloc();
@@ -902,52 +902,22 @@ void app_main()
          }
       }
       /* Display */
-      gfx_lock();
-      char s[30];
       if (gfx_msg_time)
       {                         /* display fixed message */
          if (gfx_msg_time < (esp_timer_get_time() / 1000000))
          {                      /* time up */
             gfx_msg_time = 0;
+            gfx_lock();
             reset();
+            gfx_unlock();
          } else
          {
-            char *m = gfx_msg;
-            gfx_pos(CONFIG_GFX_WIDTH / 2, 0, GFX_T | GFX_C | GFX_V);
-            uint8_t size = 2;
-            ESP_LOGE(TAG, "Text %s", gfx_msg);
-            while (*m)
-            {
-               if (*m == '[')
-               {
-                  char isf = 1;
-                  for (; *m && *m != ']'; m++)
-                     if (isdigit(*m))
-                        size = *m - '0';        /* size */
-                     else if (isalpha(*m))
-                     {          /* colour */
-                        if ((isf++) & 1)
-                           gfx_colour(*m);
-                        else
-                           gfx_background(*m);
-                     }
-                  if (*m)
-                     m++;
-               }
-               if (!gfx_y())
-                  gfx_clear(0);
-               char *e = m;
-               while (*e && *e != '/' && *e != '[')
-                  e++;
-               gfx_text(size, "%.*s", (int) (e - m), m);
-               m = e;
-               if (*m == '/')
-                  m++;
-            }
-            gfx_unlock();
+            gfx_message(gfx_msg);
             continue;
          }
       }
+      gfx_lock();
+      char s[30];
       if (gfx_dark)
       {                         /* Night mode, just time */
          gfx_colour('r');
