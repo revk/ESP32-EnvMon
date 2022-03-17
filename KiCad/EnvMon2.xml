@@ -2,15 +2,15 @@
 <export version="E">
   <design>
     <source>/Users/adrian/git/ESP32-EnvMon/KiCad/EnvMon2.kicad_sch</source>
-    <date>Tuesday, 08 March 2022 at 08:06:34</date>
+    <date>Thursday, 17 March 2022 at 07:57:45</date>
     <tool>Eeschema (6.0.2-0)</tool>
-    <textvar name="DATE">2022-03-07</textvar>
+    <textvar name="DATE">2022-03-09</textvar>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
         <title>1.5" OLED Module driver with GPIO</title>
         <company>Adrian Kennard / Andrews &amp; Arnold Ltd</company>
         <rev>4</rev>
-        <date>2022-03-07</date>
+        <date>2022-03-09</date>
         <source>EnvMon2.kicad_sch</source>
         <comment number="1" value="@TheRealRevK"/>
         <comment number="2" value="www.me.uk"/>
@@ -152,7 +152,7 @@
       <tstamps>00000000-0000-0000-0000-0000610fe01a</tstamps>
     </comp>
     <comp ref="R1">
-      <value>10M 1% or 0R</value>
+      <value>100k 1% or 0R</value>
       <footprint>RevK:R_0603</footprint>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
@@ -161,7 +161,7 @@
       <tstamps>6324f539-5157-429d-ad08-999e5f3ad633</tstamps>
     </comp>
     <comp ref="R2">
-      <value>3M 1% or NF</value>
+      <value>30k 1% or NF</value>
       <footprint>RevK:R_0603</footprint>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>

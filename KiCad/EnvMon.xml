@@ -2,8 +2,8 @@
 <export version="E">
   <design>
     <source>/Users/adrian/git/ESP32-EnvMon/KiCad/EnvMon.kicad_sch</source>
-    <date>Tuesday, 25 January 2022 at 11:15:09</date>
-    <tool>Eeschema (6.0.1-0)</tool>
+    <date>Thursday, 17 March 2022 at 07:58:22</date>
+    <tool>Eeschema (6.0.2-0)</tool>
     <textvar name="DATE">2022-01-25</textvar>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -207,7 +207,7 @@
       <tstamps>00000000-0000-0000-0000-00006050b2b3</tstamps>
     </comp>
     <comp ref="R1">
-      <value>10M 1% or 0R</value>
+      <value>100k 1% or 0R</value>
       <footprint>RevK:R_0603</footprint>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
@@ -216,7 +216,7 @@
       <tstamps>6324f539-5157-429d-ad08-999e5f3ad633</tstamps>
     </comp>
     <comp ref="R2">
-      <value>3M 1% or NF</value>
+      <value>30k 1% or NF</value>
       <footprint>RevK:R_0603</footprint>
       <libsource lib="Device" part="R" description="Resistor"/>
       <property name="Sheetname" value=""/>
@@ -361,11 +361,11 @@
       <value>ESP32-WROOM-32</value>
       <footprint>RevK:ESP32-WROOM-32</footprint>
       <datasheet>https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf</datasheet>
-      <libsource lib="RF_Module" part="ESP32-WROOM-32" description="RF Module, ESP32-D0WDQ6 SoC, Wi-Fi 802.11b/g/n, Bluetooth, BLE, 32-bit, 2.7-3.6V, onboard antenna, SMD"/>
+      <libsource lib="RevK" part="ESP32-WROOM-32" description="RF Module, ESP32-D0WDQ6 SoC, Wi-Fi 802.11b/g/n, Bluetooth, BLE, 32-bit, 2.7-3.6V, onboard antenna, SMD"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="EnvMon.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
-      <tstamps>00000000-0000-0000-0000-000060467763</tstamps>
+      <tstamps>631c2060-4a7b-4228-aa63-2dcbae795b0f</tstamps>
     </comp>
   </components>
   <libparts>
@@ -529,7 +529,22 @@
         <pin num="21" name="GND" type="power_in"/>
       </pins>
     </libpart>
-    <libpart lib="RF_Module" part="ESP32-WROOM-32">
+    <libpart lib="RevK" part="AA">
+      <description>A&amp;A Logo</description>
+      <fields>
+        <field name="Reference">Logo</field>
+        <field name="Value">AA</field>
+        <field name="Footprint">RevK:AA</field>
+      </fields>
+    </libpart>
+    <libpart lib="RevK" part="AJK">
+      <fields>
+        <field name="Reference">Logo</field>
+        <field name="Value">AJK</field>
+        <field name="Footprint">RevK:AJK</field>
+      </fields>
+    </libpart>
+    <libpart lib="RevK" part="ESP32-WROOM-32">
       <description>RF Module, ESP32-D0WDQ6 SoC, Wi-Fi 802.11b/g/n, Bluetooth, BLE, 32-bit, 2.7-3.6V, onboard antenna, SMD</description>
       <docs>https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf</docs>
       <footprints>
@@ -538,7 +553,7 @@
       <fields>
         <field name="Reference">U</field>
         <field name="Value">ESP32-WROOM-32</field>
-        <field name="Footprint">RF_Module:ESP32-WROOM-32</field>
+        <field name="Footprint">RevK:ESP32-WROOM-32</field>
         <field name="Datasheet">https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf</field>
       </fields>
       <pins>
@@ -582,21 +597,6 @@
         <pin num="38" name="GND" type="passive"/>
         <pin num="39" name="GND" type="passive"/>
       </pins>
-    </libpart>
-    <libpart lib="RevK" part="AA">
-      <description>A&amp;A Logo</description>
-      <fields>
-        <field name="Reference">Logo</field>
-        <field name="Value">AA</field>
-        <field name="Footprint">RevK:AA</field>
-      </fields>
-    </libpart>
-    <libpart lib="RevK" part="AJK">
-      <fields>
-        <field name="Reference">Logo</field>
-        <field name="Value">AJK</field>
-        <field name="Footprint">RevK:AJK</field>
-      </fields>
     </libpart>
     <libpart lib="RevK" part="Hidden">
       <fields>
@@ -677,9 +677,6 @@
     </library>
     <library logical="Interface_USB">
       <uri>/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols//Interface_USB.kicad_sym</uri>
-    </library>
-    <library logical="RF_Module">
-      <uri>/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols//RF_Module.kicad_sym</uri>
     </library>
     <library logical="RevK">
       <uri>/Users/adrian/Documents/KiCad/6.0/symbols/RevK.kicad_sym</uri>

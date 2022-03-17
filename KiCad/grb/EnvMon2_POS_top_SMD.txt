@@ -1,15 +1,15 @@
-### Module positions - created on 2022-03-09 14:02
+### Module positions - created on 2022-03-17 07:57
 ### Printed by pcb_positions plugin
 ## Unit = mm, Angle = deg.
-## Pcb Height 37.050mm, Pcb Width 58.050mm [based on Edge bounding box]
+## Pcb Height 37.050mm, Pcb Width 58.250mm [based on Edge bounding box]
 ## Side : top
 ## Board Aux Origin: 0.000mm ,0.000mm
 # Ref         Val                 Package                       PosX       PosY       Pin1_PosX  Pin1_PosY    Rot     Side      Type
-R1            10M 1% or 0R        R_0603                        131.4250   -86.7500   130.6000   -86.7500      0.0    top       SMD
-U2            SCD41               SCD41                         92.0000    -68.5000   96.0000    -71.0000    180.0    top       SMD
+R1            100k 1% or 0R       R_0603                        131.4250   -86.7500   130.6000   -86.7500      0.0    top       SMD
+U2            SCD41               SCD41                         91.8000    -68.5000   95.8000    -71.0000    180.0    top       SMD
 C2            2.2uF               Hidden                        135.7500   -83.5500   0.0000     0.0000        0.0    top       SMD
 J1            USB-C               USC16-TR-Round                122.2500   -100.0000  0.0000     0.0000        0.0    top       SMD
-R2            3M 1% or NF         R_0603                        131.4250   -88.0000   130.6000   -88.0000      0.0    top       SMD
+R2            30k 1% or NF        R_0603                        131.4250   -88.0000   130.6000   -88.0000      0.0    top       SMD
 R10           4k7                 R_0603                        127.0500   -88.7250   127.0500   -89.5500     90.0    top       SMD
 U1            LMR16006+FB         RegulatorBlockFB              132.2000   -82.7000   133.5500   -83.6500     90.0    top       SMD
 R7            680R                R_0603                        137.0000   -68.6000   137.8250   -68.6000    180.0    top       SMD
