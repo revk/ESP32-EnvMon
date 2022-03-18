@@ -35,7 +35,7 @@ const char TAG[] = "Env";
 	u8(lag,5)	\
 	s8(co2sda,-1)	\
 	s8(co2scl,-1)	\
-	s8(co2address,0x61)	\
+	s8(co2address,0x62)	\
 	s8(co2places,-1)	\
 	u32(co2damp,100)	\
 	s8(tempplaces,1)	\
