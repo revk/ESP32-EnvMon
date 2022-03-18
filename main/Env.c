@@ -38,6 +38,7 @@ const char TAG[] = "Env";
 	s8(co2address,0x62)	\
 	s8(co2places,-1)	\
 	u32(co2damp,100)	\
+	b(co2autocal)	\
 	s8(tempplaces,1)	\
 	s8(rhplaces,0)	\
 	u32(rhdamp,10)	\
@@ -106,8 +107,7 @@ static float thistemp = NOTSET;
 static float thisrh = NOTSET;
 static int8_t co2port = -1;
 static int8_t num_owb = 0;
-static volatile uint16_t do_co2_cmd = 0;
-static volatile int do_co2_value = -1;
+static volatile uint32_t do_co2 = 0;
 static OneWireBus *owb = NULL;
 static owb_rmt_driver_info rmt_driver_info;
 static DS18B20_Info *ds18b20s[MAX_OWB] = { 0 };
@@ -125,7 +125,7 @@ static volatile uint8_t gfx_dark = 0;
 static volatile uint32_t gfx_msg_time = 0;      /* message timer */
 static char gfx_msg[100];       /* message text */
 
-static const char *co2_setting(uint16_t cmd, int val);
+static const char *co2_setting(uint16_t cmd, uint16_t val);
 
 typedef struct value_s value_t;
 struct value_s {
@@ -300,6 +300,10 @@ const char *app_callback(int client, const char *prefix, const char *target, con
    }
    if (!strcmp(suffix, "co2factory") && scd41)
       return co2_setting(0x3632, -1);
+   if (!strcmp(suffix, "co2reload") && scd41)
+      return co2_setting(0x3646, -1);
+   if (!strcmp(suffix, "co2persist") && scd41)
+      return co2_setting(0x3615, -1);
    if (!strcmp(suffix, "co2autocal"))
       return co2_setting(scd41 ? 0x2416 : 0x5306, 1);
    if (!strcmp(suffix, "co2nocal"))
@@ -366,16 +370,14 @@ static esp_err_t co2_start(void)
    ESP_LOGI(TAG, "CO2 start");
    i2c_cmd_handle_t i = co2_cmd(0x21b1);        // Start measurement (SCD41)
    i2c_master_stop(i);
-   esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+   esp_err_t err = i2c_master_cmd_begin(co2port, i, 1000 / portTICK_PERIOD_MS);
    i2c_cmd_link_delete(i);
    return err;
 }
 
-static const char *co2_setting(uint16_t cmd, int val)
+static const char *co2_setting(uint16_t cmd, uint16_t val)
 {
-   do_co2_cmd = 0;
-   do_co2_value = val;
-   do_co2_cmd = cmd;
+   do_co2 = (cmd << 16) + val;
    return "";
 }
 
@@ -454,6 +456,7 @@ void co2_task(void *p)
       vTaskDelete(NULL);
       return;
    }
+   co2_setting(scd41 ? 0x2416 : 0x5306, co2autocal);
    /* Get measurements */
    while (1)
    {
@@ -497,22 +500,23 @@ void co2_task(void *p)
                continue;        // Not ready (least 11 bits 0 means not ready)
          }
       }
-      if (do_co2_cmd)
+      if (do_co2)
       {                         // Do a command from mqtt
+         uint16_t cmd = (do_co2 >> 16);
+         uint16_t val = do_co2;
+         do_co2 = 0;
          if (scd41)
             co2_stop();
-         ESP_LOGI(TAG, "CO2 cmd %04X", do_co2_cmd);
-         int val = do_co2_value;
-         i2c_cmd_handle_t i = co2_cmd(do_co2_cmd);
-         do_co2_cmd = 0;
-         do_co2_value = -1;
-         if (val >= 0)
+         i2c_cmd_handle_t i = co2_cmd(cmd);
+         if (cmd != 0x3632 && cmd != 0x3615 && cmd != 0x3646)
             co2_add(i, val);
          i2c_master_stop(i);
-         err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
+         err = i2c_master_cmd_begin(co2port, i, 1000 / portTICK_PERIOD_MS);
          i2c_cmd_link_delete(i);
          if (err)
             ESP_LOGI(TAG, "CMD failed %s", esp_err_to_name(err));
+         if (scd41)
+            co2_start();
          continue;
       }
       // Data
