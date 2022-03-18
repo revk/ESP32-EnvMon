@@ -43,14 +43,6 @@ const char TAG[] = "Env";
 	u32(rhdamp,10)	\
 	s8(ds18b20,-1)	\
 	s32(ds18b20mC,0)	\
-<<<<<<< HEAD
-	s8(gfxdin,)	\
-	s8(gfxclk,)	\
-	s8(gfxcs,)	\
-	s8(gfxdc,)	\
-	s8(gfxrst,)	\
-	u8(gfxcontrast,)	\
-=======
 	u8(gfxmosi,)	\
 	u8(gfxsck,)	\
 	u8(gfxcs,)	\
@@ -58,7 +50,6 @@ const char TAG[] = "Env";
 	u8(gfxrst,)	\
 	u8(gfxflip,)	\
 	u8(gfxcontrast,255)	\
->>>>>>> 1e5f1e65ae1198254cb8042f7ae3b9c6d782c953
 	u32(gfxmsgtime,30)	\
 	b(f)	\
 	b(ha)	\
