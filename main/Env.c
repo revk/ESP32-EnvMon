@@ -43,14 +43,14 @@ const char TAG[] = "Env";
 	u32(rhdamp,10)	\
 	s8(ds18b20,-1)	\
 	s32(ds18b20mC,0)	\
-	s8(gfxmosi,-1)	\
-	s8(gfxsck,-1)	\
-	s8(gfxcs,-1)	\
-	s8(gfxdc,-1)	\
-	s8(gfxrst,-1)	\
+	u8(gfxmosi,)	\
+	u8(gfxsck,)	\
+	u8(gfxcs,)	\
+	u8(gfxdc,)	\
+	u8(gfxrst,)	\
+	u8(gfxflip,)	\
 	u8(gfxcontrast,255)	\
 	u32(gfxmsgtime,30)	\
-	b(gfxflip)	\
 	b(f)	\
 	b(ha)	\
 	s(fanon)	\
@@ -655,7 +655,7 @@ void app_main()
    revk_boot(&app_callback);
    revk_register("heat", 0, 0, &heaton, NULL, SETTING_SECRET);
    revk_register("fan", 0, 0, &fanon, NULL, SETTING_SECRET);
-   revk_register("gfx", 0, sizeof(gfxflip), &gfxflip, NULL, SETTING_BOOLEAN | SETTING_SECRET);
+   revk_register("gfx", 0, sizeof(gfxmosi), &gfxmosi, NULL, SETTING_SECRET);
    revk_register("co2", 0, sizeof(co2places), &co2places, "-1", SETTING_SIGNED | SETTING_SECRET);
    revk_register("hhmm", 0, sizeof(hhmmday), &hhmmday, NULL, SETTING_SECRET);
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
