@@ -43,8 +43,8 @@ const char TAG[] = "Env";
 	u32(rhdamp,10)	\
 	s8(ds18b20,-1)	\
 	s32(ds18b20mC,0)	\
-	s8(gfxdin,-1)	\
-	s8(gfxclk,-1)	\
+	s8(gfxmosi,-1)	\
+	s8(gfxsck,-1)	\
 	s8(gfxcs,-1)	\
 	s8(gfxdc,-1)	\
 	s8(gfxrst,-1)	\
@@ -718,9 +718,9 @@ void app_main()
             i2c_set_timeout(co2port, 80000 * 5);        /* 5 ms ? allow for clock stretching */
       }
    }
-   if (gfxdin >= 0)
+   if (gfxmosi)
    {
-    const char *e = gfx_init(cs: gfxcs, sck: gfxclk, mosi: gfxdin, dc: gfxdc, rst: gfxrst, flip:gfxflip);
+    const char *e = gfx_init(cs: gfxcs, sck: gfxsck, mosi: gfxmosi, dc: gfxdc, rst: gfxrst, flip:gfxflip);
       if (e)
       {
          jo_t j = jo_object_alloc();
