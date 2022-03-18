@@ -50,7 +50,7 @@ const char TAG[] = "Env";
 	u8(gfxdc,)	\
 	u8(gfxrst,)	\
 	u8(gfxflip,)	\
-	u8(gfxcontrast,255)	\
+	u8(gfxcontrast,)	\
 	u32(gfxmsgtime,30)	\
 	b(f)	\
 	b(ha)	\
