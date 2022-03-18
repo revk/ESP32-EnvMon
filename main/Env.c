@@ -720,7 +720,7 @@ void app_main()
    }
    if (gfxdin >= 0)
    {
-    const char *e = gfx_init(cs: gfxcs, sck: gfxclk, mosi: gfxdin, dc: gfxdc, rst: gfxrst, flipx: gfxflip, flipy:gfxflip);
+    const char *e = gfx_init(cs: gfxcs, sck: gfxclk, mosi: gfxdin, dc: gfxdc, rst: gfxrst, flip:gfxflip);
       if (e)
       {
          jo_t j = jo_object_alloc();
