@@ -1015,7 +1015,7 @@ void app_main()
          gfx_text(1, "o");
          gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
          gfx_text(2, f ? "F" : "C");
-         if (!num_owb)
+         if (!num_owb && !scd41)
             gfx_text(2, "~");
       }
       y += 35 + space;
