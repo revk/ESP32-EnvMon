@@ -681,6 +681,7 @@ void app_main()
 #undef s
        revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINDATA);    /* fixed logo */
    revk_start();
+   revk_blink(0,0,"K");
    if (fanco2gpio >= 0)
       gpio_set_direction(fanco2gpio, GPIO_MODE_OUTPUT);
    if (heatgpio >= 0)
