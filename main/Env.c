@@ -38,7 +38,6 @@ const char TAG[] = "Env";
 	s8(co2address,0x62)	\
 	s8(co2places,-1)	\
 	u32(co2damp,100)	\
-	b(co2autocal)	\
 	s8(tempplaces,1)	\
 	s8(rhplaces,0)	\
 	u32(rhdamp,10)	\
@@ -456,7 +455,6 @@ void co2_task(void *p)
       vTaskDelete(NULL);
       return;
    }
-   co2_setting(scd41 ? 0x2416 : 0x5306, co2autocal);
    /* Get measurements */
    while (1)
    {
@@ -681,7 +679,6 @@ void app_main()
 #undef s
        revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINDATA);    /* fixed logo */
    revk_start();
-   revk_blink(0,0,"K");
    if (fanco2gpio >= 0)
       gpio_set_direction(fanco2gpio, GPIO_MODE_OUTPUT);
    if (heatgpio >= 0)
@@ -925,6 +922,7 @@ void app_main()
       char s[30];
       if (gfx_dark)
       {                         /* Night mode, just time */
+         revk_blink(0, 0, "K");
          gfx_colour('r');
          reset();
          if (!notime)
@@ -964,10 +962,25 @@ void app_main()
       }
       int y = 0,
           space = (CONFIG_GFX_HEIGHT - 28 - 35 - 21 - 9) / 3;
+      int32_t reftemp = temp_target ? : 21000;
+      int32_t thismC = thistemp * 1000;
+      char co2col = (showco2 < 200 ? 'K' : showco2 > (fanco2on ? : 1000) ? 'R' : showco2 > (fanco2off ? : 750) ? 'Y' : 'G');
+      char tempcol = (showtemp == NOTSET ? 'K' : thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');
+      char rhcol = (showrh < 0 ? 'K' : 'C');
+      static char cols[4],
+      *c = cols;
+      if (co2col != 'K')
+         *c++ = co2col;
+      if (tempcol != 'K')
+         *c++ = tempcol;
+      if (rhcol != 'K')
+         *c++ = rhcol;
+      *c = 0;
+      revk_blink(0, 0, cols);
       if (thisco2 != showco2)
       {
          showco2 = thisco2;
-         gfx_colour(showco2 < 200 ? 'K' : showco2 > (fanco2on ? : 1000) ? 'R' : showco2 > (fanco2off ? : 750) ? 'Y' : 'G');
+         gfx_colour(co2col);
          if (showco2 < 200)
             strcpy(s, "?LOW");
          else if (showco2 >= 10000.0)
@@ -989,14 +1002,7 @@ void app_main()
       if (thistemp != showtemp)
       {
          showtemp = thistemp;
-         int32_t reftemp = temp_target ? : 21000;
-         int32_t thismC = thistemp * 1000;
-         if (showtemp == NOTSET)
-            gfx_colour('K');
-         else if (reftemp)
-            gfx_colour(thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');
-         else
-            gfx_colour('W');
+         gfx_colour(tempcol);
          gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
          if (f)
          {                      /* Fahrenheit */
@@ -1027,7 +1033,7 @@ void app_main()
       if (thisrh != showrh)
       {
          showrh = thisrh;
-         gfx_colour(showrh < 0 ? 'K' : 'C');
+         gfx_colour(rhcol);
          gfx_pos(3, y, GFX_T | GFX_L | GFX_H);
          if (showrh <= 0)
             strcpy(s, "__");
