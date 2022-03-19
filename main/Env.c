@@ -967,17 +967,17 @@ void app_main()
       char co2col = (showco2 < 200 ? 'K' : showco2 > (fanco2on ? : 1000) ? 'R' : showco2 > (fanco2off ? : 750) ? 'Y' : 'G');
       char tempcol = (showtemp == NOTSET ? 'K' : thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');
       char rhcol = (showrh < 0 ? 'K' : 'C');
-      { // Colours for LED
-      static char cols[4];
-      char *c = cols;
-      if (co2col != 'K')
-         *c++ = co2col;
-      if (tempcol != 'K')
-         *c++ = tempcol;
-      if (rhcol != 'K')
-         *c++ = rhcol;
-      *c = 0;
-      revk_blink(0, 0, cols);
+      {                         // Colours for LED
+         static char cols[4];
+         char *c = cols;
+         if (co2col != 'K')
+            *c++ = co2col;
+         if (tempcol != 'K')
+            *c++ = tempcol;
+         if (rhcol != 'K')
+            *c++ = rhcol;
+         *c = 0;
+         revk_blink(0, 0, cols);
       }
       if (thisco2 != showco2)
       {
