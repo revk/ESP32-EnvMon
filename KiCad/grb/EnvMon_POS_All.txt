@@ -1,14 +1,16 @@
-### Module positions - created on 2022-03-17 07:58
+### Module positions - created on 2022-03-20 16:30
 ### Printed by pcb_positions plugin
 ## Unit = mm, Angle = deg.
 ## Pcb Height 37.050mm, Pcb Width 44.550mm [based on Edge bounding box]
 ## Side : ALL
 ## Board Aux Origin: 0.000mm ,0.000mm
 # Ref         Val                 Package                       PosX       PosY       Pin1_PosX  Pin1_PosY    Rot     Side      Type
+J2            DC                  DC                            106.0250   -98.5520   106.0250   -98.5520    180.0    bottom    VIRTUAL
+D2            D                   D_1206                        94.9000    -87.2000   94.9000    -85.8000    -90.0    top       SMD
 J1            USB-C               USC16-TR-Round                99.7500    -99.9950   0.0000     0.0000        0.0    top       SMD
 J3            GPIO                Molex_MiniSPOX_H8RA           117.8000   -93.1500   109.0500   -93.1500      0.0    top       THD
 M2            OLED1.5-RGB         OLED1.5-RGB                   134.5000   -63.0000   92.5000    -73.8800    180.0    top       THD
-Logo3         AJK                 AJK                           129.5000   -73.2000   0.0000     0.0000       90.0    top       THD
+Logo3         AJK                 AJK                           129.5000   -73.2000   0.0000     0.0000       90.0    top       VIRTUAL
 U2            FT231XQ             QFN-20-1EP_4x4mm_P0.5mm_EP2.. 99.9750    -88.1250   98.0750    -87.1250      0.0    top       SMD
 R3            5K1                 R_0603_1608Metric_Pad0.98x0.. 93.3000    -92.5000   93.3000    -91.5875    -90.0    top       SMD
 R4            5K1                 R_0603_1608Metric_Pad0.98x0.. 91.8000    -92.5000   91.8000    -91.5875    -90.0    top       SMD
@@ -25,7 +27,6 @@ C4            10nF                C_0603                        94.9000    -91.0
 U1            LMR16006+FB         RegulatorBlockFB              97.4000    -78.5000   96.4500    -79.8500      0.0    top       SMD
 R1            100k 1% or 0R       R_0603                        94.9000    -74.8000   94.9000    -73.9750    -90.0    top       SMD
 R2            30k 1% or NF        R_0603                        96.2000    -74.8000   96.2000    -73.9750    -90.0    top       SMD
-D2            D                   D_1206_3216Metric             94.9000    -87.2000   94.9000    -85.8000    -90.0    top       SMD
 U3            ESP32-WROOM-32      ESP32-WROOM-32                115.2500   -79.0000   106.7500   -70.7450      0.0    top       SMD
 M1            SCD30-4pin          SCD30-4pin                    130.2000   -69.4000   96.6000    -70.8000    -90.0    bottom    THD
 R8            NF                  R_1206_3216Metric_Pad1.30x1.. 111.5500   -96.9500   111.5500   -95.4000    -90.0    bottom    SMD
@@ -35,16 +36,15 @@ R11           NF                  R_1206_3216Metric_Pad1.30x1.. 119.0500   -96.9
 R12           NF                  R_1206_3216Metric_Pad1.30x1.. 121.5500   -96.9500   121.5500   -95.4000    -90.0    bottom    SMD
 R13           NF                  R_1206_3216Metric_Pad1.30x1.. 124.0500   -96.9500   124.0500   -95.4000    -90.0    bottom    SMD
 R14           NF                  R_1206_3216Metric_Pad1.30x1.. 126.5500   -96.9500   126.5500   -95.4000    -90.0    bottom    SMD
-Logo2         AJK                 AJK                           129.8000   -72.9000   0.0000     0.0000      -90.0    bottom    THD
-Logo1         AA                  AA                            128.6000   -83.8000   0.0000     0.0000      -90.0    bottom    THD
-J2            DC                  PinHeader_1x02_P2.54mm_Vert.. 106.0250   -96.0000   106.0250   -96.0000    -90.0    bottom    THD
+Logo2         AJK                 AJK                           129.8000   -72.9000   0.0000     0.0000      -90.0    bottom    VIRTUAL
+Logo1         AA                  AA                            128.6000   -83.8000   0.0000     0.0000      -90.0    bottom    VIRTUAL
 ## End
-## 178 SMD pads
-## 33 TH pads
-## 0 Virtual pads
-## 4 Top TH modules
-## 4 Bot TH modules
+## 176 SMD pads
+## 29 TH pads
+## 3 Virtual pads
+## 3 Top TH modules
+## 1 Bot TH modules
 ## 18 Top SMD modules
 ## 7 Bot SMD modules
-## 0 Top Virtual modules
-## 0 Bot Virtual modules
+## 1 Top Virtual modules
+## 3 Bot Virtual modules

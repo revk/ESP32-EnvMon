@@ -2,15 +2,15 @@
 <export version="E">
   <design>
     <source>/Users/adrian/git/ESP32-EnvMon/KiCad/EnvMon.kicad_sch</source>
-    <date>Thursday, 17 March 2022 at 07:58:22</date>
+    <date>Sunday, 20 March 2022 at 16:30:16</date>
     <tool>Eeschema (6.0.2-0)</tool>
-    <textvar name="DATE">2022-01-25</textvar>
+    <textvar name="DATE">2022-03-20</textvar>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
         <title>1.5" OLED Module driver with GPIO</title>
         <company>Adrian Kennard / Andrews &amp; Arnold Ltd</company>
         <rev>4</rev>
-        <date>2022-01-25</date>
+        <date>2022-03-20</date>
         <source>EnvMon.kicad_sch</source>
         <comment number="1" value="@TheRealRevK"/>
         <comment number="2" value="www.me.uk"/>
@@ -95,7 +95,7 @@
     </comp>
     <comp ref="D2">
       <value>D</value>
-      <footprint>Diode_SMD:D_1206_3216Metric</footprint>
+      <footprint>RevK:D_1206</footprint>
       <libsource lib="Device" part="D" description="Diode"/>
       <property name="Sheetname" value=""/>
       <property name="Sheetfile" value="EnvMon.kicad_sch"/>
@@ -120,19 +120,6 @@
       <property name="Sheetfile" value="EnvMon.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>00000000-0000-0000-0000-0000604764e2</tstamps>
-    </comp>
-    <comp ref="J2">
-      <value>DC</value>
-      <footprint>Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical</footprint>
-      <fields>
-        <field name="Notes">Not fitted</field>
-      </fields>
-      <libsource lib="RevK" part="PowerIn" description=""/>
-      <property name="Notes" value="Not fitted"/>
-      <property name="Sheetname" value=""/>
-      <property name="Sheetfile" value="EnvMon.kicad_sch"/>
-      <sheetpath names="/" tstamps="/"/>
-      <tstamps>05c95e20-b8ce-45a0-abe6-40ea1ba1906f</tstamps>
     </comp>
     <comp ref="J3">
       <value>GPIO</value>
@@ -159,33 +146,6 @@
       <property name="Sheetfile" value="EnvMon.kicad_sch"/>
       <sheetpath names="/" tstamps="/"/>
       <tstamps>00000000-0000-0000-0000-0000610fe01a</tstamps>
-    </comp>
-    <comp ref="Logo1">
-      <value>AA</value>
-      <footprint>RevK:AA</footprint>
-      <libsource lib="RevK" part="AA" description="A&amp;A Logo"/>
-      <property name="Sheetname" value=""/>
-      <property name="Sheetfile" value="EnvMon.kicad_sch"/>
-      <sheetpath names="/" tstamps="/"/>
-      <tstamps>00000000-0000-0000-0000-000060a6ada4</tstamps>
-    </comp>
-    <comp ref="Logo2">
-      <value>AJK</value>
-      <footprint>RevK:AJK</footprint>
-      <libsource lib="RevK" part="AJK" description=""/>
-      <property name="Sheetname" value=""/>
-      <property name="Sheetfile" value="EnvMon.kicad_sch"/>
-      <sheetpath names="/" tstamps="/"/>
-      <tstamps>00000000-0000-0000-0000-000060625c2f</tstamps>
-    </comp>
-    <comp ref="Logo3">
-      <value>AJK</value>
-      <footprint>RevK:AJK</footprint>
-      <libsource lib="RevK" part="AJK" description=""/>
-      <property name="Sheetname" value=""/>
-      <property name="Sheetfile" value="EnvMon.kicad_sch"/>
-      <sheetpath names="/" tstamps="/"/>
-      <tstamps>00000000-0000-0000-0000-00006061dc7b</tstamps>
     </comp>
     <comp ref="M1">
       <value>SCD30-4pin</value>
@@ -369,6 +329,14 @@
     </comp>
   </components>
   <libparts>
+    <libpart lib="" part="AJK_1">
+      <fields>
+        <field name="Reference">Logo</field>
+        <field name="Value">AJK_1</field>
+        <field name="Footprint">RevK:AJK</field>
+        <field name="Note">Non part, PCB printed</field>
+      </fields>
+    </libpart>
     <libpart lib="Connector" part="Conn_01x08_Male">
       <description>Generic connector, single row, 01x08, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
       <docs>~</docs>
@@ -535,6 +503,7 @@
         <field name="Reference">Logo</field>
         <field name="Value">AA</field>
         <field name="Footprint">RevK:AA</field>
+        <field name="Note">Non part, PCB printed</field>
       </fields>
     </libpart>
     <libpart lib="RevK" part="AJK">
@@ -542,6 +511,7 @@
         <field name="Reference">Logo</field>
         <field name="Value">AJK</field>
         <field name="Footprint">RevK:AJK</field>
+        <field name="Note">Non part, PCB printed</field>
       </fields>
     </libpart>
     <libpart lib="RevK" part="ESP32-WROOM-32">
@@ -638,7 +608,6 @@
         <pin num="5" name="CS" type="input"/>
         <pin num="6" name="DC" type="input"/>
         <pin num="7" name="RST" type="input"/>
-        <pin num="S" name="SCREWS" type="passive"/>
       </pins>
     </libpart>
     <libpart lib="RevK" part="PowerIn">
@@ -648,10 +617,11 @@
       <fields>
         <field name="Reference">J</field>
         <field name="Value">PowerIn</field>
+        <field name="Footprint">RevK:Molex_MiniSPOX_H2RA</field>
       </fields>
       <pins>
-        <pin num="1" name="Pin_1" type="power_out"/>
-        <pin num="2" name="Pin_2" type="power_out"/>
+        <pin num="1" name="GND" type="power_in"/>
+        <pin num="2" name="DC" type="power_out"/>
       </pins>
     </libpart>
     <libpart lib="RevK" part="SCD30-4pin">
@@ -716,7 +686,6 @@
     </net>
     <net code="5" name="DC">
       <node ref="D2" pin="1" pinfunction="K" pintype="passive"/>
-      <node ref="J2" pin="2" pinfunction="Pin_2" pintype="power_out"/>
       <node ref="U1" pin="1" pinfunction="SHDN" pintype="input"/>
       <node ref="U1" pin="2" pinfunction="VIN" pintype="power_in"/>
     </net>
@@ -731,11 +700,9 @@
       <node ref="J1" pin="B1" pinfunction="GND" pintype="passive"/>
       <node ref="J1" pin="B12" pinfunction="GND" pintype="passive"/>
       <node ref="J1" pin="S1" pinfunction="SHIELD" pintype="passive"/>
-      <node ref="J2" pin="1" pinfunction="Pin_1" pintype="power_out"/>
       <node ref="J3" pin="1" pinfunction="Pin_1" pintype="passive"/>
       <node ref="M1" pin="2" pinfunction="GND" pintype="power_in"/>
       <node ref="M2" pin="2" pinfunction="GND" pintype="power_in"/>
-      <node ref="M2" pin="S" pinfunction="SCREWS" pintype="passive"/>
       <node ref="R2" pin="1" pintype="passive"/>
       <node ref="R3" pin="2" pintype="passive"/>
       <node ref="R4" pin="2" pintype="passive"/>
