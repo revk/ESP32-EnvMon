@@ -945,7 +945,7 @@ void app_main()
             gfx_text(1, s);
          }
       }
-      if (scd41 && thisco2 == NOTSET && scd41_settled > up)
+      if (scd41 && thisco2 == NOTSET && scd41_settled >= up)
       {
          sprintf(s, "%d:%02d", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
          gfx_colour('O');
