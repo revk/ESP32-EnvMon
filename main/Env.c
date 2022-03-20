@@ -335,8 +335,8 @@ static uint8_t co2_crc(uint8_t b1, uint8_t b2)
    return crc;
 }
 
-static i2c_cmd_handle_t co2_cmd(uint16_t c)
-{
+static i2c_cmd_handle_t co2_setup(uint16_t c)
+{                               // Set up command
    i2c_cmd_handle_t i = i2c_cmd_link_create();
    i2c_master_start(i);
    i2c_master_write_byte(i, (co2address << 1), ACK_CHECK_EN);
@@ -346,32 +346,45 @@ static i2c_cmd_handle_t co2_cmd(uint16_t c)
 }
 
 static void co2_add(i2c_cmd_handle_t i, uint16_t v)
-{
+{                               // Add word to command
    i2c_master_write_byte(i, v >> 8, true);
    i2c_master_write_byte(i, v, true);
    i2c_master_write_byte(i, co2_crc(v >> 8, v), true);
 }
 
-static esp_err_t co2_stop(void)
-{
-   ESP_LOGI(TAG, "CO2 stop");
-   i2c_cmd_handle_t i = co2_cmd(0x3f86);        // Stop measurement (SCD41)
-   i2c_master_stop(i);
-   esp_err_t err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-   i2c_cmd_link_delete(i);
-   if (!err)
-      usleep(500000);           // Takes time
+static esp_err_t co2_done(i2c_cmd_handle_t * i)
+{                               // Finish command
+   i2c_master_stop(*i);
+   esp_err_t err = i2c_master_cmd_begin(co2port, *i, 1000 / portTICK_PERIOD_MS);
+   i2c_cmd_link_delete(*i);
+   *i = NULL;
    return err;
 }
 
-static esp_err_t co2_start(void)
+static esp_err_t co2_command(uint16_t c)
 {
-   ESP_LOGI(TAG, "CO2 start");
-   i2c_cmd_handle_t i = co2_cmd(0x21b1);        // Start measurement (SCD41)
-   i2c_master_stop(i);
-   esp_err_t err = i2c_master_cmd_begin(co2port, i, 1000 / portTICK_PERIOD_MS);
-   i2c_cmd_link_delete(i);
-   return err;
+   i2c_cmd_handle_t i = co2_setup(c);
+   return co2_done(&i);
+}
+
+static esp_err_t co2_read(int len, uint8_t * buf)
+{
+   i2c_cmd_handle_t i = i2c_cmd_link_create();
+   i2c_master_start(i);
+   i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
+   i2c_master_read(i, buf, len - 1, ACK_VAL);
+   i2c_master_read_byte(i, buf + len - 1, NACK_VAL);
+   return co2_done(&i);
+}
+
+static esp_err_t co2_scd41_stop_measure(void)
+{
+   return co2_command(0x3f86);  // Stop measurement (SCD41)
+}
+
+static esp_err_t co2_scd41_start_measure(void)
+{
+   return co2_command(0x21b1);  // Start measurement (SCD41)
 }
 
 static const char *co2_setting(uint16_t cmd, uint16_t val)
@@ -386,39 +399,19 @@ void co2_task(void *p)
    ESP_LOGI(TAG, "CO2 start");
    int try = 10;
    esp_err_t err = 0;
-   i2c_cmd_handle_t i;
    while (try--)
    {
       if (scd41)
       {
-         err = co2_stop();
+         err = co2_scd41_stop_measure();
          if (!err)
-         {
-            i = co2_cmd(0x3646);        // Re init
-            i2c_master_stop(i);
-            err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-            i2c_cmd_link_delete(i);
-            if (!err)
-               usleep(20000);
-         }
+            err = co2_command(0x3646);  // Reinit
          if (!err)
-         {
-            i = co2_cmd(0x3682);        // Get serial number
-            i2c_master_stop(i);
-            err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-            i2c_cmd_link_delete(i);
-         }
+            err = co2_command(0x3682);  // Get serial number
          if (!err)
          {                      // Read
             uint8_t buf[9];
-            i = i2c_cmd_link_create();
-            i2c_master_start(i);
-            i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
-            i2c_master_read(i, buf, sizeof(buf) - 1, ACK_VAL);
-            i2c_master_read_byte(i, buf + sizeof(buf) - 1, NACK_VAL);
-            i2c_master_stop(i);
-            err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-            i2c_cmd_link_delete(i);
+            err = co2_read(sizeof(buf), buf);
             if (!err)
             {                   // OK
                if (co2_crc(buf[0], buf[1]) == buf[2] && co2_crc(buf[3], buf[4]) == buf[5] && co2_crc(buf[6], buf[7]) == buf[8])
@@ -434,11 +427,7 @@ void co2_task(void *p)
          }
       } else
       {                         // Just try starting measurement
-         i = co2_cmd(0x0010);   // Start measurement
-         co2_add(i, 0);         /* 0 = unknown */
-         i2c_master_stop(i);
-         err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-         i2c_cmd_link_delete(i);
+         err = co2_command(0x0010);     // Start measurement
          if (!err)
             break;
       }
@@ -460,26 +449,15 @@ void co2_task(void *p)
    {
       usleep(100000);
       {                         // Ready status
-         i = co2_cmd(scd41 ? 0xe4b8 : 0x0202);
-         /* Get ready state */
-         i2c_master_stop(i);
-         err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-         i2c_cmd_link_delete(i);
+         err = co2_command(scd41 ? 0xe4b8 : 0x0202);
          if (err)
          {
             ESP_LOGI(TAG, "Tx GetReady %s", esp_err_to_name(err));
             continue;
          }
-         {
+         {                      // Read status
             uint8_t buf[3];
-            i = i2c_cmd_link_create();
-            i2c_master_start(i);
-            i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
-            i2c_master_read(i, buf, sizeof(buf) - 1, ACK_VAL);
-            i2c_master_read_byte(i, buf + sizeof(buf) - 1, NACK_VAL);
-            i2c_master_stop(i);
-            err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-            i2c_cmd_link_delete(i);
+            err = co2_read(sizeof(buf), buf);
             if (err)
             {
                ESP_LOGI(TAG, "Rx GetReady %s", esp_err_to_name(err));
@@ -491,7 +469,7 @@ void co2_task(void *p)
                continue;
             }
             if (scd41 && !(buf[0] & 0x80))
-               co2_start();     // Undocumented but top bit 8 if not running
+               co2_scd41_start_measure();       // Undocumented but top bit 8 if not running
             if (!scd41 && (buf[0] << 8) + buf[1] != 1)
                continue;        // Not ready (1 means ready)
             if (scd41 && !(buf[0] & 7) && !buf[1])
@@ -504,40 +482,28 @@ void co2_task(void *p)
          uint16_t val = do_co2;
          do_co2 = 0;
          if (scd41)
-            co2_stop();
-         i2c_cmd_handle_t i = co2_cmd(cmd);
+            co2_scd41_stop_measure();
+         i2c_cmd_handle_t i = co2_setup(cmd);
          if (cmd != 0x3632 && cmd != 0x3615 && cmd != 0x3646)
             co2_add(i, val);
-         i2c_master_stop(i);
-         err = i2c_master_cmd_begin(co2port, i, 1000 / portTICK_PERIOD_MS);
-         i2c_cmd_link_delete(i);
+         err = co2_done(&i);
          if (err)
             ESP_LOGI(TAG, "CMD failed %s", esp_err_to_name(err));
          if (scd41)
-            co2_start();
+            co2_scd41_start_measure();
          continue;
       }
       // Data
       if (scd41)
       {
-         i = co2_cmd(0xec05);   // read data
-         i2c_master_stop(i);
-         err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-         i2c_cmd_link_delete(i);
+         err = co2_command(0xec05);     // read data
          if (err)
          {
             ESP_LOGI(TAG, "Tx GetData %s", esp_err_to_name(err));
             continue;
          }
          uint8_t buf[9];
-         i = i2c_cmd_link_create();
-         i2c_master_start(i);
-         i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
-         i2c_master_read(i, buf, sizeof(buf) - 1, ACK_VAL);
-         i2c_master_read_byte(i, buf + sizeof(buf) - 1, NACK_VAL);
-         i2c_master_stop(i);
-         err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-         i2c_cmd_link_delete(i);
+         err = co2_read(sizeof(buf), buf);
          if (err)
          {
             ESP_LOGI(TAG, "Rx Data %s", esp_err_to_name(err));
@@ -559,11 +525,7 @@ void co2_task(void *p)
             lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);      // Treat as temp not itemp as we trust the SCD41 to be sane
       } else
       {                         // Wait for data to be ready
-         i = co2_cmd(0x0300);
-         /* Read data */
-         i2c_master_stop(i);
-         err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-         i2c_cmd_link_delete(i);
+         err = co2_command(0x0300);
          if (err)
          {
             ESP_LOGI(TAG, "Tx GetData %s", esp_err_to_name(err));
@@ -571,14 +533,7 @@ void co2_task(void *p)
          }
          {
             uint8_t buf[18];
-            i = i2c_cmd_link_create();
-            i2c_master_start(i);
-            i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
-            i2c_master_read(i, buf, sizeof(buf) - 1, ACK_VAL);
-            i2c_master_read_byte(i, buf + sizeof(buf) - 1, NACK_VAL);
-            i2c_master_stop(i);
-            err = i2c_master_cmd_begin(co2port, i, 10 / portTICK_PERIOD_MS);
-            i2c_cmd_link_delete(i);
+            err = co2_read(sizeof(buf), buf);
             if (err)
             {
                ESP_LOGI(TAG, "Rx Data %s", esp_err_to_name(err));
