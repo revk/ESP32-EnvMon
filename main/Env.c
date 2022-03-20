@@ -817,7 +817,7 @@ void app_main()
       if (up > 60 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
          reportall(now);        // Don't report right away if clock may be duff
       static uint32_t fanwait = 0;
-      if (fanwait < up && (fanco2on || fanco2off || fanrhon || fanrhoff))
+      if (thisco2 != NOTSET && thisrh != NOTSET && fanwait < up && (fanco2on || fanco2off || fanrhon || fanrhoff))
       {                         /* Fan control */
          const char *fan = NULL;
          if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)))
@@ -848,7 +848,7 @@ void app_main()
          }
       }
       static uint32_t heatwait = 0;
-      if (heatwait < up && (heatnightmC || heatdaymC || heatratemC || temp_target || heatgpio >= 0 || heaton || heatoff))
+      if (thistemp != NOTSET && heatwait < up && (heatnightmC || heatdaymC || heatratemC || temp_target || heatgpio >= 0 || heaton || heatoff))
       {                         /* Heat control */
          if (temp_target || heatlast == 1)
          {                      /* We have a reference temp to work with or we left on */
