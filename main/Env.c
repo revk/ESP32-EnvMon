@@ -379,7 +379,9 @@ static esp_err_t co2_read(int len, uint8_t * buf)
 
 static esp_err_t co2_scd41_stop_measure(void)
 {
-   return co2_command(0x3f86);  // Stop measurement (SCD41)
+   esp_err_t err = co2_command(0x3f86); // Stop measurement (SCD41)
+   sleep(1);
+   return err;
 }
 
 static esp_err_t co2_scd41_start_measure(void)
@@ -492,8 +494,10 @@ void co2_task(void *p)
          err = co2_done(&i);
          if (err)
             ESP_LOGI(TAG, "CMD failed %s", esp_err_to_name(err));
-         else
+         if (cmd == 0x362f || cmd == 0x3615 || cmd == 0x3632)
             sleep(1);
+         else if (cmd == 0x3639)
+            sleep(10);
          if (scd41)
             co2_scd41_start_measure();
          continue;
