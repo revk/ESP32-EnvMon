@@ -536,15 +536,15 @@ void co2_task(void *p)
             ESP_LOGI(TAG, "Rx bad CRC");
             continue;
          }
-         thisco2 = (float) ((buf[0] << 8) + buf[1]);
+         float c = (float) ((buf[0] << 8) + buf[1]);
          float t = -45.0 + 175.0 * (float) ((buf[3] << 8) + buf[4]) / 65536.0;
-         thisrh = 100.0 * (float) ((buf[6] << 8) + buf[7]) / 65536.0;
+         float r = 100.0 * (float) ((buf[6] << 8) + buf[7]) / 65536.0;
          if (scd41_settled && scd41_settled < uptime())
          {
-            if (thisco2)
-               lastco2 = report("co2", lastco2, thisco2, co2places);
-            if (thisrh)
-               lastrh = report("rh", lastrh, thisrh, rhplaces);
+            if (c)
+               lastco2 = report("co2", lastco2, thisco2 = c, co2places);
+            if (r)
+               lastrh = report("rh", lastrh, thisrh = r, rhplaces);
             if (!num_owb)
                lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);   // Treat as temp not itemp as we trust the SCD41 to be sane
          }
@@ -944,6 +944,13 @@ void app_main()
             gfx_pos(0, CONFIG_GFX_HEIGHT - 1, GFX_B | GFX_L);
             gfx_text(1, s);
          }
+      }
+      if (scd41 && thisco2 == NOTSET && scd41_settled > up)
+      {
+         sprintf(s, "%d:%02d", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
+         gfx_colour('O');
+         gfx_pos(4, 0, GFX_T | GFX_L);
+         gfx_text(4, s);
       }
       int y = 0,
           space = (CONFIG_GFX_HEIGHT - 28 - 35 - 21 - 9) / 3;
