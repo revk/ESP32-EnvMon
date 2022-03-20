@@ -696,7 +696,6 @@ void app_main()
       }
    }
    gfx_lock();
-   gfx_set_contrast(gfxcontrast);
    gfx_colour('B');
    gfx_box(CONFIG_GFX_WIDTH, CONFIG_GFX_HEIGHT, 255);
    gfx_unlock();
@@ -870,6 +869,7 @@ void app_main()
       /* Display */
       if (gfx_msg_time)
       {                         /* display fixed message */
+         gfx_set_contrast(gfxcontrast);
          if (gfx_msg_time < (esp_timer_get_time() / 1000000))
          {                      /* time up */
             gfx_msg_time = 0;
@@ -886,6 +886,7 @@ void app_main()
       char s[30];
       if (gfx_dark)
       {                         /* Night mode, just time */
+         gfx_set_contrast(1);
          revk_blink(0, 0, "K");
          gfx_colour('r');
          reset();
@@ -904,6 +905,7 @@ void app_main()
          gfx_unlock();
          continue;
       }
+      gfx_set_contrast(gfxcontrast);
       if (showlogo)
       {
          showlogo = 0;
