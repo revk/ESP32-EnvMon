@@ -355,7 +355,7 @@ static void co2_add(i2c_cmd_handle_t i, uint16_t v)
 static esp_err_t co2_done(i2c_cmd_handle_t * i)
 {                               // Finish command
    i2c_master_stop(*i);
-   esp_err_t err = i2c_master_cmd_begin(co2port, *i, 1000 / portTICK_PERIOD_MS);
+   esp_err_t err = i2c_master_cmd_begin(co2port, *i, 10 / portTICK_PERIOD_MS);
    i2c_cmd_link_delete(*i);
    *i = NULL;
    return err;
@@ -401,13 +401,17 @@ void co2_task(void *p)
    esp_err_t err = 0;
    while (try--)
    {
+      sleep(1);
       if (scd41)
       {
          err = co2_scd41_stop_measure();
          if (!err)
             err = co2_command(0x3646);  // Reinit
          if (!err)
+         {
+            sleep(1);           // Time for reinit
             err = co2_command(0x3682);  // Get serial number
+         }
          if (!err)
          {                      // Read
             uint8_t buf[9];
@@ -432,7 +436,6 @@ void co2_task(void *p)
             break;
       }
       ESP_LOGI(TAG, "CO2 retry");
-      sleep(1);
    }
    if (err)
    {                            /* failed */
@@ -489,6 +492,8 @@ void co2_task(void *p)
          err = co2_done(&i);
          if (err)
             ESP_LOGI(TAG, "CMD failed %s", esp_err_to_name(err));
+         else
+            sleep(1);
          if (scd41)
             co2_scd41_start_measure();
          continue;
