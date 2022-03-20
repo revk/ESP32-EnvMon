@@ -96,7 +96,7 @@ settings
 #undef s
 #define	NOTSET	-10000.0
 static uint8_t scd41 = 0;
-static uint32_t scd41_temp_ok = 0;      // uptime when started measurements
+static uint32_t scd41_settled = 0;      // uptime when started measurements
 
 static uint8_t logo[LOGOW * LOGOH / 2];
 static float lastco2 = NOTSET;
@@ -383,7 +383,7 @@ static esp_err_t co2_read(int len, uint8_t * buf)
 
 static esp_err_t co2_scd41_stop_measure(void)
 {
-   scd41_temp_ok = 0;
+   scd41_settled = 0;
    esp_err_t err = co2_command(0x3f86); // Stop measurement (SCD41)
    sleep(1);
    return err;
@@ -391,7 +391,7 @@ static esp_err_t co2_scd41_stop_measure(void)
 
 static esp_err_t co2_scd41_start_measure(void)
 {
-   scd41_temp_ok = uptime() + 300;      // Time for temp to settle
+   scd41_settled = uptime() + 300;      // Time for temp to settle
    return co2_command(0x21b1);  // Start measurement (SCD41)
 }
 
@@ -539,12 +539,15 @@ void co2_task(void *p)
          thisco2 = (float) ((buf[0] << 8) + buf[1]);
          float t = -45.0 + 175.0 * (float) ((buf[3] << 8) + buf[4]) / 65536.0;
          thisrh = 100.0 * (float) ((buf[6] << 8) + buf[7]) / 65536.0;
-         if (thisco2)
-            lastco2 = report("co2", lastco2, thisco2, co2places);
-         if (thisrh)
-            lastrh = report("rh", lastrh, thisrh, rhplaces);
-         if (!num_owb && scd41_temp_ok && scd41_temp_ok < uptime())
-            lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);      // Treat as temp not itemp as we trust the SCD41 to be sane
+         if (scd41_settled && scd41_settled < uptime())
+         {
+            if (thisco2)
+               lastco2 = report("co2", lastco2, thisco2, co2places);
+            if (thisrh)
+               lastrh = report("rh", lastrh, thisrh, rhplaces);
+            if (!num_owb)
+               lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);   // Treat as temp not itemp as we trust the SCD41 to be sane
+         }
       } else
       {                         // Wait for data to be ready
          err = co2_command(0x0300);
