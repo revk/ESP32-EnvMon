@@ -909,12 +909,12 @@ void app_main()
             int d = t.tm_sec;
             if (t.tm_min & 1)
                d = 60 - d;
-            int y = CONFIG_GFX_HEIGHT / 2 - 7 + d - 30;
-            d = t.tm_sec;
+            int y = CONFIG_GFX_HEIGHT / 2 + d - 30;
+            d = t.tm_min;
             if (t.tm_hour & 1)
                d = 60 - d;
-            int x = CONFIG_GFX_WIDTH / 2 - 21 + d - 30;
-            gfx_pos(x, y, GFX_B | GFX_L);
+            int x = CONFIG_GFX_WIDTH / 2 + d - 30;
+            gfx_pos(x, y, GFX_M | GFX_C);
             gfx_text(2, s);
          }
          gfx_unlock();
