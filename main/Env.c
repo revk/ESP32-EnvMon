@@ -96,6 +96,8 @@ settings
 #undef s
 #define	NOTSET	-10000.0
 static uint8_t scd41 = 0;
+static uint32_t scd41_temp_ok = 0;      // uptime when started measurements
+
 static uint8_t logo[LOGOW * LOGOH / 2];
 static float lastco2 = NOTSET;
 static float lastrh = NOTSET;
@@ -270,6 +272,8 @@ const char *app_callback(int client, const char *prefix, const char *target, con
    }
    if (!strcmp(suffix, "connect"))
    {
+      if (scd41)
+         co2_setting(0x3682, 0);
       fanlast = -1;
       heatlast = -1;
       sendall();
@@ -279,7 +283,7 @@ const char *app_callback(int client, const char *prefix, const char *target, con
    {
       jo_strncpy(j, gfx_msg, sizeof(gfx_msg));
       if (gfxmsgtime)
-         gfx_msg_time = (esp_timer_get_time() / 1000000) + gfxmsgtime;
+         gfx_msg_time = uptime() + gfxmsgtime;
       return "";
    }
    if (!strcmp(suffix, "night"))
@@ -379,6 +383,7 @@ static esp_err_t co2_read(int len, uint8_t * buf)
 
 static esp_err_t co2_scd41_stop_measure(void)
 {
+   scd41_temp_ok = 0;
    esp_err_t err = co2_command(0x3f86); // Stop measurement (SCD41)
    sleep(1);
    return err;
@@ -386,6 +391,7 @@ static esp_err_t co2_scd41_stop_measure(void)
 
 static esp_err_t co2_scd41_start_measure(void)
 {
+   scd41_temp_ok = uptime() + 300;      // Time for temp to settle
    return co2_command(0x21b1);  // Start measurement (SCD41)
 }
 
@@ -410,27 +416,7 @@ void co2_task(void *p)
          if (!err)
             err = co2_command(0x3646);  // Reinit
          if (!err)
-         {
-            sleep(1);           // Time for reinit
-            err = co2_command(0x3682);  // Get serial number
-         }
-         if (!err)
-         {                      // Read
-            uint8_t buf[9];
-            err = co2_read(sizeof(buf), buf);
-            if (!err)
-            {                   // OK
-               if (co2_crc(buf[0], buf[1]) == buf[2] && co2_crc(buf[3], buf[4]) == buf[5] && co2_crc(buf[6], buf[7]) == buf[8])
-               {
-                  ESP_LOGI(TAG, "CO2 serial %02X%02X%02X%02X%02X%02X", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
-                  jo_t j = jo_object_alloc();
-                  jo_stringf(j, "serial", "%02X%02X%02X%02X%02X%02X", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
-                  revk_info("CO2", &j);
-                  break;
-               }
-            }
-
-         }
+            break;
       } else
       {                         // Just try starting measurement
          err = co2_command(0x0010);     // Start measurement
@@ -498,6 +484,33 @@ void co2_task(void *p)
             sleep(1);
          else if (cmd == 0x3639)
             sleep(10);
+         if (cmd == 0x3682 && !err)
+         {                      // Get serial
+            jo_t j = jo_object_alloc();
+            uint8_t buf[9];
+            err = co2_read(9, buf);
+            if (!err && co2_crc(buf[0], buf[1]) == buf[2] && co2_crc(buf[3], buf[4]) == buf[5] && co2_crc(buf[6], buf[7]) == buf[8])
+               jo_stringf(j, "serial", "%02X%02X%02X%02X%02X%02X", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
+            if (!err)
+               err = co2_command(0x2318);
+            if (!err)
+               err = co2_read(3, buf);
+            if (!err && co2_crc(buf[0], buf[1]) == buf[2])
+               jo_int(j, "temperature-offset", (buf[0] << 8) + buf[1]);
+            if (!err)
+               err = co2_command(0x2322);
+            if (!err)
+               err = co2_read(3, buf);
+            if (!err && co2_crc(buf[0], buf[1]) == buf[2])
+               jo_int(j, "sensor-altitude", (buf[0] << 8) + buf[1]);
+            if (!err)
+               err = co2_command(0x2313);
+            if (!err)
+               err = co2_read(3, buf);
+            if (!err && co2_crc(buf[0], buf[1]) == buf[2])
+               jo_bool(j, "automatic-self-calibration", (buf[0] << 8) + buf[1]);
+            revk_info("CO2", &j);
+         }
          if (scd41)
             co2_scd41_start_measure();
          continue;
@@ -530,7 +543,7 @@ void co2_task(void *p)
             lastco2 = report("co2", lastco2, thisco2, co2places);
          if (thisrh)
             lastrh = report("rh", lastrh, thisrh, rhplaces);
-         if (!num_owb)
+         if (!num_owb && scd41_temp_ok && scd41_temp_ok < uptime())
             lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);      // Treat as temp not itemp as we trust the SCD41 to be sane
       } else
       {                         // Wait for data to be ready
@@ -866,12 +879,13 @@ void app_main()
             }
          }
       }
+      char s[30];
       /* Display */
       if (gfx_msg_time)
-      {                         /* display fixed message */
+      {                         // Fixed message
          gfx_set_contrast(gfxcontrast);
-         if (gfx_msg_time < (esp_timer_get_time() / 1000000))
-         {                      /* time up */
+         if (gfx_msg_time < uptime())
+         {                      // Time up, clear and drop through
             gfx_msg_time = 0;
             gfx_lock();
             reset();
@@ -883,28 +897,30 @@ void app_main()
          }
       }
       gfx_lock();
-      char s[30];
       if (gfx_dark)
-      {                         /* Night mode, just time */
-         gfx_set_contrast(1);
+      {                         // Night mode
+         gfx_set_contrast(1);   // Dim
          revk_blink(0, 0, "K");
-         gfx_colour('r');
+         gfx_colour('b');
          reset();
          if (!notime)
          {
             strftime(s, sizeof(s), "%T", &t);
-            int y = CONFIG_GFX_HEIGHT - 1 - t.tm_sec * 2;
+            int d = t.tm_sec;
             if (t.tm_min & 1)
-               y = 6 + t.tm_sec * 2;
-            int x = t.tm_hour + t.tm_min;
+               d = 60 - d;
+            int y = CONFIG_GFX_HEIGHT / 2 - 7 + d - 30;
+            d = t.tm_sec;
             if (t.tm_hour & 1)
-               x = t.tm_hour + 60 - t.tm_min;
+               d = 60 - d;
+            int x = CONFIG_GFX_WIDTH / 2 - 21 + d - 30;
             gfx_pos(x, y, GFX_B | GFX_L);
-            gfx_text(1, s);
+            gfx_text(2, s);
          }
          gfx_unlock();
          continue;
       }
+      // Normal
       gfx_set_contrast(gfxcontrast);
       if (showlogo)
       {
