@@ -49,8 +49,9 @@ const char TAG[] = "Env";
 	u8(gfxdc,)	\
 	u8(gfxrst,)	\
 	u8(gfxflip,)	\
-	u8(gfxcontrast,)	\
-	u32(gfxmsgtime,30)	\
+	u8(gfxlight,255)\
+	u8(gfxdark,5)	\
+	u32(msgtime,30)	\
 	b(f)	\
 	b(ha)	\
 	s(fanon)	\
@@ -886,7 +887,7 @@ void app_main()
       /* Display */
       if (gfx_msg_time)
       {                         // Fixed message
-         gfx_set_contrast(gfxcontrast);
+         gfx_set_contrast(gfxlight);
          if (gfx_msg_time < uptime())
          {                      // Time up, clear and drop through
             gfx_msg_time = 0;
@@ -902,29 +903,29 @@ void app_main()
       gfx_lock();
       if (gfx_dark)
       {                         // Night mode
-         gfx_set_contrast(5);   // Extra dim
+         gfx_set_contrast(gfxdark);   // Extra dim
          revk_blink(0, 0, "K");
          gfx_colour('b');
          reset();
          if (!notime)
          {
-            strftime(s, sizeof(s), "%T", &t);
+            strftime(s, sizeof(s), "%H:%M", &t);
             int d = t.tm_sec;
             if (t.tm_min & 1)
                d = 60 - d;
-            int y = CONFIG_GFX_HEIGHT / 2 + d - 30;
+            int y = CONFIG_GFX_HEIGHT / 2 + (d - 30) * 10 / 6;
             d = t.tm_min;
             if (t.tm_hour & 1)
                d = 60 - d;
-            int x = CONFIG_GFX_WIDTH / 2 + d - 30;
+            int x = CONFIG_GFX_WIDTH / 2 + (d - 30) * 5 / 6;
             gfx_pos(x, y, GFX_M | GFX_C);
-            gfx_text(2, s);
+            gfx_text(3, s);
          }
          gfx_unlock();
          continue;
       }
       // Normal
-      gfx_set_contrast(gfxcontrast);
+      gfx_set_contrast(gfxlight);
       if (showlogo)
       {
          showlogo = 0;
