@@ -283,8 +283,8 @@ const char *app_callback(int client, const char *prefix, const char *target, con
    if (!strcmp(suffix, "message"))
    {
       jo_strncpy(j, gfx_msg, sizeof(gfx_msg));
-      if (gfxmsgtime)
-         gfx_msg_time = uptime() + gfxmsgtime;
+      if (msgtime)
+         gfx_msg_time = uptime() + msgtime;
       return "";
    }
    if (!strcmp(suffix, "night"))
