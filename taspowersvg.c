@@ -442,7 +442,10 @@ int main(int argc, const char *argv[])
          if (href && !D)
          {
             t = xml_element_add(t, "a");
-            xml_addf(t, "@href", "%s/%s-%02d%s", href, date, x, dlist);
+            if (Y && !D)
+               xml_addf(t, "@href", "%s/%s-%02d%s", href, date, x + 1, dlist);
+            else
+               xml_addf(t, "@href", "%s/%s-%02d%s", href, date, x, dlist);
          }
          if (Y && !D)
             t = xml_addf(t, "+text", "%2d", x + 1);
