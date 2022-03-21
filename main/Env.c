@@ -360,7 +360,7 @@ static void co2_add(i2c_cmd_handle_t i, uint16_t v)
 static esp_err_t co2_done(i2c_cmd_handle_t * i)
 {                               // Finish command
    i2c_master_stop(*i);
-   esp_err_t err = i2c_master_cmd_begin(co2port, *i, 10 / portTICK_PERIOD_MS);
+   esp_err_t err = i2c_master_cmd_begin(co2port, *i, 1000 / portTICK_PERIOD_MS);
    i2c_cmd_link_delete(*i);
    *i = NULL;
    return err;
@@ -440,34 +440,6 @@ void co2_task(void *p)
    while (1)
    {
       usleep(100000);
-      {                         // Ready status
-         err = co2_command(scd41 ? 0xe4b8 : 0x0202);
-         if (err)
-         {
-            ESP_LOGI(TAG, "Tx GetReady %s", esp_err_to_name(err));
-            continue;
-         }
-         {                      // Read status
-            uint8_t buf[3];
-            err = co2_read(sizeof(buf), buf);
-            if (err)
-            {
-               ESP_LOGI(TAG, "Rx GetReady %s", esp_err_to_name(err));
-               continue;
-            }
-            if (co2_crc(buf[0], buf[1]) != buf[2])
-            {
-               ESP_LOGI(TAG, "Rx GetReady CRC error %02X %02X", co2_crc(buf[0], buf[1]), buf[2]);
-               continue;
-            }
-            if (scd41 && !(buf[0] & 0x80))
-               co2_scd41_start_measure();       // Undocumented but top bit 8 if not running
-            if (!scd41 && (buf[0] << 8) + buf[1] != 1)
-               continue;        // Not ready (1 means ready)
-            if (scd41 && !(buf[0] & 7) && !buf[1])
-               continue;        // Not ready (least 11 bits 0 means not ready)
-         }
-      }
       if (do_co2)
       {                         // Do a command from mqtt
          uint16_t cmd = (do_co2 >> 16);
@@ -476,7 +448,7 @@ void co2_task(void *p)
          if (scd41)
             co2_scd41_stop_measure();
          i2c_cmd_handle_t i = co2_setup(cmd);
-         if (cmd != 0x3632 && cmd != 0x3615 && cmd != 0x3646)
+         if (cmd != 0x3632 && cmd != 0x3615 && cmd != 0x3646 && cmd != 0x3682)
             co2_add(i, val);
          err = co2_done(&i);
          if (err)
@@ -487,7 +459,7 @@ void co2_task(void *p)
             sleep(10);
          if ((cmd == 0x241d || cmd == 0x2416 || cmd == 0x2427) && !err)
          {
-            err = co2_command(0x3615);
+            err = co2_command(0x3615);  // Persist
             sleep(1);
          }
          if (cmd == 0x3682 && !err)
@@ -520,6 +492,34 @@ void co2_task(void *p)
          if (scd41)
             co2_scd41_start_measure();
          continue;
+      }
+      {                         // Ready status
+         err = co2_command(scd41 ? 0xe4b8 : 0x0202);
+         if (err)
+         {
+            ESP_LOGI(TAG, "Tx GetReady %s", esp_err_to_name(err));
+            continue;
+         }
+         {                      // Read status
+            uint8_t buf[3];
+            err = co2_read(sizeof(buf), buf);
+            if (err)
+            {
+               ESP_LOGI(TAG, "Rx GetReady %s", esp_err_to_name(err));
+               continue;
+            }
+            if (co2_crc(buf[0], buf[1]) != buf[2])
+            {
+               ESP_LOGI(TAG, "Rx GetReady CRC error %02X %02X", co2_crc(buf[0], buf[1]), buf[2]);
+               continue;
+            }
+            if (scd41 && !(buf[0] & 0x80))
+               co2_scd41_start_measure();       // Undocumented but top bit 8 if not running
+            if (!scd41 && (buf[0] << 8) + buf[1] != 1)
+               continue;        // Not ready (1 means ready)
+            if (scd41 && !(buf[0] & 7) && !buf[1])
+               continue;        // Not ready (least 11 bits 0 means not ready)
+         }
       }
       // Data
       if (scd41)
