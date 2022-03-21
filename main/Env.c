@@ -902,7 +902,7 @@ void app_main()
       gfx_lock();
       if (gfx_dark)
       {                         // Night mode
-         gfx_set_contrast(1);   // Dim
+         gfx_set_contrast(5);   // Extra dim
          revk_blink(0, 0, "K");
          gfx_colour('b');
          reset();
