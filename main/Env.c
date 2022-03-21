@@ -306,8 +306,6 @@ const char *app_callback(int client, const char *prefix, const char *target, con
       return co2_setting(0x3632, -1);
    if (!strcmp(suffix, "co2reload") && scd41)
       return co2_setting(0x3646, -1);
-   if (!strcmp(suffix, "co2persist") && scd41)
-      return co2_setting(0x3615, -1);
    if (!strcmp(suffix, "co2autocal"))
       return co2_setting(scd41 ? 0x2416 : 0x5306, 1);
    if (!strcmp(suffix, "co2nocal"))
@@ -342,6 +340,7 @@ static uint8_t co2_crc(uint8_t b1, uint8_t b2)
 
 static i2c_cmd_handle_t co2_setup(uint16_t c)
 {                               // Set up command
+   ESP_LOGE(TAG, "CO2 cmd %04X", c);
    i2c_cmd_handle_t i = i2c_cmd_link_create();
    i2c_master_start(i);
    i2c_master_write_byte(i, (co2address << 1), ACK_CHECK_EN);
@@ -352,9 +351,10 @@ static i2c_cmd_handle_t co2_setup(uint16_t c)
 
 static void co2_add(i2c_cmd_handle_t i, uint16_t v)
 {                               // Add word to command
-   i2c_master_write_byte(i, v >> 8, true);
-   i2c_master_write_byte(i, v, true);
-   i2c_master_write_byte(i, co2_crc(v >> 8, v), true);
+   ESP_LOGE(TAG, "CO2 val %04X", v);
+   i2c_master_write_byte(i, v >> 8, ACK_CHECK_EN);
+   i2c_master_write_byte(i, v, ACK_CHECK_EN);
+   i2c_master_write_byte(i, co2_crc(v >> 8, v), ACK_CHECK_EN);
 }
 
 static esp_err_t co2_done(i2c_cmd_handle_t * i)
@@ -485,6 +485,11 @@ void co2_task(void *p)
             sleep(1);
          else if (cmd == 0x3639)
             sleep(10);
+         if ((cmd == 0x241d || cmd == 0x2416 || cmd == 0x2427) && !err)
+         {
+            err = co2_command(0x3615);
+            sleep(1);
+         }
          if (cmd == 0x3682 && !err)
          {                      // Get serial
             jo_t j = jo_object_alloc();
@@ -903,7 +908,7 @@ void app_main()
       gfx_lock();
       if (gfx_dark)
       {                         // Night mode
-         gfx_set_contrast(gfxdark);   // Dark/dim
+         gfx_set_contrast(gfxdark);     // Dark/dim
          revk_blink(0, 0, "K");
          gfx_colour('b');
          reset();
@@ -917,7 +922,7 @@ void app_main()
             d = t.tm_min;
             if (t.tm_hour & 1)
                d = 60 - d;
-            int x = CONFIG_GFX_WIDTH / 2 + (d - 30) * 5 / 6; // Adjusted to fit display
+            int x = CONFIG_GFX_WIDTH / 2 + (d - 30) * 5 / 6;    // Adjusted to fit display
             gfx_pos(x, y, GFX_M | GFX_C);
             gfx_text(3, s);
          }
