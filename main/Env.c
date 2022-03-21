@@ -340,7 +340,7 @@ static uint8_t co2_crc(uint8_t b1, uint8_t b2)
 
 static i2c_cmd_handle_t co2_setup(uint16_t c)
 {                               // Set up command
-   ESP_LOGE(TAG, "CO2 cmd %04X", c);
+   //ESP_LOGE(TAG, "CO2 cmd %04X", c);
    i2c_cmd_handle_t i = i2c_cmd_link_create();
    i2c_master_start(i);
    i2c_master_write_byte(i, (co2address << 1), ACK_CHECK_EN);
@@ -351,7 +351,7 @@ static i2c_cmd_handle_t co2_setup(uint16_t c)
 
 static void co2_add(i2c_cmd_handle_t i, uint16_t v)
 {                               // Add word to command
-   ESP_LOGE(TAG, "CO2 val %04X", v);
+   //ESP_LOGE(TAG, "CO2 val %04X", v);
    i2c_master_write_byte(i, v >> 8, ACK_CHECK_EN);
    i2c_master_write_byte(i, v, ACK_CHECK_EN);
    i2c_master_write_byte(i, co2_crc(v >> 8, v), ACK_CHECK_EN);
