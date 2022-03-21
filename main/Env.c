@@ -903,7 +903,7 @@ void app_main()
       gfx_lock();
       if (gfx_dark)
       {                         // Night mode
-         gfx_set_contrast(gfxdark);   // Extra dim
+         gfx_set_contrast(gfxdark);   // Dark/dim
          revk_blink(0, 0, "K");
          gfx_colour('b');
          reset();
@@ -913,11 +913,11 @@ void app_main()
             int d = t.tm_sec;
             if (t.tm_min & 1)
                d = 60 - d;
-            int y = CONFIG_GFX_HEIGHT / 2 + (d - 30) * 10 / 6;
+            int y = CONFIG_GFX_HEIGHT / 2 + (d - 30);
             d = t.tm_min;
             if (t.tm_hour & 1)
                d = 60 - d;
-            int x = CONFIG_GFX_WIDTH / 2 + (d - 30) * 5 / 6;
+            int x = CONFIG_GFX_WIDTH / 2 + (d - 30) * 5 / 6; // Adjusted to fit display
             gfx_pos(x, y, GFX_M | GFX_C);
             gfx_text(3, s);
          }
