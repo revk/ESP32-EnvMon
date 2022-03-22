@@ -922,9 +922,9 @@ void app_main()
             d = t.tm_min;
             if (t.tm_hour & 1)
                d = 60 - d;
-            int x = gfx_width() / 2 + (d - 30) * 5 / 6;    // Adjusted to fit display
+            int x = gfx_width() / 2 + (d - 30) * 2 / 6; // Adjusted to fit display
             gfx_pos(x, y, GFX_M | GFX_C);
-            gfx_text(3, s);
+            gfx_text(4, s);
          }
          gfx_unlock();
          continue;
