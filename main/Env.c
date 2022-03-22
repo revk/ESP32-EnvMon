@@ -719,7 +719,7 @@ void app_main()
    }
    gfx_lock();
    gfx_colour('B');
-   gfx_box(CONFIG_GFX_WIDTH, CONFIG_GFX_HEIGHT, 255);
+   gfx_box(gfx_width(), gfx_height(), 255);
    gfx_unlock();
    if (co2port >= 0)
       revk_task("CO2", co2_task, NULL);
@@ -918,11 +918,11 @@ void app_main()
             int d = t.tm_sec;
             if (t.tm_min & 1)
                d = 60 - d;
-            int y = CONFIG_GFX_HEIGHT / 2 + (d - 30);
+            int y = gfx_height() / 2 + (d - 30);
             d = t.tm_min;
             if (t.tm_hour & 1)
                d = 60 - d;
-            int x = CONFIG_GFX_WIDTH / 2 + (d - 30) * 5 / 6;    // Adjusted to fit display
+            int x = gfx_width() / 2 + (d - 30) * 5 / 6;    // Adjusted to fit display
             gfx_pos(x, y, GFX_M | GFX_C);
             gfx_text(3, s);
          }
@@ -937,7 +937,7 @@ void app_main()
          gfx_clear(0);
          if (!nologo)
          {
-            gfx_pos(CONFIG_GFX_WIDTH - LOGOW, CONFIG_GFX_WIDTH - 12, GFX_B | GFX_L);
+            gfx_pos(gfx_width() - LOGOW, gfx_width() - 12, GFX_B | GFX_L);
             gfx_icon16(LOGOW, LOGOH, logo);
          }
       }
@@ -947,7 +947,7 @@ void app_main()
          if (t.tm_year > 100)
          {
             strftime(s, sizeof(s), "%F\004%T %Z", &t);
-            gfx_pos(0, CONFIG_GFX_HEIGHT - 1, GFX_B | GFX_L);
+            gfx_pos(0, gfx_height() - 1, GFX_B | GFX_L);
             gfx_text(1, s);
          }
       }
@@ -959,7 +959,7 @@ void app_main()
          gfx_text(4, s);
       }
       int y = 0,
-          space = (CONFIG_GFX_HEIGHT - 28 - 35 - 21 - 9) / 3;
+          space = (gfx_height() - 28 - 35 - 21 - 9) / 3;
       int32_t reftemp = temp_target ? : 21000;
       int32_t thismC = thistemp * 1000;
       char co2col = (showco2 < 200 ? 'K' : showco2 > (fanco2on ? : 1000) ? 'R' : showco2 > (fanco2off ? : 750) ? 'Y' : 'G');
@@ -994,7 +994,7 @@ void app_main()
          gfx_text(-1, "ppm");
          if (fanlast >= 0)
          {
-            gfx_pos(CONFIG_GFX_WIDTH - LOGOW * 2 - 2, CONFIG_GFX_HEIGHT - 12, GFX_B | GFX_L);
+            gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
             gfx_icon16(LOGOW, LOGOH, fanlast ? fan : NULL);
          }
       }
