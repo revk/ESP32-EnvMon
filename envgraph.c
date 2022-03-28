@@ -321,7 +321,10 @@ int main(int argc, const char *argv[])
             if ((!data[d].count && !data[d].max) || data[d].max < v)
                data[d].max = v;
             data[d].count++;
-            int x = (xml_time(when) - start) * xsize / 3600;
+            struct tm t;
+            time_t whent = xml_time(when);
+            localtime_r(&whent, &t);
+            int x = (t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec) * xsize / 3600;
             if (x > maxx)
                maxx = x;
             int y = v * data[d].scale;
