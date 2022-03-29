@@ -547,10 +547,22 @@ void co2_task(void *p)
          float r = 100.0 * (float) ((buf[6] << 8) + buf[7]) / 65536.0;
          if (scd41_settled && scd41_settled < uptime())
          {
-            if (c)
-               lastco2 = report("co2", lastco2, thisco2 = c, co2places);
-            if (r)
-               lastrh = report("rh", lastrh, thisrh = r, rhplaces);
+            if (c > 0)
+            {
+               if (thisco2 < 0)
+                  thisco2 = c;  /* First */
+               else
+                  thisco2 = (thisco2 * co2damp + c) / (co2damp + 1);
+               lastco2 = report("co2", lastco2, thisco2, co2places);
+            }
+            if (r > 0)
+            {
+               if (thisrh < 0)
+                  thisrh = r;   /* First */
+               else
+                  thisrh = (thisrh * rhdamp + r) / (rhdamp + 1);
+               lastrh = report("rh", lastrh, thisrh, rhplaces);
+            }
             if (!num_owb)
                lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);   // Treat as temp not itemp as we trust the SCD41 to be sane
          }
@@ -594,15 +606,14 @@ void co2_task(void *p)
             if (co2_crc(buf[12], buf[13]) != buf[14] || co2_crc(buf[15], buf[16]) != buf[17])
                rh = -1000;
             if (co2 > 100)
-            {
-               /* Sanity check */
+            {                   // Have a reading
                if (thisco2 < 0)
                   thisco2 = co2;        /* First */
                else
                   thisco2 = (thisco2 * co2damp + co2) / (co2damp + 1);
             }
             if (rh > 0)
-            {
+            {                   // Have a reading
                if (thisrh < 0)
                   thisrh = rh;  /* First */
                else
@@ -962,9 +973,9 @@ void app_main()
           space = (gfx_height() - 28 - 35 - 21 - 9) / 3;
       int32_t reftemp = temp_target ? : 21000;
       int32_t thismC = thistemp * 1000;
-      char co2col = (showco2 < 200 ? 'K' : showco2 > (fanco2on ? : 1000) ? 'R' : showco2 > (fanco2off ? : 750) ? 'Y' : 'G');
-      char tempcol = (showtemp == NOTSET ? 'K' : thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');
-      char rhcol = (showrh < 0 ? 'K' : 'C');
+      char co2col = (thisco2 < 200 ? 'K' : thisco2 > (fanco2on ? : 1000) ? 'R' : thisco2 > (fanco2off ? : 750) ? 'Y' : 'G');
+      char tempcol = (thistemp == NOTSET ? 'K' : thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');
+      char rhcol = (thisrh < 0 ? 'K' : 'C');
       {                         // Colours for LED
          static char cols[4];
          char *c = cols;
