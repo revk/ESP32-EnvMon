@@ -13,9 +13,11 @@ MQTT messages allowing control of fans or heating systems.
 The CO2 sensor used is an expensive NDIR module providing accurate CO2
 measurement which is not fooled by farts, etc.
 
+3D case designs include stand alone (as shown) or included in a standard UK single gang face plate.
+
 Also included are some linux tools to log data from this module to sql and graph it as svg.
 Additional tools are also included to log and graph power data from tasmota.
 
-![IMG_8093](https://user-images.githubusercontent.com/996983/114298107-a1878e00-9aac-11eb-95fa-5be9127406a7.jpg)
+![267317](https://user-images.githubusercontent.com/996983/160762485-386e75ea-6af6-4420-8a94-bd05ad091422.jpg)
 
-(c) 2019-21 Andrews & Arnold Ltd, Adrian Kennard. See LICENSE file (GPL).
+(c) 2019-22 Andrews & Arnold Ltd, Adrian Kennard. See LICENSE file (GPL).
