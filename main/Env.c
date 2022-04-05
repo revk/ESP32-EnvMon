@@ -74,6 +74,7 @@ const char TAG[] = "Env";
 	s32(heatdaymC,0)	\
 	s32(heatnightmC,0)	\
 	s32(heatminmC,0)	\
+	s32(heatdeltamC,0)	\
 	u16(hhmmnight,0)	\
 	u16(hhmmday,0)		\
 	b(nologo)	\
@@ -182,6 +183,12 @@ static void reportall(time_t now)
          snprintf(topic, sizeof(topic), "command/%s/auto", heataircon);
          jo_t j = jo_object_alloc();
          jo_litf(j, "home", "%.1f", lasttemp);
+	 if(heatdeltamC)
+	 {
+         jo_litf(j, "min", "%.1f", lasttarget-((float)heatdeltamC)/2000);
+         jo_litf(j, "max", "%.1f", lasttarget+((float)heatdeltamC)/2000);
+	 }
+	 else
          jo_litf(j, "temp", "%.1f", lasttarget);
          revk_mqtt_send_clients(NULL, 0, topic, &j, 1);
       }
