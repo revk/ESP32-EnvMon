@@ -1014,7 +1014,7 @@ void app_main()
          showco2 = thisco2;
          gfx_colour(co2col);
          if (isnan(showco2))
-            strcpy(s, "-");
+            *s = 0;
          else if (showco2 < 200)
             strcpy(s, "?LOW");
          else if (showco2 >= 10000.0)
@@ -1039,7 +1039,7 @@ void app_main()
          gfx_colour(tempcol);
          gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
          if (isnan(thistemp))
-            strcpy(s, "-");
+            *s = 0;
          else if (f)
          {                      /* Fahrenheit */
             int fh = (showtemp + 40.0) * 1.8 - 40.0;
@@ -1072,7 +1072,7 @@ void app_main()
          gfx_colour(rhcol);
          gfx_pos(3, y, GFX_T | GFX_L | GFX_H);
          if (isnan(thisrh))
-            strcpy(s, "-");
+            *s = 0;
          else if (showrh <= 0)
             strcpy(s, "__");
          else if (showrh >= 100)
