@@ -65,6 +65,7 @@ const char TAG[] = "Env";
 	u32(fanresend,600)	\
 	s(heaton)	\
 	s(heatoff)	\
+	s(aircon)	\
 	s32(heatratemC,0)\
 	s32a(temphourmC,24)\
 	u8(heatswitch,30)	\
@@ -95,18 +96,17 @@ settings
 #undef u8
 #undef b
 #undef s
-#define	NOTSET	-10000.0
 static uint8_t scd41 = 0;
 static uint32_t scd41_settled = 0;      // uptime when started measurements
 
 static uint8_t logo[LOGOW * LOGOH / 2];
-static float lastco2 = NOTSET;
-static float lastrh = NOTSET;
-static float lasttemp = NOTSET;
-static float lastotemp = NOTSET;
-static float thisco2 = NOTSET;
-static float thistemp = NOTSET;
-static float thisrh = NOTSET;
+static float lastco2 = NAN;
+static float lastrh = NAN;
+static float lasttemp = NAN;
+static float lastotemp = NAN;
+static float thisco2 = NAN;
+static float thistemp = NAN;
+static float thisrh = NAN;
 static int8_t co2port = -1;
 static int8_t num_owb = 0;
 static volatile uint32_t do_co2 = 0;
@@ -166,7 +166,7 @@ static void reportall(time_t now)
          jo_stringf(j, "ts", "%04d-%02d-%02dT%02d:%02d:%02dZ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
       }
       for (v = values; v; v = v->next)
-         if (v->value > NOTSET)
+         if (v->value != NAN)
             add(v->tag, v->value, v->places);
       if (heatmax >= 0)
          jo_bool(j, "heat", heatmax);
@@ -175,6 +175,14 @@ static void reportall(time_t now)
       fanmax = fanlast;
       heatmax = heatlast;
       revk_state("data", &j);
+      if (*aircon)
+      {                         // Aircon control
+         char topic[100];
+         snprintf(topic,sizeof(topic),"command/%s/auto", aircon);
+         jo_t j = jo_object_alloc();
+         jo_litf(j, "home", "%.1f",lasttemp);
+         revk_mqtt_send_clients(NULL, 0, topic, &j, 1);
+      }
    }
    reportlast = now;
    reportchange = 0;
@@ -193,7 +201,7 @@ static float report(const char *tag, float last, float this, int places)
       values = v;
    }
    float mag = powf(10.0, -places);
-   if (last > NOTSET)
+   if (last != NAN)
    {                            // Hysteresis
       if (this < last)
       {
@@ -207,9 +215,9 @@ static float report(const char *tag, float last, float this, int places)
             return last;
       }
    }
-   if (this > NOTSET)
+   if (this != NAN)
       this = roundf(this / mag) * mag;  // Rounding
-   if (last > NOTSET && this != last && !reportchange)
+   if (last != NAN && this != last && !reportchange)
       reportchange = time(0);
    v->value = this;
    return this;
@@ -777,16 +785,16 @@ void app_main()
    /* Main task... */
    time_t showtime = 0;
    char showlogo = 1;
-   float showco2 = NOTSET;
-   float showtemp = NOTSET;
-   float showrh = NOTSET;
+   float showco2 = NAN;
+   float showtemp = NAN;
+   float showrh = NAN;
    void reset(void) {           /* re display all */
       gfx_clear(0);
       showlogo = 1;
       showtime = 0;
-      showco2 = NOTSET;
-      showtemp = NOTSET;
-      showrh = NOTSET;
+      showco2 = NAN;
+      showtemp = NAN;
+      showrh = NAN;
    };
    while (1)
    {
@@ -827,14 +835,14 @@ void app_main()
       if (temp_target < heatminmC)
          temp_target = heatminmC;
       if (temp_target)
-         report("temp-target", NOTSET, ((float) temp_target) / 1000.0, 3);
+         report("temp-target", NAN, ((float) temp_target) / 1000.0, 3);
       else
-         report("temp-target", NOTSET, NOTSET, 3);      // No target
+         report("temp-target", NAN, NAN, 3);      // No target
       // Report
       if (up > 60 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
          reportall(now);        // Don't report right away if clock may be duff
       static uint32_t fanwait = 0;
-      if (thisco2 != NOTSET && thisrh != NOTSET && fanwait < up && (fanco2on || fanco2off || fanrhon || fanrhoff))
+      if (thisco2 != NAN && thisrh != NAN && fanwait < up && (fanco2on || fanco2off || fanrhon || fanrhoff))
       {                         /* Fan control */
          const char *fan = NULL;
          if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)))
@@ -865,7 +873,7 @@ void app_main()
          }
       }
       static uint32_t heatwait = 0;
-      if (thistemp != NOTSET && heatwait < up && (heatnightmC || heatdaymC || heatratemC || temp_target || heatgpio >= 0 || heaton || heatoff))
+      if (thistemp != NAN && heatwait < up && (heatnightmC || heatdaymC || heatratemC || temp_target || heatgpio >= 0 || heaton || heatoff))
       {                         /* Heat control */
          if (temp_target || heatlast == 1)
          {                      /* We have a reference temp to work with or we left on */
@@ -962,7 +970,7 @@ void app_main()
             gfx_text(1, s);
          }
       }
-      if (scd41 && thisco2 == NOTSET && scd41_settled >= up)
+      if (scd41 && thisco2 == NAN && scd41_settled >= up)
       {
          sprintf(s, "%d:%02d", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
          gfx_colour('O');
@@ -974,7 +982,7 @@ void app_main()
       int32_t reftemp = temp_target ? : 21000;
       int32_t thismC = thistemp * 1000;
       char co2col = (thisco2 < 200 ? 'K' : thisco2 > (fanco2on ? : 1000) ? 'R' : thisco2 > (fanco2off ? : 750) ? 'Y' : 'G');
-      char tempcol = (thistemp == NOTSET ? 'K' : thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');
+      char tempcol = (thistemp == NAN ? 'K' : thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');
       char rhcol = (thisrh < 0 ? 'K' : 'C');
       {                         // Colours for LED
          static char cols[4];
