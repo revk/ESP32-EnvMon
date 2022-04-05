@@ -182,13 +182,16 @@ static void reportall(time_t now)
          char topic[100];
          snprintf(topic, sizeof(topic), "command/%s/auto", heataircon);
          jo_t j = jo_object_alloc();
-         jo_litf(j, "home", "%.2f", lasttemp);
+         if (tempplaces <= 0)
+            jo_litf(j, "home", "%d", (int) lasttemp);
+         else
+            jo_litf(j, "home", "%.*f", tempplaces, lasttemp);
          if (heatdeltamC)
          {
-            jo_litf(j, "min", "%.2f", lasttarget - ((float) heatdeltamC) / 2000);
-            jo_litf(j, "max", "%.2f", lasttarget + ((float) heatdeltamC) / 2000);
+            jo_litf(j, "min", "%.3f", lasttarget - ((float) heatdeltamC) / 2000);
+            jo_litf(j, "max", "%.3f", lasttarget + ((float) heatdeltamC) / 2000);
          } else
-            jo_litf(j, "temp", "%.2f", lasttarget);
+            jo_litf(j, "temp", "%.3f", lasttarget);
          revk_mqtt_send_clients(NULL, 0, topic, &j, 1);
       }
    }
