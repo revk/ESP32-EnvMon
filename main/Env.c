@@ -626,14 +626,14 @@ void co2_task(void *p)
                rh = -1000;
             if (co2 > 100)
             {                   // Have a reading
-               if (thisco2 < 0)
+               if (isnan(thisco2))
                   thisco2 = co2;        /* First */
                else
                   thisco2 = (thisco2 * co2damp + co2) / (co2damp + 1);
             }
             if (rh > 0)
             {                   // Have a reading
-               if (thisrh < 0)
+               if (isnan(thisrh))
                   thisrh = rh;  /* First */
                else
                   thisrh = (thisrh * rhdamp + rh) / (rhdamp + 1);
@@ -994,9 +994,9 @@ void app_main()
           space = (gfx_height() - 28 - 35 - 21 - 9) / 3;
       int32_t reftemp = temp_target ? : 21000;
       int32_t thismC = thistemp * 1000;
-      char co2col = (thisco2 < 200 ? 'K' : thisco2 > (fanco2on ? : 1000) ? 'R' : thisco2 > (fanco2off ? : 750) ? 'Y' : 'G');
+      char co2col = (isnan(thisco2) ? 'K' : thisco2 > (fanco2on ? : 1000) ? 'R' : thisco2 > (fanco2off ? : 750) ? 'Y' : 'G');
       char tempcol = (isnan(thistemp) ? 'K' : thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');
-      char rhcol = (thisrh < 0 ? 'K' : 'C');
+      char rhcol = (isnan(thisrh) ? 'K' : 'C');
       {                         // Colours for LED
          static char cols[4];
          char *c = cols;
@@ -1013,7 +1013,9 @@ void app_main()
       {
          showco2 = thisco2;
          gfx_colour(co2col);
-         if (showco2 < 200)
+         if (isnan(showco2))
+            strcpy(s, "-");
+         else if (showco2 < 200)
             strcpy(s, "?LOW");
          else if (showco2 >= 10000.0)
             strcpy(s, "HIGH");
@@ -1036,7 +1038,9 @@ void app_main()
          showtemp = thistemp;
          gfx_colour(tempcol);
          gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
-         if (f)
+         if (isnan(thistemp))
+            strcpy(s, "-");
+         else if (f)
          {                      /* Fahrenheit */
             int fh = (showtemp + 40.0) * 1.8 - 40.0;
             if (fh <= -100)
@@ -1067,7 +1071,9 @@ void app_main()
          showrh = thisrh;
          gfx_colour(rhcol);
          gfx_pos(3, y, GFX_T | GFX_L | GFX_H);
-         if (showrh <= 0)
+         if (isnan(thisrh))
+            strcpy(s, "-");
+         else if (showrh <= 0)
             strcpy(s, "__");
          else if (showrh >= 100)
             strcpy(s, "^^");
