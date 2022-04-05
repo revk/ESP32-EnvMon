@@ -568,7 +568,7 @@ void co2_task(void *p)
          {
             if (c > 0)
             {
-               if (thisco2 < 0)
+               if (isnan(thisco2))
                   thisco2 = c;  /* First */
                else
                   thisco2 = (thisco2 * co2damp + c) / (co2damp + 1);
@@ -576,7 +576,7 @@ void co2_task(void *p)
             }
             if (r > 0)
             {
-               if (thisrh < 0)
+               if (isnan(thisrh))
                   thisrh = r;   /* First */
                else
                   thisrh = (thisrh * rhdamp + r) / (rhdamp + 1);
