@@ -74,7 +74,7 @@ const char TAG[] = "Env";
 	s32(heatdaymC,0)	\
 	s32(heatnightmC,0)	\
 	s32(heatminmC,0)	\
-	s32(heatdeltamC,0)	\
+	s32(heatrangemC,0)	\
 	u16(hhmmnight,0)	\
 	u16(hhmmday,0)		\
 	b(nologo)	\
@@ -186,10 +186,10 @@ static void reportall(time_t now)
             jo_litf(j, "home", "%d", (int) lasttemp);
          else
             jo_litf(j, "home", "%.*f", tempplaces, lasttemp);
-         if (heatdeltamC)
+         if (heatrangemC)
          {
-            jo_litf(j, "min", "%.3f", lasttarget - ((float) heatdeltamC) / 2000);
-            jo_litf(j, "max", "%.3f", lasttarget + ((float) heatdeltamC) / 2000);
+            jo_litf(j, "min", "%.3f", lasttarget - ((float) heatrangemC) / 2000);
+            jo_litf(j, "max", "%.3f", lasttarget + ((float) heatrangemC) / 2000);
          } else
             jo_litf(j, "temp", "%.3f", lasttarget);
          revk_mqtt_send_clients(NULL, 0, topic, &j, 1);
