@@ -1009,13 +1009,11 @@ void app_main()
          *c = 0;
          revk_blink(0, 0, cols);
       }
-      if (thisco2 != showco2)
+      if (thisco2 != showco2 && !isnan(thisco2))
       {
          showco2 = thisco2;
          gfx_colour(co2col);
-         if (isnan(showco2))
-            *s = 0;
-         else if (showco2 < 200)
+         if (showco2 < 200)
             strcpy(s, "?LOW");
          else if (showco2 >= 10000.0)
             strcpy(s, "HIGH");
@@ -1033,14 +1031,12 @@ void app_main()
          }
       }
       y += 28 + space;
-      if (thistemp != showtemp)
+      if (thistemp != showtemp && !isnan(thistemp))
       {
          showtemp = thistemp;
          gfx_colour(tempcol);
          gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
-         if (isnan(thistemp))
-            *s = 0;
-         else if (f)
+         if (f)
          {                      /* Fahrenheit */
             int fh = (showtemp + 40.0) * 1.8 - 40.0;
             if (fh <= -100)
@@ -1066,14 +1062,12 @@ void app_main()
             gfx_text(2, "~");
       }
       y += 35 + space;
-      if (thisrh != showrh)
+      if (thisrh != showrh && !isnan(thisrh))
       {
          showrh = thisrh;
          gfx_colour(rhcol);
          gfx_pos(3, y, GFX_T | GFX_L | GFX_H);
-         if (isnan(thisrh))
-            *s = 0;
-         else if (showrh <= 0)
+         if (showrh <= 0)
             strcpy(s, "__");
          else if (showrh >= 100)
             strcpy(s, "^^");
