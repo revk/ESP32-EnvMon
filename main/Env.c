@@ -866,6 +866,8 @@ void app_main()
       }
       if (temp_target)
       {
+         if (acmin < ((float) temp_target) / 1000.0)
+            acmin = ((float) temp_target) / 1000.0;
          report("temp-target", NAN, ((float) temp_target) / 1000.0, 3);
       } else
          report("temp-target", NAN, NAN, 3);    // No target
