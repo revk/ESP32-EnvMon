@@ -843,13 +843,6 @@ void app_main()
          if (temphourmC[t.tm_hour] && temphourmC[(t.tm_hour + 1) % 24])
             temp_target = (temphourmC[t.tm_hour] * (3600 - sec) + temphourmC[(t.tm_hour + 1) % 24] * sec) / 3600;
       }
-      if (heatratemC)
-      {                         // Allow time to get to a target temperature if any hour temps are set
-         int32_t min;
-         for (int h = 1; h < 23; h++)
-            if (temphourmC[(t.tm_hour + h) % 24] && (min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * (h * 3600 - sec) / 3600) > temp_target)
-               temp_target = min;
-      }
       if (!temp_target)
       {
          if (heatminmC)
@@ -864,6 +857,13 @@ void app_main()
             acmax = acmin;
       } else
          acmin = acmax = ((float) temp_target) / 1000.0;
+      if (heatratemC)
+      {                         // Allow time to get to a target temperature if any hour temps are set
+         int32_t min;
+         for (int h = 1; h < 23; h++)
+            if (temphourmC[(t.tm_hour + h) % 24] && (min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * (h * 3600 - sec) / 3600) > temp_target)
+               temp_target = min;
+      }
       if (temp_target)
       {
          report("temp-target", NAN, ((float) temp_target) / 1000.0, 3);
