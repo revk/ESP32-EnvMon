@@ -190,8 +190,13 @@ static void reportall(time_t now)
          float max = lasttarget;
          if (heatmaxmC && max * 1000 < heatmaxmC)
             max = (float) heatmaxmC / 1000;
-         jo_litf(j, "min", "%.3f", min);
-         jo_litf(j, "max", "%.3f", max);
+         if (min == max)
+            jo_litf(j, "temp", "%.3f", min);
+         else
+         {
+            jo_litf(j, "min", "%.3f", min);
+            jo_litf(j, "max", "%.3f", max);
+         }
          revk_mqtt_send_clients(NULL, 0, topic, &j, 1);
       }
    }
