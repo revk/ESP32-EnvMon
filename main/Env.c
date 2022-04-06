@@ -104,11 +104,12 @@ static uint8_t logo[LOGOW * LOGOH / 2];
 static float lastco2 = NAN;
 static float lastrh = NAN;
 static float lasttemp = NAN;
-static float lasttarget = NAN;
 static float lastotemp = NAN;
 static float thisco2 = NAN;
 static float thistemp = NAN;
 static float thisrh = NAN;
+static float acmin = NAN;
+static float acmax = NAN;
 static int8_t co2port = -1;
 static int8_t num_owb = 0;
 static volatile uint32_t do_co2 = 0;
@@ -186,16 +187,14 @@ static void reportall(time_t now)
             jo_litf(j, "home", "%d", (int) lasttemp);
          else
             jo_litf(j, "home", "%.*f", tempplaces, lasttemp);
-         float min = lasttarget;
-         float max = lasttarget;
-         if (heatmaxmC && max * 1000 < heatmaxmC)
-            max = (float) heatmaxmC / 1000;
-         if (min == max)
-            jo_litf(j, "temp", "%.3f", min);
+         if (!isnan(acmin) && acmin == acmax)
+            jo_litf(j, "temp", "%.3f", acmin);
          else
          {
-            jo_litf(j, "min", "%.3f", min);
-            jo_litf(j, "max", "%.3f", max);
+            if (!isnan(acmin))
+               jo_litf(j, "min", "%.3f", acmin);
+            if (!isnan(acmax))
+               jo_litf(j, "max", "%.3f", acmax);
          }
          revk_mqtt_send_clients(NULL, 0, topic, &j, 1);
       }
@@ -834,7 +833,7 @@ void app_main()
       }
       // References
       // Temp should either use a day/night temp, or a temphourmC (setting temp on the hour for 00:00 to 23:00). Zero meaning not set
-      // heatratemC allows for getting to some future temphourmC. heatminmC applies anyway
+      // When 0 (not set) the temp is set based on heatminmC and heatmaxmC. For external heat control this is heatminmC, for aircon it is a range to max.
       int32_t temp_target = (gfx_dark ? heatnightmC : heatdaymC);
       if (!temp_target)
       {
@@ -848,11 +847,22 @@ void app_main()
             if (temphourmC[(t.tm_hour + h) % 24] && (min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * (h * 3600 - sec) / 3600) > temp_target)
                temp_target = min;
       }
-      if (temp_target < heatminmC)
-         temp_target = heatminmC;
+      if (!temp_target)
+      {
+         if (heatminmC)
+         {
+            temp_target = heatminmC;
+            acmin = ((float) heatminmC) / 1000.0;
+         } else
+            acmin = NAN;
+         if (heatmaxmC)
+            acmax = ((float) heatmaxmC) / 1000.0;
+         else
+            acmax = acmin;
+      } else
+         acmin = acmax = ((float) temp_target) / 1000.0;
       if (temp_target)
       {
-         lasttarget = ((float) temp_target) / 1000.0;
          report("temp-target", NAN, ((float) temp_target) / 1000.0, 3);
       } else
          report("temp-target", NAN, NAN, 3);    // No target
