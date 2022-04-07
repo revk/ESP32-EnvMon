@@ -325,7 +325,7 @@ int main(int argc, const char *argv[])
             time_t whent = xml_time(when);
             localtime_r(&whent, &t);
             int x = (t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec) * xsize / 3600;
-            if (!x && whent > start)
+            if (!x && whent > start + 3600)
                x += 24 * xsize; // Right hand side
             if (x > maxx)
                maxx = x;
