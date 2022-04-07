@@ -31,7 +31,7 @@ const char TAG[] = "Env";
 // Note a heat target of 0 is considered "off", so if actually targeting 0, use 1 or -1
 
 #define settings	\
-	u32(reporting,300)	\
+	u32(reporting,60)	\
 	u8(lag,5)	\
 	s8(co2sda,-1)	\
 	s8(co2scl,-1)	\
