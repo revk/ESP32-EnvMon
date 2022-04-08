@@ -847,7 +847,7 @@ void app_main()
          int i,
           prev = 0,
              next = 0;
-         for (i = 0; i < TIMES && temphhmm[i] && temphhmm[i] <= hhmm; i++);
+         for (i = 0; i < TIMES && tempheatmC[i] && temphhmm[i] <= hhmm; i++);
          if (i + 1 < TIMES && temphhmm[i + 1] > hhmm)
          {
             prev = i;
