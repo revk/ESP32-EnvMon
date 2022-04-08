@@ -128,8 +128,8 @@ int main(int argc, const char *argv[])
       char m;
       char m2;
       char m3;
-      int lastx;
-      int lasty;
+      double lastx;
+      double lasty;
       int count;
    } data[MAX] = {
     { arg: "co2", secondary: "fan", scale: ysize / co2step, line: co2line, unit:"ppm" },
@@ -324,12 +324,12 @@ int main(int argc, const char *argv[])
             struct tm t;
             time_t whent = xml_time(when);
             localtime_r(&whent, &t);
-            int x = (t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec) * xsize / 3600;
-            if (!x && whent > start + 3600)
+            double x = (t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec) * xsize / 3600;
+            if (!x && whent > start)
                x += 24 * xsize; // Right hand side
             if (x > maxx)
                maxx = x;
-            int y = v * data[d].scale;
+            double y = v * data[d].scale;
             data[d].lastx = x;
             data[d].lasty = y;
             // Extra
@@ -337,10 +337,10 @@ int main(int argc, const char *argv[])
             {                   // Control trace
                char on = (*sql_colz(res, data[d].secondary) == 't');
                if (on || data[d].m2 == 'L')
-                  fprintf(data[d].f2, "%c%d,%d", data[d].m2, x, y);
+                  fprintf(data[d].f2, "%c%.1lf,%.1lf", data[d].m2, x, y);
                data[d].m2 = (on ? 'L' : 'M');
             }
-            fprintf(data[d].f, "%c%d,%d", data[d].m, x, y);
+            fprintf(data[d].f, "%c%.1lf,%.1lf", data[d].m, x, y);
             if (data[d].m2 == 'L')
                data[d].m = 'M';
             else
@@ -357,8 +357,8 @@ int main(int argc, const char *argv[])
                   if (!data[d].count || data[d].max < v)
                      data[d].max = v;
 #endif
-                  int y = v * data[d].scale;
-                  fprintf(data[d].f3, "%c%d,%d", data[d].m3, x, y);
+                  double y = v * data[d].scale;
+                  fprintf(data[d].f3, "%c%.1lf,%.1lf", data[d].m3, x, y);
                   data[d].m3 = 'L';
                } else
                   data[d].m3 = 'M';
@@ -384,8 +384,8 @@ int main(int argc, const char *argv[])
       if (data[d].lastx && data[d].lastx < 24 * xsize)
       {
          xml_t c = xml_element_add(data[d].g, "circle");
-         xml_addf(c, "@cx", "%d", data[d].lastx);
-         xml_addf(c, "@cy", "%d", data[d].lasty);
+         xml_addf(c, "@cx", "%.1lf", data[d].lastx);
+         xml_addf(c, "@cy", "%.1lf", data[d].lasty);
          xml_addf(c, "@r", "%d", (int) (ysize / 6));
          xml_addf(c, "@fill", data[d].colour);
          xml_add(c, "@stroke", "none");
