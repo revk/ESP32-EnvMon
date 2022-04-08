@@ -2,6 +2,8 @@
 /* Copyright(c) 2019-21 Adrian Kennard, Andrews & Arnold Limited, see LICENSE file(GPL) */
 const char TAG[] = "Env";
 
+#define	DEBUGTEMP
+
 #include "revk.h"
 #include <driver/i2c.h>
 #include <hal/spi_types.h>
@@ -179,7 +181,7 @@ static void reportall(time_t now)
       fanmax = fanlast;
       heatmax = heatlast;
       revk_state("data", &j);
-      if (*heataircon && !isnan(lasttemp))
+      if (*heataircon && lasttemp)
       {                         // Aircon control
          char topic[100];
          snprintf(topic, sizeof(topic), "command/%s/control", heataircon);
@@ -859,7 +861,7 @@ void app_main()
             next = i;
          } else
             prev = i - 1;       // Next is 0, wrapping
-#if 0
+#ifdef	DEBUGTEMP
          jo_t j = jo_object_alloc();    // TODO
          jo_int(j, "prev", prev);
          jo_int(j, "next", next);
@@ -886,14 +888,14 @@ void app_main()
                acmax = (float) (tempcoolmC[prev] + (tempcoolmC[next] - tempcoolmC[prev]) * (snow - sprev) / (snext - sprev)) / 1000.0;
             } else
                acmax = acmin;   // same as heat
-#if 0
+#ifdef	DEBUGTEMP
             jo_int(j, "sprev", sprev);
             jo_int(j, "snext", snext);
             jo_int(j, "snow", snow);
 #endif
          } else
             acmin = acmax = NAN;
-#if 0
+#ifdef	DEBUGTEMP
          if (!isnan(acmin))
             jo_litf(j, "acmin", "%.3f", acmin);
          if (!isnan(acmax))
