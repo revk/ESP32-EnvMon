@@ -66,22 +66,22 @@ const char TAG[] = "Env";
 	s(heaton)	\
 	s(heatoff)	\
 	s(heataircon)	\
-	s32a(temphourmC,24)\
-       	s32(heatratemC,0)\
 	u8(heatswitch,30)	\
 	u32(heatresend,600)	\
 	s8(heatgpio,-1)	\
-	s32(heatdaymC,0)	\
-	s32(heatnightmC,0)	\
-	s32(heatminmC,0)	\
-	s32(heatmaxmC,0)	\
 	u16(hhmmnight,0)	\
 	u16(hhmmday,0)		\
 	b(nologo)	\
 	b(notime)	\
+	s32(heatdaymC,0)	\
+	s32(heatnightmC,0)	\
+	u16a(temphhmm,10)	\
+	s32a(tempheatmC,10)	\
+	s32a(tempcoolmC,10)	\
 
 #define u32(n,d)	uint32_t n;
 #define u16(n,d)	uint16_t n;
+#define u16a(n,q)	uint16_t n[q];
 #define s32(n,d)	int32_t n;
 #define s32a(n,q)	int32_t n[q];
 #define s8(n,d)	int8_t n;
@@ -91,6 +91,7 @@ const char TAG[] = "Env";
 settings
 #undef u32
 #undef u16
+#undef u16a
 #undef s32
 #undef s32a
 #undef s8
@@ -683,6 +684,7 @@ void app_main()
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define u16(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
+#define u16a(n,q) revk_register(#n,q,sizeof(n),&n,NULL,SETTING_LIVE);
 #define s32(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED|SETTING_LIVE);
 #define s32a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,SETTING_SIGNED|SETTING_LIVE);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
@@ -691,6 +693,7 @@ void app_main()
    settings
 #undef u32
 #undef u16
+#undef u16a
 #undef s32
 #undef s32a
 #undef s8
@@ -817,8 +820,7 @@ void app_main()
       time_t now = time(0);
       struct tm t;
       localtime_r(&now, &t);
-      int sec = t.tm_min * 60 + t.tm_sec;
-      uint32_t hhmm = t.tm_hour * 100 + t.tm_min;
+      uint16_t hhmm = t.tm_hour * 100 + t.tm_min;
       uint32_t up = uptime();
       if (!reportconfig && up > 10)
          sendconfig();
@@ -831,42 +833,50 @@ void app_main()
          else if (hhmm >= hhmmnight)
             gfx_dark = 1;
       }
-      // References
-      // Temp should either use a day/night temp, or a temphourmC (setting temp on the hour for 00:00 to 23:00). Zero meaning not set
-      // When 0 (not set) the temp is set based on heatminmC and heatmaxmC. For external heat control this is heatminmC, for aircon it is a range to max.
+      // Reference temp
+      // heatdaymC or heatnightmC take priority. If not set (0) then temphhmm/tempheatmC/tempcoolmC apply
+      // The temp are a set, with hhmm points (in order, can start 0000) and heating and cooling settings
       int32_t temp_target = (gfx_dark ? heatnightmC : heatdaymC);
-      if (!temp_target)
-      {
-         if (temphourmC[t.tm_hour] && temphourmC[(t.tm_hour + 1) % 24])
-            temp_target = (temphourmC[t.tm_hour] * (3600 - sec) + temphourmC[(t.tm_hour + 1) % 24] * sec) / 3600;
-      }
-      if (!temp_target)
-      {
-         if (heatminmC)
-         {
-            temp_target = heatminmC;
-            acmin = ((float) heatminmC) / 1000.0;
-         } else
-            acmin = NAN;
-         if (heatmaxmC)
-            acmax = ((float) heatmaxmC) / 1000.0;
-         else
-            acmax = acmin;
+      if (temp_target)
+      {                         // Temp is set base don night/day, use that as heating basis (min) and no cooling set
+         acmin = ((float) temp_target) / 1000.0;
+         acmax = 32.0;
       } else
-         acmin = acmax = ((float) temp_target) / 1000.0;
-      if (heatratemC)
-      {                         // Allow time to get to a target temperature if any hour temps are set
-         int32_t min;
-         for (int h = 1; h < 23; h++)
-            if (temphourmC[(t.tm_hour + h) % 24] && (min = temphourmC[(t.tm_hour + h) % 24] - heatratemC * (h * 3600 - sec) / 3600) > temp_target)
-               temp_target = min;
+      {                         // Setting from temphhmm/tempheatmC/tempcoolmC
+#define	TIMES	(sizeof(temphhmm)/sizeof(*temphhmm))
+         int i,
+          prev = 0,
+             next = 0;
+         for (i = 0; i < TIMES && temphhmm[i] && temphhmm[i] <= hhmm; i++);
+         if (i + 1 < TIMES && temphhmm[i + 1] > hhmm)
+         {
+            prev = i;
+            next = i + 1;
+         } else if (i < TIMES)
+            prev = i;           // Next is 0, i.e. wrapped
+         else
+            prev = TIMES - 1;   // Wrap end of day from last entry
+         if (tempheatmC[prev])
+         {
+            int sprev = (temphhmm[prev] / 100) * 3600 + (temphhmm[prev] % 100) * 60;
+            int snext = (temphhmm[next] / 100) * 3600 + (temphhmm[next] % 100) * 60;
+            if (snext < sprev)
+               snext += 86400;
+            int snow = t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec;
+            if (snow < sprev)
+               snow += 86400;
+            temp_target = tempheatmC[prev] + (tempheatmC[next] - tempheatmC[prev]) * (snow - sprev) / (snext - sprev);
+            acmin = ((float) temp_target) / 1000.0;
+            if (tempcoolmC[prev] && tempcoolmC[next])
+            {
+               acmax = (float) (tempcoolmC[prev] + (tempcoolmC[next] - tempcoolmC[prev]) * (snow - sprev) / (snext - sprev)) / 1000.0;
+            } else
+               acmax = acmin;   // same as heat
+         }
       }
       if (temp_target)
-      {
-         if (acmin < ((float) temp_target) / 1000.0)
-            acmin = ((float) temp_target) / 1000.0;
          report("temp-target", NAN, ((float) temp_target) / 1000.0, 3);
-      } else
+      else
          report("temp-target", NAN, NAN, 3);    // No target
       // Report
       if (up > 60 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
@@ -903,7 +913,7 @@ void app_main()
          }
       }
       static uint32_t heatwait = 0;
-      if (!isnan(thistemp) && heatwait < up && (heatnightmC || heatdaymC || heatratemC || temp_target || heatgpio >= 0 || heaton || heatoff))
+      if (!isnan(thistemp) && heatwait < up && (heatnightmC || heatdaymC || tempheatmC[0] || temp_target || heatgpio >= 0 || heaton || heatoff))
       {                         /* Heat control */
          if (temp_target || heatlast == 1)
          {                      /* We have a reference temp to work with or we left on */
