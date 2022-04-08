@@ -181,7 +181,7 @@ static void reportall(time_t now)
       fanmax = fanlast;
       heatmax = heatlast;
       revk_state("data", &j);
-      if (*heataircon && lasttemp)
+      if (*heataircon && !isnan(lasttemp))
       {                         // Aircon control
          char topic[100];
          snprintf(topic, sizeof(topic), "command/%s/control", heataircon);
