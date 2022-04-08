@@ -2,7 +2,7 @@
 /* Copyright(c) 2019-21 Adrian Kennard, Andrews & Arnold Limited, see LICENSE file(GPL) */
 const char TAG[] = "Env";
 
-#define	DEBUGTEMP
+//#define	DEBUGTEMP
 
 #include "revk.h"
 #include <driver/i2c.h>
