@@ -684,7 +684,7 @@ void app_main()
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define u16(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define u16a(n,q) revk_register(#n,q,sizeof(n),&n,NULL,SETTING_LIVE);
+#define u16a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,SETTING_LIVE);
 #define s32(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED|SETTING_LIVE);
 #define s32a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,SETTING_SIGNED|SETTING_LIVE);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
@@ -848,19 +848,33 @@ void app_main()
           prev = 0,
              next = 0;
          for (i = 0; i < TIMES && tempheatmC[i] && temphhmm[i] <= hhmm; i++);
-         if (i + 1 < TIMES && temphhmm[i + 1] > hhmm)
-         {
-            prev = i;
-            next = i + 1;
+         if (!i)
+         {                      // wrap as first entry is later
+            for (i = 1; i < TIMES && tempheatmC[i]; i++);
+            prev = i - 1;
+            next = 0;
          } else if (i < TIMES)
-            prev = i;           // Next is 0, i.e. wrapped
-         else
-            prev = TIMES - 1;   // Wrap end of day from last entry
-         if (tempheatmC[prev])
+         {                      // Simple range
+            prev = i - 1;
+            next = i;
+         } else
+            prev = i - 1;       // Next is 0, wrapping
+#if 1
+         jo_t j = jo_object_alloc();    // TODO
+         jo_int(j, "prev", prev);
+         jo_int(j, "next", next);
+         jo_int(j, "prevhhmm", temphhmm[prev]);
+         jo_int(j, "nexthhmm", temphhmm[next]);
+         jo_int(j, "prevheat", tempheatmC[prev]);
+         jo_int(j, "nextheat", tempheatmC[next]);
+         jo_int(j, "prevcool", tempcoolmC[prev]);
+         jo_int(j, "nextcool", tempcoolmC[next]);
+#endif
+         if (tempheatmC[prev] && tempheatmC[next])
          {
             int sprev = (temphhmm[prev] / 100) * 3600 + (temphhmm[prev] % 100) * 60;
             int snext = (temphhmm[next] / 100) * 3600 + (temphhmm[next] % 100) * 60;
-            if (snext < sprev)
+            if (snext <= sprev)
                snext += 86400;
             int snow = t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec;
             if (snow < sprev)
@@ -872,7 +886,18 @@ void app_main()
                acmax = (float) (tempcoolmC[prev] + (tempcoolmC[next] - tempcoolmC[prev]) * (snow - sprev) / (snext - sprev)) / 1000.0;
             } else
                acmax = acmin;   // same as heat
-         }
+            jo_int(j, "sprev", sprev);
+            jo_int(j, "snext", snext);
+            jo_int(j, "snow", snow);
+         } else
+            acmin = acmax = NAN;
+#if 1
+         if (!isnan(acmin))
+            jo_litf(j, "acmin", "%.3f", acmin);
+         if (!isnan(acmax))
+            jo_litf(j, "amax", "%.3f", acmax);
+         revk_info("debug", &j);
+#endif
       }
       if (temp_target)
          report("temp-target", NAN, ((float) temp_target) / 1000.0, 3);
