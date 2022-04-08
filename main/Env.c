@@ -181,7 +181,7 @@ static void reportall(time_t now)
       if (*heataircon)
       {                         // Aircon control
          char topic[100];
-         snprintf(topic, sizeof(topic), "command/%s/auto", heataircon);
+         snprintf(topic, sizeof(topic), "command/%s/control", heataircon);
          jo_t j = jo_object_alloc();
          if (!isnan(lasttemp))
          {
