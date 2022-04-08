@@ -178,18 +178,15 @@ static void reportall(time_t now)
       fanmax = fanlast;
       heatmax = heatlast;
       revk_state("data", &j);
-      if (*heataircon)
+      if (*heataircon && !isnan(lasttemp))
       {                         // Aircon control
          char topic[100];
          snprintf(topic, sizeof(topic), "command/%s/control", heataircon);
          jo_t j = jo_object_alloc();
-         if (!isnan(lasttemp))
-         {
-            if (tempplaces <= 0)
-               jo_litf(j, "home", "%d", (int) lasttemp);
-            else
-               jo_litf(j, "home", "%.*f", tempplaces, lasttemp);
-         }
+         if (tempplaces <= 0)
+            jo_litf(j, "home", "%d", (int) lasttemp);
+         else
+            jo_litf(j, "home", "%.*f", tempplaces, lasttemp);
          if (!isnan(acmin) && acmin == acmax)
             jo_litf(j, "temp", "%.3f", acmin);
          else
