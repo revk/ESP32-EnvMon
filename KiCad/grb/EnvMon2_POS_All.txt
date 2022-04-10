@@ -1,14 +1,13 @@
-### Module positions - created on 2022-04-10 10:20
+### Module positions - created on 2022-04-10 10:45
 ### Printed by pcb_positions plugin
 ## Unit = mm, Angle = deg.
 ## Pcb Height 37.050mm, Pcb Width 57.550mm [based on Edge bounding box]
 ## Side : ALL
 ## Board Aux Origin: 0.000mm ,0.000mm
 # Ref         Val                 Package                       PosX       PosY       Pin1_PosX  Pin1_PosY    Rot     Side      Type
-SW3           SW_Push             SW_PUSH_6mm_H13mm             89.3000    -93.2500   89.3000    -93.2500      0.0    top       THD
-SW2           SW_Push             SW_PUSH_6mm_H13mm             89.2500    -85.7500   89.2500    -85.7500      0.0    top       THD
 SW1           SW_Push             SW_PUSH_6mm_H13mm             89.2500    -78.2500   89.2500    -78.2500      0.0    top       THD
 R1            100k 1% or 0R       R_0603                        131.4250   -86.7500   130.6000   -86.7500      0.0    top       SMD
+SW3           SW_Push             SW_PUSH_6mm_H13mm             89.3000    -93.2500   95.8000    -93.2500      0.0    top       THD
 U2            SCD41               SCD41                         92.5000    -68.5000   96.5000    -71.0000    180.0    top       SMD
 J3            TEMP                Molex_MiniSPOX_H3RA           110.2500   -93.4000   107.7500   -93.4000      0.0    top       VIRTUAL
 C2            2.2uF               Hidden                        135.7500   -83.5500   0.0000     0.0000        0.0    top       SMD
@@ -33,12 +32,13 @@ R12           10k                 R_0603                        115.0000   -72.3
 Logo2         AJK                 AJK                           116.2500   -87.1250   0.0000     0.0000        0.0    top       VIRTUAL
 J2            DC                  Molex_MiniSPOX_H2RA           135.4000   -93.4000   134.1500   -93.4000      0.0    top       THD
 U4            ESP32-PICO-MINI-02  ESP32-PICO-MINI-02            122.2500   -73.9933   116.3500   -69.9933      0.0    top       SMD
+SW2           SW_Push             SW_PUSH_6mm_H13mm             89.2500    -85.7500   89.2500    -85.7500      0.0    top       THD
 C4            10nF                C_0603                        128.2500   -88.7250   128.2500   -87.9500    -90.0    top       SMD
 R13           4k7                 R_0603                        111.4000   -91.0000   110.5750   -91.0000      0.0    top       SMD
 R9            220R                R_0603                        137.0000   -67.4000   137.8250   -67.4000    180.0    top       SMD
 U3            FT231XQ             QFN-20-1EP_4x4mm_P0.5mm_EP2.. 122.0500   -85.2500   120.1500   -84.2500      0.0    top       SMD
 D2            D                   D_1206                        130.0000   -94.2500   130.0000   -95.6500     90.0    top       SMD
-Logo1         AJK                 AJK                           134.7500   -83.8750   0.0000     0.0000      180.0    bottom    VIRTUAL
+Logo1         AJK                 AJK                           136.2500   -83.8750   0.0000     0.0000      180.0    bottom    VIRTUAL
 U5            QR                  QR-ENVMON                     122.2500   -97.0000   0.0000     0.0000        0.0    bottom    VIRTUAL
 ## End
 ## 208 SMD pads
