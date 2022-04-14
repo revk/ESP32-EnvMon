@@ -1,4 +1,4 @@
-### Module positions - created on 2022-03-20 16:43
+### Module positions - created on 2022-04-10 10:45
 ### Printed by pcb_positions plugin
 ## Unit = mm, Angle = deg.
 ## Pcb Height 37.050mm, Pcb Width 57.550mm [based on Edge bounding box]
