@@ -108,19 +108,23 @@ int main(int argc, const char *argv[])
    struct data_s {
       const char *arg;
       const char *secondary;
-      const char *target;
+      const char *target1;
+      const char *target2;
       const char *unit;
       const char *colour;
       xml_t g;
       char *path;               // Main path
       char *path2;              // Secondary path
-      char *path3;              // Target path
+      char *path3;              // Target path 1
+      char *path4;              // Target path 2
       size_t size;
       size_t size2;
       size_t size3;
+      size_t size4;
       FILE *f;
       FILE *f2;
       FILE *f3;
+      FILE *f4;
       double line;
       double min;
       double max;
@@ -128,13 +132,14 @@ int main(int argc, const char *argv[])
       char m;
       char m2;
       char m3;
+      char m4;
       double lastx;
       double lasty;
       int count;
    } data[MAX] = {
     { arg: "co2", secondary: "fan", scale: ysize / co2step, line: co2line, unit:"ppm" },
     { arg: "rh", scale: ysize / rhstep, line: rhline, unit:"%" },
-    { arg: "temp", secondary: "heat", target: "tempt", scale: ysize / tempstep, line: templine, unit:"℃" },
+    { arg: "temp", secondary: "heat", target1: "tempt1", target2: "tempt2", scale: ysize / tempstep, line: templine, unit:"℃" },
    };
 
    if (control)
@@ -256,10 +261,15 @@ int main(int argc, const char *argv[])
             data[d].f2 = open_memstream(&data[d].path2, &data[d].size2);
             data[d].m2 = 'M';
          }
-         if (data[d].target)
+         if (data[d].target1)
          {                      // Target trace
             data[d].f3 = open_memstream(&data[d].path3, &data[d].size3);
             data[d].m3 = 'M';
+         }
+         if (data[d].target2)
+         {                      // Target trace
+            data[d].f4 = open_memstream(&data[d].path4, &data[d].size4);
+            data[d].m4 = 'M';
          }
       }
    }
@@ -267,17 +277,29 @@ int main(int argc, const char *argv[])
       day++;
       for (d = 0; d < MAX; d++)
       {
-         if (data[d].target)
+         if (data[d].target1)
          {
             fclose(data[d].f3);
             if (*data[d].path3)
             {
                xml_t p = xml_element_add(data[d].g, "path");
                xml_addf(p, "@opacity", "%.1f", (double) day / days);
-               xml_add(p, "@stroke-dasharray", "1 2");
+               xml_add(p, "@stroke-dasharray", "1 3");
                xml_add(p, "@d", data[d].path3);
             }
             free(data[d].path3);
+         }
+         if (data[d].target2)
+         {
+            fclose(data[d].f4);
+            if (*data[d].path4)
+            {
+               xml_t p = xml_element_add(data[d].g, "path");
+               xml_addf(p, "@opacity", "%.1f", (double) day / days);
+               xml_add(p, "@stroke-dasharray", "1 3");
+               xml_add(p, "@d", data[d].path4);
+            }
+            free(data[d].path4);
          }
          fclose(data[d].f);
          if (*data[d].path)
@@ -345,23 +367,29 @@ int main(int argc, const char *argv[])
                data[d].m = 'M';
             else
                data[d].m = 'L';
-            if (data[d].target)
+            if (data[d].target1)
             {                   // Target trace
-               const char *val = sql_col(res, data[d].target);
+               const char *val = sql_col(res, data[d].target1);
                if (val)
                {
                   double v = strtod(val, NULL);
-#if 0                           // Can rather distort temp scale, and is not really needed - the issue is when it slopes to zero, etc.
-                  if (!data[d].count || data[d].min > v)
-                     data[d].min = v;
-                  if (!data[d].count || data[d].max < v)
-                     data[d].max = v;
-#endif
                   double y = v * data[d].scale;
                   fprintf(data[d].f3, "%c%.1lf,%.1lf", data[d].m3, x, y);
                   data[d].m3 = 'L';
                } else
                   data[d].m3 = 'M';
+            }
+            if (data[d].target2)
+            {                   // Target trace
+               const char *val = sql_col(res, data[d].target2);
+               if (val)
+               {
+                  double v = strtod(val, NULL);
+                  double y = v * data[d].scale;
+                  fprintf(data[d].f4, "%c%.1lf,%.1lf", data[d].m4, x, y);
+                  data[d].m4 = 'L';
+               } else
+                  data[d].m4 = 'M';
             }
          }
       }

@@ -2,7 +2,7 @@
 /* Copyright(c) 2019-21 Adrian Kennard, Andrews & Arnold Limited, see LICENSE file(GPL) */
 const char TAG[] = "Env";
 
-//#define	DEBUGTEMP
+//#define       DEBUGTEMP
 
 #include "revk.h"
 #include <driver/i2c.h>
@@ -30,7 +30,7 @@ const char TAG[] = "Env";
 #define	MAX_OWB	8
 #define DS18B20_RESOLUTION   (DS18B20_RESOLUTION_12_BIT)
 
-// Note a heat target of 0 is considered "off", so if actually targeting 0, use 1 or -1
+// temp targets of 0 mean off, so use 1 or -1 if really targeting 0
 
 #define settings	\
 	u32(reporting,60)	\
@@ -111,8 +111,8 @@ static float lastotemp = NAN;
 static float thisco2 = NAN;
 static float thistemp = NAN;
 static float thisrh = NAN;
-static float acmin = NAN;
-static float acmax = NAN;
+static float temptargetmin = NAN;
+static float temptargetmax = NAN;
 static int8_t co2port = -1;
 static int8_t num_owb = 0;
 static volatile uint32_t do_co2 = 0;
@@ -180,6 +180,18 @@ static void reportall(time_t now)
          jo_bool(j, "fan", fanmax);
       fanmax = fanlast;
       heatmax = heatlast;
+      if (!isnan(temptargetmin) && !isnan(temptargetmax))
+      {
+         if (temptargetmin == temptargetmax)
+            jo_litf(j, "temp-target", "%.3f", temptargetmin);
+         else
+         {
+            jo_array(j, "temp-target");
+            jo_litf(j, NULL, "%.3f", temptargetmin);
+            jo_litf(j, NULL, "%.3f", temptargetmax);
+            jo_close(j);
+         }
+      }
       revk_state("data", &j);
       if (*heataircon && !isnan(lasttemp))
       {                         // Aircon control
@@ -190,14 +202,14 @@ static void reportall(time_t now)
             jo_litf(j, "home", "%d", (int) lasttemp);
          else
             jo_litf(j, "home", "%.*f", tempplaces, lasttemp);
-         if (!isnan(acmin) && acmin == acmax)
-            jo_litf(j, "temp", "%.3f", acmin);
+         if (!isnan(temptargetmin) && temptargetmin == temptargetmax)
+            jo_litf(j, "temp", "%.3f", temptargetmin);
          else
          {
-            if (!isnan(acmin))
-               jo_litf(j, "min", "%.3f", acmin);
-            if (!isnan(acmax))
-               jo_litf(j, "max", "%.3f", acmax);
+            jo_array(j, "temp");
+            jo_litf(j, NULL, "%.3f", temptargetmin);
+            jo_litf(j, NULL, "%.3f", temptargetmax);
+            jo_close(j);
          }
          revk_mqtt_send_clients(NULL, 0, topic, &j, 1);
       }
@@ -837,22 +849,22 @@ void app_main()
       }
       // Reference temp
       // heatdaymC or heatnightmC take priority. If not set (0) then temphhmm/tempheatmC/tempcoolmC apply
-      // The temp are a set, with hhmm points (in order, can start 0000) and heating and cooling settings
-      int32_t temp_target = (gfx_dark ? heatnightmC : heatdaymC);
-      if (temp_target)
+      // The temp are a set, with hhmm points (in order, can start 0000) and heating and cooling settings, and 0 means same as other setting
+      int32_t heat_target = (gfx_dark ? heatnightmC : heatdaymC);
+      if (heat_target)
       {                         // Temp is set base don night/day, use that as heating basis (min) and no cooling set
-         acmin = ((float) temp_target) / 1000.0;
-         acmax = 32.0;
+         temptargetmin = ((float) heat_target) / 1000.0;
+         temptargetmax = 32.0;
       } else
       {                         // Setting from temphhmm/tempheatmC/tempcoolmC
 #define	TIMES	(sizeof(temphhmm)/sizeof(*temphhmm))
          int i,
           prev = 0,
              next = 0;
-         for (i = 0; i < TIMES && tempheatmC[i] && temphhmm[i] <= hhmm; i++);
+         for (i = 0; i < TIMES && (tempheatmC[i] || tempcoolmC[i]) && temphhmm[i] <= hhmm; i++);
          if (!i)
          {                      // wrap as first entry is later
-            for (i = 1; i < TIMES && tempheatmC[i]; i++);
+            for (i = 1; i < TIMES && (tempheatmC[i] || tempcoolmC[i]); i++);
             prev = i - 1;
             next = 0;
          } else if (i < TIMES && temphhmm[i] > hhmm)
@@ -861,52 +873,29 @@ void app_main()
             next = i;
          } else
             prev = i - 1;       // Next is 0, wrapping
-#ifdef	DEBUGTEMP
-         jo_t j = jo_object_alloc();    // TODO
-         jo_int(j, "prev", prev);
-         jo_int(j, "next", next);
-         jo_int(j, "prevhhmm", temphhmm[prev]);
-         jo_int(j, "nexthhmm", temphhmm[next]);
-         jo_int(j, "prevheat", tempheatmC[prev]);
-         jo_int(j, "nextheat", tempheatmC[next]);
-         jo_int(j, "prevcool", tempcoolmC[prev]);
-         jo_int(j, "nextcool", tempcoolmC[next]);
-#endif
-         if (tempheatmC[prev] && tempheatmC[next])
-         {
-            int sprev = (temphhmm[prev] / 100) * 3600 + (temphhmm[prev] % 100) * 60;
-            int snext = (temphhmm[next] / 100) * 3600 + (temphhmm[next] % 100) * 60;
-            if (snext <= sprev)
-               snext += 86400;
-            int snow = t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec;
-            if (snow < sprev)
-               snow += 86400;
-            temp_target = tempheatmC[prev] + (tempheatmC[next] - tempheatmC[prev]) * (snow - sprev) / (snext - sprev);
-            acmin = ((float) temp_target) / 1000.0;
-            if (tempcoolmC[prev] && tempcoolmC[next])
-            {
-               acmax = (float) (tempcoolmC[prev] + (tempcoolmC[next] - tempcoolmC[prev]) * (snow - sprev) / (snext - sprev)) / 1000.0;
-            } else
-               acmax = acmin;   // same as heat
-#ifdef	DEBUGTEMP
-            jo_int(j, "sprev", sprev);
-            jo_int(j, "snext", snext);
-            jo_int(j, "snow", snow);
-#endif
-         } else
-            acmin = acmax = NAN;
-#ifdef	DEBUGTEMP
-         if (!isnan(acmin))
-            jo_litf(j, "acmin", "%.3f", acmin);
-         if (!isnan(acmax))
-            jo_litf(j, "amax", "%.3f", acmax);
-         revk_info("debug", &j);
-#endif
+         int sprev = (temphhmm[prev] / 100) * 3600 + (temphhmm[prev] % 100) * 60;
+         int snext = (temphhmm[next] / 100) * 3600 + (temphhmm[next] % 100) * 60;
+         if (snext <= sprev)
+            snext += 86400;
+         int snow = t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec;
+         if (snow < sprev)
+            snow += 86400;
+         float min = NAN,
+             max = NAN;
+         int a,
+          b;
+         if ((a = (tempheatmC[prev] ? : tempcoolmC[prev])) && (b = (tempheatmC[next] ? : tempcoolmC[next])))
+         {                      // Heat valid
+            heat_target = a + (b - a) * (snow - sprev) / (snext - sprev);
+            min = ((float) heat_target) / 1000.0;
+         }
+         if ((a = (tempcoolmC[prev] ? : tempheatmC[prev])) && (b = (tempcoolmC[next] ? : tempheatmC[next])))
+            max = (float) (a + (b - a) * (snow - sprev) / (snext - sprev)) / 1000.0;    // Cool valid
+         else
+            max = min;          // same as heat
+         temptargetmin = min;
+         temptargetmax = max;
       }
-      if (temp_target)
-         report("temp-target", NAN, ((float) temp_target) / 1000.0, 3);
-      else
-         report("temp-target", NAN, NAN, 3);    // No target
       // Report
       if (up > 60 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
          reportall(now);        // Don't report right away if clock may be duff
@@ -942,15 +931,15 @@ void app_main()
          }
       }
       static uint32_t heatwait = 0;
-      if (!isnan(thistemp) && heatwait < up && (heatnightmC || heatdaymC || tempheatmC[0] || temp_target || heatgpio >= 0 || heaton || heatoff))
+      if (!isnan(thistemp) && heatwait < up && (heatnightmC || heatdaymC || tempheatmC[0] || heat_target || heatgpio >= 0 || heaton || heatoff))
       {                         /* Heat control */
-         if (temp_target || heatlast == 1)
+         if (heat_target || heatlast == 1)
          {                      /* We have a reference temp to work with or we left on */
             if (heatresend && heattime < up)
                heatlast = -1;
             const char *heat = NULL;
             int32_t thismC = thistemp * 1000;
-            if (!temp_target || thismC > temp_target)
+            if (!heat_target || thismC > heat_target)
             {                   // Heat off
                if (heatlast != 0)
                {                // Change
@@ -1048,7 +1037,7 @@ void app_main()
       }
       int y = 0,
           space = (gfx_height() - 28 - 35 - 21 - 9) / 3;
-      int32_t reftemp = temp_target ? : 21000;
+      int32_t reftemp = heat_target ? : 21000;
       int32_t thismC = thistemp * 1000;
       char co2col = (isnan(thisco2) ? 'K' : thisco2 > (fanco2on ? : 1000) ? 'R' : thisco2 > (fanco2off ? : 750) ? 'Y' : 'G');
       char tempcol = (isnan(thistemp) ? 'K' : thismC > reftemp + 500 ? 'R' : thismC > reftemp - 500 ? 'G' : 'B');

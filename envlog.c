@@ -34,7 +34,8 @@ struct log_s {
    vals_t co2;
    vals_t rh;
    vals_t temp;
-   vals_t tempt;
+   vals_t tempt1;
+   vals_t tempt2;
    bools_t heat;
    bools_t fan;
 };
@@ -225,8 +226,10 @@ int main(int argc, const char *argv[])
                sql_sprintf(&s, "INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T", sqltable, l->tag, now);
                if (l->temp.set)
                   sql_sprintf(&s, ",`temp`=%lf,`temph`=%lf,`templ`=%lf", l->temp.latest, l->temp.high, l->temp.low);
-               if (l->tempt.set)
-                  sql_sprintf(&s, ",`tempt`=%lf", l->tempt.latest);
+               if (l->tempt1.set)
+                  sql_sprintf(&s, ",`tempt1`=%lf", l->tempt1.latest);
+               if (l->tempt2.set)
+                  sql_sprintf(&s, ",`tempt2`=%lf", l->tempt2.latest);
                if (l->rh.set)
                   sql_sprintf(&s, ",`rh`=%lf,`rhh`=%lf,`rhl`=%lf", l->rh.latest, l->rh.high, l->rh.low);
                if (l->co2.set)
@@ -236,7 +239,8 @@ int main(int argc, const char *argv[])
                if (l->fan.set)
                   sql_sprintf(&s, ",`fan`=%#s", l->fan.val ? "true" : "false");
                clearval(&l->temp);
-               clearval(&l->tempt);
+               clearval(&l->tempt1);
+               clearval(&l->tempt2);
                clearval(&l->co2);
                clearval(&l->rh);
                clearbool(&l->heat);
@@ -319,8 +323,16 @@ int main(int argc, const char *argv[])
                if (t)
                   now = (t / interval) * interval;
             }
-            if ((v = j_get(data, "temp-target")))
-               logval("tempt", &l->tempt, v);
+            j_t tt = j_find(data, "temp-target");
+            if (tt)
+            {
+               if (j_isarray(tt))
+               {
+                  logval("tempt1", &l->tempt1, j_val(j_index(tt, 0)));
+                  logval("tempt2", &l->tempt2, j_val(j_index(tt, 1)));
+               } else
+                  logval("tempt1", &l->tempt1, j_val(tt));
+            }
             if ((v = j_get(data, "temp")))
                logval("temp", &l->temp, v);
             if ((v = j_get(data, "rh")))
