@@ -295,13 +295,15 @@ int main(int argc, const char *argv[])
    }
    SQL_RES *res = sql_safe_query_store_free(&sql, q);
    // Plot
-   xml_t g = xml_element_add(svg, "g");
-   xml_t grid = xml_element_add(svg, "g");
-   xml_t axis = xml_element_add(svg, "g");
-   xml_t text = xml_element_add(svg, "g");
+   xml_t outer = xml_element_add(svg, "g");
+   xml_t grid = xml_element_add(outer, "g");
+   xml_t axis = xml_element_add(outer, "g");
+   xml_t text = xml_element_add(outer, "g");
+   xml_t g = xml_element_add(outer, "g");
 
    double hwm[periods],
-    max = 0;
+    max = 0,
+       min = 0;
    for (int x = 0; x < periods; x++)
       hwm[x] = 0;
    int left = tsize * 3;
@@ -364,6 +366,10 @@ int main(int argc, const char *argv[])
                max = T;
             if (TF > max)
                max = TF;
+            if (T < min)
+               min = T;
+            if (TF < min)
+               min = TF;
          } else
          {
             int P = atoi(sql_colz(res, "P"));
@@ -390,6 +396,8 @@ int main(int argc, const char *argv[])
                      P * xsize, new * ysize / ydiv);
             if (new > max)
                max = new;
+            if (new < min)
+               min = new;
             if (!background || d != devices)
                hwm[P] += T;
          }
@@ -419,8 +427,9 @@ int main(int argc, const char *argv[])
    fclose(dfile);
    sql_free_result(res);
    int kwh = ceil(max / 1000);
+   int base = floor(min / 1000);
    int bottom = tsize + 2;
-   int top = bottom + kwh * ysize * 1000 / ydiv + 1;
+   int top = bottom + (kwh - base) * ysize * 1000 / ydiv + 1;
    // Axis
    xml_add(g, "@stroke-linecap", "round");
    xml_add(g, "@stroke-linejoin", "round");
@@ -456,8 +465,8 @@ int main(int argc, const char *argv[])
          xml_add(g, "@text-anchor", "middle");
       }
       g = xml_element_add(axis, "g");
-      int l = 0;
-      for (int y = 0; y < kwh; y += ystep)
+      int l = base * ysize * 1000 / ydiv;
+      for (int y = base; y < kwh; y += ystep)
       {
          int q = y * ysize * 1000 / ydiv;
          if (y && q - l <= tsize)
@@ -482,9 +491,9 @@ int main(int argc, const char *argv[])
       for (int x = 0; x <= periods; x++)
       {
          xml_t l = xml_element_add(grid, "path");
-         xml_addf(l, "@d", "M%d,%dL%d,%d", left + x * xsize, top - bottom, left + x * xsize, top - bottom - kwh * ysize * 1000 / ydiv);
+         xml_addf(l, "@d", "M%d,%dL%d,%d", left + x * xsize, top - bottom - base * ysize * 1000 / ydiv, left + x * xsize, top - bottom - (kwh - base) * ysize * 1000 / ydiv);
       }
-      for (int y = 0; y <= kwh; y += ystep)
+      for (int y = base; y <= kwh; y += ystep)
       {
          xml_t l = xml_element_add(grid, "path");
          xml_addf(l, "@d", "M%d,%dL%d,%d", left, top - bottom - y * ysize * 1000 / ydiv, left + periods * xsize, top - bottom - y * ysize * 1000 / ydiv);
@@ -556,6 +565,7 @@ int main(int argc, const char *argv[])
          y -= tsize + 1;
       }
    }
+   xml_addf(outer, "@transform", "translate(0,%d)", base * ysize * 1000 / ydiv);
    xml_addf(svg, "@width", "%d", right);
    xml_addf(svg, "@height", "%d", top);
    xml_addf(g, "@transform", "translate(%d,%d)scale(1,-1)", left, top - bottom);
