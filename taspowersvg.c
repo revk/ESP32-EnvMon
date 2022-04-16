@@ -410,7 +410,10 @@ int main(int argc, const char *argv[])
          xml_add(t, "@fill", "none");
          colour(t, "@stroke", d->device);
          if (!raw)
-            xml_add(t, "@stroke-dasharray", "1 2");
+	 {
+            //xml_add(t, "@stroke-dasharray", "1 3");
+            xml_add(t, "@stroke-width", "0.1");
+	 }
          xml_add(t, "@d", path);
          if (!raw)
          {
