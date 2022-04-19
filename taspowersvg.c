@@ -268,7 +268,7 @@ int main(int argc, const char *argv[])
    while (ysize * ystep * 1000 < 3 * ydiv)
       ystep = 10;
    int periods = 0;
-   const char *factor = (raw ? "" : "/if(abs(`factor`)<0.3,1,abs(`factor`))");
+   const char *factor = (raw ? "" : "/if(`factor`<0.3,1,`factor`)"); // Factor is always recorded +ve regardless by logging
    char *q = NULL;
    if (!M)
    {                            // Year

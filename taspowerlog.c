@@ -161,6 +161,8 @@ int main(int argc, const char *argv[])
                   double v = strtod(j_val(f), NULL);
                   if (!strcmp(name, "Factor"))
                   {             // Special handling for power factor as end of high usage get misleadingly low values as factor is a snapshot so at end of sample
+                     if (v < 0)
+                        v = 0 - v;      // Do factors as positive regardless, we log power usage negative
                      double w = d->lastfactor;
                      d->lastfactor = v;
                      if (d->last && w > v)
