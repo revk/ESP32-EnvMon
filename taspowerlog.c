@@ -100,7 +100,6 @@ int main(int argc, const char *argv[])
    }
    void message(struct mosquitto *mqtt, void *obj, const struct mosquitto_message *msg) {
       obj = obj;
-      device_t *d;
       char *topic = strdupa(msg->topic);
       char *tag = strchr(topic, '/');
       if (!tag)
@@ -114,9 +113,9 @@ int main(int argc, const char *argv[])
       *e++ = 0;
       if (!strcmp(e, "LWT"))
       {
-         for (d = devices; d && strcmp(d->tag, tag); d = d->next);
-         if (d)
-            d->last = 0;
+         for (device_t * d = devices; d; d = d->next)
+            if (strstr(tag, d->tag))
+               d->last = 0;
          return;
       }
       if (strcmp(e, "SENSOR"))
@@ -133,18 +132,19 @@ int main(int argc, const char *argv[])
          {
             if (debug)
                warnx("%s: %.*s", tag, msg->payloadlen, (char *) msg->payload);
-            for (d = devices; d && strcmp(d->tag, tag); d = d->next);
-            if (!d)
-            {
-               d = malloc(sizeof(*d));
-               d->last = 0;
-               d->tag = strdup(tag);
-               d->next = devices;
-               devices = d;
-            }
             void process(const char *tag, j_t period, int n) {
                if (!period || !j_isnumber(period))
                   return;
+               device_t *d;
+               for (d = devices; d && strcmp(d->tag, tag); d = d->next);
+               if (!d)
+               {
+                  d = malloc(sizeof(*d));
+                  d->last = 0;
+                  d->tag = strdup(tag);
+                  d->next = devices;
+                  devices = d;
+               }
                double wh = strtod(j_val(period), NULL);
                sql_string_t s = { };
                sql_sprintf(&s, "INSERT IGNORE INTO `%#S` SET `device`=%#s,`ts`=%#T,`wh`=%lf", sqltable, tag, ts, wh);
@@ -175,6 +175,7 @@ int main(int argc, const char *argv[])
                extra("Current");
                extra("Factor");
                sql_safe_query_s(&sql, &s);
+               d->last = ts;
             }
             j_t period = j_find(energy, "Period");
             if (period)
@@ -203,7 +204,6 @@ int main(int argc, const char *argv[])
                } else
                   process(tag, period, 0);
             }
-            d->last = ts;
          }
       }
       j_delete(&data);
