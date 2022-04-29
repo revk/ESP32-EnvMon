@@ -259,7 +259,7 @@ int main(int argc, const char *argv[])
        D = 0;
    if (sscanf(date, "%d-%d-%d", &Y, &M, &D) < 1 || Y < 2000 || (M && (M < 1 || M > 12)) || (D && (D < 1 || D > 31)))
       errx(1, "Date is YYYY[-MM[-DD]]");
-   if (control && D && devices && !devices->next)
+   if (control && D && devices && (!devices->next || (background&&devices->next&&!devices->next->next)))
       trace = 1;
    if (control && D)
       ysize *= 5;
