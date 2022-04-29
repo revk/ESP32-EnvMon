@@ -24,6 +24,7 @@ int main(int argc, const char *argv[])
    const char *tag = NULL;
    const char *title = NULL;
    const char *control = NULL;
+   const char *me = NULL;
    char *tempcol = "#f00";
    char *co2col = "#080";
    char *rhcol = "#00f";
@@ -79,6 +80,7 @@ int main(int argc, const char *argv[])
          { "no-axis", 0, POPT_ARG_NONE, &noaxis, 0, "No axis" },
          { "no-date", 0, POPT_ARG_NONE, &nodate, 0, "No date" },
          { "debug", 'V', POPT_ARG_NONE, &debug, 0, "Debug" },
+         { "me", 0, POPT_ARG_STRING | POPT_ARGFLAG_DOC_HIDDEN, &me, 0, "Me link", "URL" },
          POPT_AUTOHELP { }
       };
 
@@ -241,6 +243,8 @@ int main(int argc, const char *argv[])
    int d;
    int day = 0;
    xml_t svg = xml_tree_new("svg");
+   if(me)
+	   xml_addf(svg,"a@rel=me@href",me);
    xml_element_set_namespace(svg, xml_namespace(svg, NULL, "http://www.w3.org/2000/svg"));
    xml_t top = xml_element_add(svg, "g");
    xml_t grid = xml_element_add(top, "g");

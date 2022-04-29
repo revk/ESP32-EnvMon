@@ -13,7 +13,7 @@ all:
 	@cp build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
 	@echo Done: $(PROJECT_NAME)$(SUFFIX).bin
 
-tools: envlog envgraph taspowerlog taspowersvg
+tools: envlog envgraph taspowerlog taspowersvg taspowerse
 
 set:    wroom pico
 
@@ -87,6 +87,9 @@ envgraph: envgraph.c SQLlib/sqllib.o AXL/axl.o
 
 taspowerlog: taspowerlog.c SQLlib/sqllib.o AJL/ajl.o
 	cc -O -o $@ $< -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAJL AJL/ajl.o ${OPTS}
+
+taspowerse: taspowerse.c SQLlib/sqllib.o AJL/ajl.o
+	cc -O -o $@ $< -lpopt -ISQLlib SQLlib/sqllib.o -IAJL AJL/ajl.o ${OPTS}
 
 taspowersvg: taspowersvg.c SQLlib/sqllib.o AXL/axl.o
 	cc -O -o $@ $< -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAXL AXL/axl.o -lcurl ${OPTS}
