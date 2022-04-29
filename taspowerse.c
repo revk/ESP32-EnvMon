@@ -124,8 +124,9 @@ int main(int argc, const char *argv[])
          sql_string_t s = { };
          sql_sprintf(&s, "INSERT IGNORE INTO `%#S` SET `device`=%#s,`ts`=%#T", sqltable, type, ts);
          if (prev)
-            sql_sprintf(&s, ",`prev`=%#T", prev);
-         sql_sprintf(&s, ",`wh`=%lf", w / 4);   // Quarter hour
+            sql_sprintf(&s, ",`prev`=%#T,`wh`=%lf", prev, w * (ts - prev) / 3600);
+         else
+            sql_sprintf(&s, ",`wh`=%lf", w / 4);        // Quarter hour
          sql_sprintf(&s, ",`w`=%lf", w);
          sql_safe_query_s(&sql, &s);
          prev = ts;
