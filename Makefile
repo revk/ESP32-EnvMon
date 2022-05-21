@@ -106,7 +106,7 @@ stl:	$(patsubst %,KiCad/%.stl,$(MODELS))
 	echo "Made $@"
 
 KiCad/EnvMon2.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1 --curve-delta=0.02
+	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1
 
 KiCad/EnvMon2-noco2.scad: KiCad/EnvMon2.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1 --edge2
