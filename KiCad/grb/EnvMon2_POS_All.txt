@@ -1,4 +1,4 @@
-### Module positions - created on 2022-05-20 15:47
+### Module positions - created on 2022-05-21 15:01
 ### Printed by pcb_positions plugin
 ## Unit = mm, Angle = deg.
 ## Pcb Height 37.050mm, Pcb Width 57.550mm [based on Edge bounding box]
@@ -7,24 +7,24 @@
 # Ref         Val                 Package                       PosX       PosY       Pin1_PosX  Pin1_PosY    Rot     Side      Type
 SW1           SW_Push             SW_PUSH_6mm_H13mm             89.2500    -65.2500   89.2500    -65.2500      0.0    top       THD
 R1            100k 1% or 0R       R_0603                        131.4250   -86.7500   130.6000   -86.7500      0.0    top       SMD
-SW3           SW_Push             SW_PUSH_6mm_H13mm             89.3000    -80.2500   89.3000    -80.2500      0.0    top       THD
+SW3           SW_Push             SW_PUSH_6mm_H13mm             89.3000    -80.2500   95.8000    -80.2500      0.0    top       THD
 U2            SCD41               SCD41                         92.5000    -94.5000   96.5000    -97.0000    180.0    top       SMD
 J3            TEMP                Molex_MiniSPOX_H3RA           110.2500   -93.4000   107.7500   -93.4000      0.0    top       VIRTUAL
-C2            2.2uF               Hidden                        135.7500   -83.5500   0.0000     0.0000        0.0    top       SMD
+C2            2.2uF               Hidden                        135.7500   -84.0500   0.0000     0.0000        0.0    top       SMD
 J1            USB-C               USC16-TR-Round                122.2500   -100.0000  0.0000     0.0000        0.0    top       SMD
 R2            30k 1% or NF        R_0603                        131.4250   -88.0000   130.6000   -88.0000      0.0    top       SMD
 R10           4k7                 R_0603                        127.0500   -88.7250   127.0500   -89.5500     90.0    top       SMD
-U1            LMR16006+FB         RegulatorBlockFB              132.2000   -82.7000   133.5500   -83.6500     90.0    top       SMD
+U1            LMR16006+FB         RegulatorBlockFB              132.2000   -83.2000   133.5500   -84.1500     90.0    top       SMD
 R7            680R                R_0603                        137.0000   -68.6000   137.8250   -68.6000    180.0    top       SMD
-L1            6.8uH               Hidden                        132.2000   -78.8000   0.0000     0.0000       90.0    top       SMD
+L1            6.8uH               Hidden                        132.2000   -79.3000   0.0000     0.0000       90.0    top       SMD
 R4            5K1                 R_0603                        124.6000   -91.8000   123.7750   -91.8000      0.0    top       SMD
 M1            OLED1.5-RGB         OLED1.5-RGB                   144.5000   -63.0000   102.5000   -73.8800    180.0    top       VIRTUAL
-C1            0.1uF               Hidden                        132.4500   -84.8000   0.0000     0.0000        0.0    top       SMD
-C3            10uF                Hidden                        135.7500   -77.3000   0.0000     0.0000        0.0    top       SMD
+C1            0.1uF               Hidden                        132.4500   -85.3000   0.0000     0.0000        0.0    top       SMD
+C3            10uF                Hidden                        135.7500   -77.8000   0.0000     0.0000        0.0    top       SMD
 R6            27R                 R_0603                        121.6000   -89.2000   121.6000   -90.0250     90.0    top       SMD
 R8            2K                  R_0603                        137.0000   -66.2000   137.8250   -66.2000    180.0    top       SMD
 R5            27R                 R_0603                        122.8000   -89.2000   122.8000   -90.0250     90.0    top       SMD
-D1            Schottky            Hidden                        135.3700   -80.4200   0.0000     0.0000       90.0    top       SMD
+D1            Schottky            Hidden                        135.3700   -80.9200   0.0000     0.0000       90.0    top       SMD
 D3            RGB                 LED-RGB-1.6x1.6               137.0000   -64.6000   136.1250   -64.1000    180.0    top       SMD
 R3            5K1                 R_0603                        119.8000   -91.8000   120.6250   -91.8000    180.0    top       SMD
 R11           10k                 R_0603                        125.8500   -88.7250   125.8500   -87.9000    -90.0    top       SMD
