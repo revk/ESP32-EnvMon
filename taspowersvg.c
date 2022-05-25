@@ -167,6 +167,11 @@ int main(int argc, const char *argv[])
             else if (!strcasecmp(date, "D"))
                today = 1;
          }
+         if (c && *c == '^')
+         {
+            raw = 1;
+            c++;
+         }
          if (c && *c == '-')
          {
             background = 1;
