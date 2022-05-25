@@ -112,6 +112,7 @@ int main(int argc, const char *argv[])
       const char *secondary;
       const char *target1;
       const char *target2;
+      const char *target3;
       const char *unit;
       const char *colour;
       xml_t g;
@@ -119,14 +120,17 @@ int main(int argc, const char *argv[])
       char *path2;              // Secondary path
       char *path3;              // Target path 1
       char *path4;              // Target path 2
+      char *path5;              // Target path 3
       size_t size;
       size_t size2;
       size_t size3;
       size_t size4;
+      size_t size5;
       FILE *f;
       FILE *f2;
       FILE *f3;
       FILE *f4;
+      FILE *f5;
       double line;
       double min;
       double max;
@@ -135,13 +139,14 @@ int main(int argc, const char *argv[])
       char m2;
       char m3;
       char m4;
+      char m5;
       double lastx;
       double lasty;
       int count;
    } data[MAX] = {
     { arg: "co2", secondary: "fan", scale: ysize / co2step, line: co2line, unit:"ppm" },
     { arg: "rh", scale: ysize / rhstep, line: rhline, unit:"%" },
-    { arg: "temp", secondary: "heat", target1: "tempt1", target2: "tempt2", scale: ysize / tempstep, line: templine, unit:"℃" },
+    { arg: "temp", secondary: "heat", target1: "tempt1", target2: "tempt2", target3: "tempt3", scale: ysize / tempstep, line: templine, unit:"℃" },
    };
 
    if (control)
@@ -243,8 +248,8 @@ int main(int argc, const char *argv[])
    int d;
    int day = 0;
    xml_t svg = xml_tree_new("svg");
-   if(me)
-	   xml_addf(svg,"a@rel=me@href",me);
+   if (me)
+      xml_addf(svg, "a@rel=me@href", me);
    xml_element_set_namespace(svg, xml_namespace(svg, NULL, "http://www.w3.org/2000/svg"));
    xml_t top = xml_element_add(svg, "g");
    xml_t grid = xml_element_add(top, "g");
@@ -275,6 +280,11 @@ int main(int argc, const char *argv[])
             data[d].f4 = open_memstream(&data[d].path4, &data[d].size4);
             data[d].m4 = 'M';
          }
+         if (data[d].target3)
+         {                      // Target trace
+            data[d].f5 = open_memstream(&data[d].path5, &data[d].size5);
+            data[d].m5 = 'M';
+         }
       }
    }
    void eod(void) {
@@ -304,6 +314,19 @@ int main(int argc, const char *argv[])
                xml_add(p, "@d", data[d].path4);
             }
             free(data[d].path4);
+         }
+         if (data[d].target3)
+         {
+            fclose(data[d].f5);
+            if (*data[d].path5)
+            {
+               xml_t p = xml_element_add(data[d].g, "path");
+               xml_addf(p, "@opacity", "%.1f", (double) day / days);
+	       xml_add(p,"@stroke-width","0.5");
+	       xml_add(p,"@stroke","blue");
+               xml_add(p, "@d", data[d].path5);
+            }
+            free(data[d].path5);
          }
          fclose(data[d].f);
          if (*data[d].path)
@@ -394,6 +417,22 @@ int main(int argc, const char *argv[])
                   data[d].m4 = 'L';
                } else
                   data[d].m4 = 'M';
+            }
+            if (data[d].target3)
+            {                   // Target trace
+               const char *val = sql_col(res, data[d].target3);
+               if (val)
+               {
+                  double v = strtod(val, NULL);
+                  if (data[d].min > v)
+                     data[d].min = v;
+                  if (data[d].max < v)
+                     data[d].max = v;
+                  double y = v * data[d].scale;
+                  fprintf(data[d].f5, "%c%.1lf,%.1lf", data[d].m5, x, y);
+                  data[d].m5 = 'L';
+               } else
+                  data[d].m5 = 'M';
             }
          }
       }
