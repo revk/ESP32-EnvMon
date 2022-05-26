@@ -113,6 +113,7 @@ int main(int argc, const char *argv[])
       const char *target1;
       const char *target2;
       const char *target3;
+      const char *secondary3;
       const char *unit;
       const char *colour;
       xml_t g;
@@ -121,16 +122,19 @@ int main(int argc, const char *argv[])
       char *path3;              // Target path 1
       char *path4;              // Target path 2
       char *path5;              // Target path 3
+      char *path6;              // Secondary path on target 3
       size_t size;
       size_t size2;
       size_t size3;
       size_t size4;
       size_t size5;
+      size_t size6;
       FILE *f;
       FILE *f2;
       FILE *f3;
       FILE *f4;
       FILE *f5;
+      FILE *f6;
       double line;
       double min;
       double max;
@@ -140,13 +144,14 @@ int main(int argc, const char *argv[])
       char m3;
       char m4;
       char m5;
+      char m6;
       double lastx;
       double lasty;
       int count;
    } data[MAX] = {
     { arg: "co2", secondary: "fan", scale: ysize / co2step, line: co2line, unit:"ppm" },
     { arg: "rh", scale: ysize / rhstep, line: rhline, unit:"%" },
-    { arg: "temp", secondary: "heat", target1: "tempt1", target2: "tempt2", target3: "tempt3", scale: ysize / tempstep, line: templine, unit:"℃" },
+    { arg: "temp", secondary: "heat", secondary3:"antifreeze",target1: "tempt1", target2: "tempt2", target3: "tempt3", scale: ysize / tempstep, line: templine, unit:"℃" },
    };
 
    if (control)
@@ -285,6 +290,11 @@ int main(int argc, const char *argv[])
             data[d].f5 = open_memstream(&data[d].path5, &data[d].size5);
             data[d].m5 = 'M';
          }
+         if (data[d].secondary3)
+         {                      // Extra control trace on target 3
+            data[d].f6 = open_memstream(&data[d].path6, &data[d].size6);
+            data[d].m6 = 'M';
+         }
       }
    }
    void eod(void) {
@@ -347,6 +357,18 @@ int main(int argc, const char *argv[])
                xml_add(p, "@d", data[d].path2);
             }
             free(data[d].path2);
+         }
+         if (data[d].secondary3)
+         {
+            fclose(data[d].f6);
+            if (*data[d].path6)
+            {
+               xml_t p = xml_element_add(data[d].g, "path");
+               xml_addf(p, "@opacity", "%.1f", (double) day / days);
+               xml_add(p, "@stroke-width", "2");
+               xml_add(p, "@d", data[d].path6);
+            }
+            free(data[d].path6);
          }
       }
    }
@@ -433,6 +455,13 @@ int main(int argc, const char *argv[])
                   data[d].m5 = 'L';
                } else
                   data[d].m5 = 'M';
+            }
+            if (data[d].secondary3)
+            {                   // Control trace
+               char on = (*sql_colz(res, data[d].secondary3) == 't');
+               if (on || data[d].m6 == 'L')
+                  fprintf(data[d].f6, "%c%.1lf,%.1lf", data[d].m6, x, y);
+               data[d].m6 = (on ? 'L' : 'M');
             }
          }
       }
