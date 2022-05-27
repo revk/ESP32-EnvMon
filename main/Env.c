@@ -199,14 +199,14 @@ static void reportall(time_t now)
          snprintf(topic, sizeof(topic), "command/%s/control", heataircon);
          jo_t j = jo_object_alloc();
          if (tempplaces <= 0)
-            jo_litf(j, "home", "%d", (int) lasttemp);
+            jo_litf(j, "env", "%d", (int) lasttemp);
          else
-            jo_litf(j, "home", "%.*f", tempplaces, lasttemp);
+            jo_litf(j, "env", "%.*f", tempplaces, lasttemp);
          if (!isnan(temptargetmin) && temptargetmin == temptargetmax)
-            jo_litf(j, "temp", "%.3f", temptargetmin);
+            jo_litf(j, "target", "%.3f", temptargetmin);
          else
          {
-            jo_array(j, "temp");
+            jo_array(j, "target");
             jo_litf(j, NULL, "%.3f", temptargetmin);
             jo_litf(j, NULL, "%.3f", temptargetmax);
             jo_close(j);
