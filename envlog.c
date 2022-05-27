@@ -34,11 +34,9 @@ struct log_s {
    vals_t co2;
    vals_t rh;
    vals_t temp;
-   vals_t tempt1;               // Min
-   vals_t tempt2;               // Max
-   vals_t tempt3;               // Liquid
+   vals_t tempt1;
+   vals_t tempt2;
    bools_t heat;
-   bools_t antifreeze;
    bools_t fan;
 };
 log_t *logs = NULL;
@@ -232,26 +230,20 @@ int main(int argc, const char *argv[])
                   sql_sprintf(&s, ",`tempt1`=%lf", l->tempt1.latest);
                if (l->tempt2.set)
                   sql_sprintf(&s, ",`tempt2`=%lf", l->tempt2.latest);
-               if (l->tempt3.set)
-                  sql_sprintf(&s, ",`tempt3`=%lf", l->tempt3.latest);
                if (l->rh.set)
                   sql_sprintf(&s, ",`rh`=%lf,`rhh`=%lf,`rhl`=%lf", l->rh.latest, l->rh.high, l->rh.low);
                if (l->co2.set)
                   sql_sprintf(&s, ",`co2`=%lf,`co2h`=%lf,`co2l`=%lf", l->co2.latest, l->co2.high, l->co2.low);
                if (l->heat.set)
                   sql_sprintf(&s, ",`heat`=%#s", l->heat.val ? "true" : "false");
-               if (l->antifreeze.set)
-                  sql_sprintf(&s, ",`antifreeze`=%#s", l->antifreeze.val ? "true" : "false");
                if (l->fan.set)
                   sql_sprintf(&s, ",`fan`=%#s", l->fan.val ? "true" : "false");
                clearval(&l->temp);
                clearval(&l->tempt1);
                clearval(&l->tempt2);
-               clearval(&l->tempt3);
                clearval(&l->co2);
                clearval(&l->rh);
                clearbool(&l->heat);
-               clearbool(&l->antifreeze);
                clearbool(&l->fan);
                sql_safe_query_s(&sql, &s);
             }
@@ -341,8 +333,6 @@ int main(int argc, const char *argv[])
                } else
                   logval("tempt1", &l->tempt1, j_val(tt));
             }
-            if ((v = j_get(data, "temp-liquid")))
-               logval("tempt3", &l->tempt3, v);
             if ((v = j_get(data, "temp")))
                logval("temp", &l->temp, v);
             if ((v = j_get(data, "rh")))
@@ -351,8 +341,6 @@ int main(int argc, const char *argv[])
                logval("co2", &l->co2, v);
             v = j_get(data, "heat");
             logbool("heat", &l->heat, v && *v == 't');
-            v = j_get(data, "anti-freeze");
-            logbool("antifreeze", &l->heat, v && *v == 't');
             v = j_get(data, "fan");
             logbool("fan", &l->fan, v && *v == 't');
             done(l, 0);
