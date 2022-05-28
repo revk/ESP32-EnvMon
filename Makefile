@@ -7,7 +7,7 @@ PROJECT_NAME := Env
 SUFFIX := $(shell components/ESP32-RevK/buildsuffix)
 MODELS := EnvMon2 EnvMon2-noco2 EnvMon2-nooled EnvMon2-flush EnvMon2-flush-nooled
 
-all:
+all:	tools
 	@echo Make: $(PROJECT_NAME)$(SUFFIX).bin
 	@idf.py build
 	@cp build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
