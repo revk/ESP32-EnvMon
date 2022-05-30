@@ -223,7 +223,7 @@ int main(int argc, const char *argv[])
             {                   // Log to SQL
                l->when = now;
                sql_string_t s = { };
-               sql_sprintf(&s, "INSERT IGNORE INTO `%#S` SET `tag`=%#s,`when`=%#T", sqltable, l->tag, now);
+               sql_sprintf(&s, "INSERT IGNORE INTO `%#S` SET `tag`=%#s,`utc`=%#U", sqltable, l->tag, now);
                if (l->temp.set)
                   sql_sprintf(&s, ",`temp`=%lf,`temph`=%lf,`templ`=%lf", l->temp.latest, l->temp.high, l->temp.low);
                if (l->tempt1.set)

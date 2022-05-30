@@ -214,6 +214,8 @@ int main(int argc, const char *argv[])
    data[RH].colour = rhcol;
    SQL sql;
    sql_real_connect(&sql, sqlhostname, sqlusername, sqlpassword, sqldatabase, 0, NULL, 0, 1, sqlconffile);
+   time_t stime,
+    etime;
    char *sdate = NULL;
    char *edate = NULL;
    char *ldate = NULL;
@@ -227,24 +229,28 @@ int main(int argc, const char *argv[])
          t.tm_mday -= back - 1;
       else
          t.tm_mday -= days - 1;
-      mktime(&t);
+      t.tm_hour = t.tm_min = t.tm_sec = 0;
+      t.tm_isdst = -1;
+      stime = mktime(&t);
       asprintf(&date, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
       sdate = strdup(date);
       t.tm_mday += days;
-      mktime(&t);
+      t.tm_isdst = -1;
+      etime = mktime(&t);
       asprintf(&edate, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
       t.tm_mday--;
+      t.tm_isdst = -1;
       mktime(&t);
       asprintf(&ldate, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
    }
    SQL_RES *res = sql_safe_query_store_free(&sql,
-                                            sql_printf("SELECT * FROM `%#S` WHERE `tag`=%#s AND `when`>=%#s AND `when`<=%#s ORDER BY `when`",
-                                                       sqltable, tag, date, edate));
+                                            sql_printf("SELECT * FROM `%#S` WHERE `tag`=%#s AND `utc`>=%#U AND `utc`<=%#U ORDER BY `utc`",
+                                                       sqltable, tag, stime, etime));
    int d;
    int day = 0;
    xml_t svg = xml_tree_new("svg");
-   if(me)
-	   xml_addf(svg,"a@rel=me@href",me);
+   if (me)
+      xml_addf(svg, "a@rel=me@href", me);
    xml_element_set_namespace(svg, xml_namespace(svg, NULL, "http://www.w3.org/2000/svg"));
    xml_t top = xml_element_add(svg, "g");
    xml_t grid = xml_element_add(top, "g");
@@ -327,12 +333,13 @@ int main(int argc, const char *argv[])
          }
       }
    }
-   int maxx = 0;
+   int maxx = xsize * 24;
    sod();
-   time_t start = xml_time(date);
+   time_t start = stime;
    while (sql_fetch_row(res))
    {
-      const char *when = sql_col(res, "when");
+      const char *when = sql_col(res, "utc");
+      double x = (xml_time_utc(when) - start) * xsize / 3600;
       void add(void) {
          for (d = 0; d < MAX; d++)
          {
@@ -347,14 +354,7 @@ int main(int argc, const char *argv[])
             if ((!data[d].count && !data[d].max) || data[d].max < v)
                data[d].max = v;
             data[d].count++;
-            struct tm t;
-            time_t whent = xml_time(when);
-            localtime_r(&whent, &t);
-            double x = (t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec) * xsize / 3600;
-            if (!x && whent > start)
-               x += 24 * xsize; // Right hand side
-            if (x > maxx)
-               maxx = x;
+            warnx("x=%lf", x);
             double y = v * data[d].scale;
             data[d].lastx = x;
             data[d].lasty = y;
@@ -397,15 +397,18 @@ int main(int argc, const char *argv[])
             }
          }
       }
-      if (strncmp(date, when, 10))
+      if (x >= maxx)
       {                         // New day
-         int x = (xml_time(when) - start) * xsize / 3600;
          if (start && x <= floor((maxx + xsize - 1) / xsize) * xsize)
             add();              // End of day
-         memcpy(date, when, 10);
-         start = xml_time(date);
+         struct tm t;
+         localtime_r(&start, &t);
+         t.tm_mday++;
+         t.tm_isdst = -1;
+         start = mktime(&t);
          eod();
          sod();
+         x = 0;
       }
       add();
    }
