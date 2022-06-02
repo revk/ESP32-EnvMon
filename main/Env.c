@@ -196,7 +196,7 @@ static void reportall(time_t now)
       if (*heataircon && !isnan(lasttemp))
       {                         // Aircon control
          static float last = NAN;
-         if (isnan(last) || last != lasttemp || !reporting || now / reporting == reportlast / reporting)
+         if (isnan(last) || last != lasttemp || !reporting || now / reporting != reportlast / reporting)
          {
             char topic[100];
             snprintf(topic, sizeof(topic), "command/%s/control", heataircon);
