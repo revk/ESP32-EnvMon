@@ -195,27 +195,53 @@ static void reportall(time_t now)
       revk_state("data", &j);
       if (*heataircon && !isnan(lasttemp))
       {                         // Aircon control
-         char topic[100];
-         snprintf(topic, sizeof(topic), "command/%s/control", heataircon);
-         jo_t j = jo_object_alloc();
-         if (tempplaces <= 0)
-            jo_litf(j, "env", "%d", (int) lasttemp);
-         else
-            jo_litf(j, "env", "%.*f", tempplaces, lasttemp);
-         if (!isnan(temptargetmin) && temptargetmin == temptargetmax)
-            jo_litf(j, "target", "%.3f", temptargetmin);
-         else
-         {
-            jo_array(j, "target");
-            jo_litf(j, NULL, "%.3f", temptargetmin);
-            jo_litf(j, NULL, "%.3f", temptargetmax);
-            jo_close(j);
+         static float last = NAN,
+             lasttemptargetmin = NAN,
+             lasttemptargetmax = NAN;
+         float this = lasttemp;
+         // Work out if changed
+         if (!isnan(last) && now / reporting != reportlast / reporting && temptargetmin == lasttemptargetmin && temptargetmax == lasttemptargetmax)
+         {                      // Hysteresis
+            float mag = powf(10.0, -tempplaces);
+            if (this < last)
+            {
+               this += mag * 0.4;       // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
+               if (this >= last)
+                  this = NAN;
+            } else if (this > last)
+            {
+               this -= mag * 0.4;       // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
+               if (this <= last)
+                  this = NAN;
+            }
          }
-         revk_mqtt_send_clients(NULL, 0, topic, &j, 1);
+         if (!isnan(this))
+         {
+            char topic[100];
+            snprintf(topic, sizeof(topic), "command/%s/control", heataircon);
+            jo_t j = jo_object_alloc();
+            if (tempplaces <= 0)
+               jo_litf(j, "env", "%d", (int) lasttemp);
+            else
+               jo_litf(j, "env", "%.*f", tempplaces, lasttemp);
+            if (!isnan(temptargetmin) && temptargetmin == temptargetmax)
+               jo_litf(j, "target", "%.3f", temptargetmin);
+            else
+            {
+               jo_array(j, "target");
+               jo_litf(j, NULL, "%.3f", temptargetmin);
+               jo_litf(j, NULL, "%.3f", temptargetmax);
+               jo_close(j);
+            }
+            revk_mqtt_send_clients(NULL, 0, topic, &j, 1);
+            lasttemptargetmin = temptargetmin;
+            lasttemptargetmax = temptargetmax;
+            last = lasttemp;
+         }
       }
+      reportlast = now;
+      reportchange = 0;
    }
-   reportlast = now;
-   reportchange = 0;
 }
 
 static float report(const char *tag, float last, float this, int places)
