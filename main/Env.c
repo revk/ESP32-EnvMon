@@ -195,12 +195,11 @@ static void reportall(time_t now)
       revk_state("data", &j);
       if (*heataircon && !isnan(lasttemp))
       {                         // Aircon control
-         static float last = NAN,
-             lasttemptargetmin = NAN,
-             lasttemptargetmax = NAN;
+         static float last = NAN;
          float this = lasttemp;
-         // Work out if changed
-         if (!isnan(last) && now / reporting != reportlast / reporting && temptargetmin == lasttemptargetmin && temptargetmax == lasttemptargetmax)
+         // Work out if changed - only really care about actual temp, the target can update every report period
+	 // And do it anyway every reporting period
+         if (!isnan(last) && now / reporting != reportlast / reporting)
          {                      // Hysteresis
             float mag = powf(10.0, -tempplaces);
             if (this < last)
@@ -234,8 +233,6 @@ static void reportall(time_t now)
                jo_close(j);
             }
             revk_mqtt_send_clients(NULL, 0, topic, &j, 1);
-            lasttemptargetmin = temptargetmin;
-            lasttemptargetmax = temptargetmax;
             last = lasttemp;
          }
       }
