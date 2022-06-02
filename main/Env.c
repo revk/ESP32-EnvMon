@@ -196,25 +196,7 @@ static void reportall(time_t now)
       if (*heataircon && !isnan(lasttemp))
       {                         // Aircon control
          static float last = NAN;
-         float this = lasttemp;
-         // Work out if changed - only really care about actual temp, the target can update every report period
-	 // And do it anyway every reporting period
-         if (!isnan(last) && now / reporting != reportlast / reporting)
-         {                      // Hysteresis
-            float mag = powf(10.0, -tempplaces);
-            if (this < last)
-            {
-               this += mag * 0.4;       // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
-               if (this >= last)
-                  this = NAN;
-            } else if (this > last)
-            {
-               this -= mag * 0.4;       // Hysteresis, and it would have to go a further 0.5 to flip on the roundf()
-               if (this <= last)
-                  this = NAN;
-            }
-         }
-         if (!isnan(this))
+         if (isnan(last) || last != lasttemp || !reporting || now / reporting == reportlast / reporting)
          {
             char topic[100];
             snprintf(topic, sizeof(topic), "command/%s/control", heataircon);
