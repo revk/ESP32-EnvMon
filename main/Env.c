@@ -68,6 +68,7 @@ const char TAG[] = "Env";
 	s(heaton)	\
 	s(heatoff)	\
 	s(heataircon)	\
+	b(heatmonitor)	\
 	u8(heatswitch,30)	\
 	u32(heatresend,600)	\
 	s8(heatgpio,-1)	\
@@ -205,14 +206,17 @@ static void reportall(time_t now)
                jo_litf(j, "env", "%d", (int) lasttemp);
             else
                jo_litf(j, "env", "%.*f", tempplaces, lasttemp);
-            if (!isnan(temptargetmin) && temptargetmin == temptargetmax)
-               jo_litf(j, "target", "%.3f", temptargetmin);
-            else
+            if (heatmonitor)
             {
-               jo_array(j, "target");
-               jo_litf(j, NULL, "%.3f", temptargetmin);
-               jo_litf(j, NULL, "%.3f", temptargetmax);
-               jo_close(j);
+               if (!isnan(temptargetmin) && temptargetmin == temptargetmax)
+                  jo_litf(j, "target", "%.3f", temptargetmin);
+               else
+               {
+                  jo_array(j, "target");
+                  jo_litf(j, NULL, "%.3f", temptargetmin);
+                  jo_litf(j, NULL, "%.3f", temptargetmax);
+                  jo_close(j);
+               }
             }
             revk_mqtt_send_clients(NULL, 0, topic, &j, 1);
             last = lasttemp;
