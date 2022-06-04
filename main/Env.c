@@ -206,7 +206,7 @@ static void reportall(time_t now)
                jo_litf(j, "env", "%d", (int) lasttemp);
             else
                jo_litf(j, "env", "%.*f", tempplaces, lasttemp);
-            if (heatmonitor)
+            if (!heatmonitor)
             {
                if (!isnan(temptargetmin) && temptargetmin == temptargetmax)
                   jo_litf(j, "target", "%.3f", temptargetmin);
@@ -335,8 +335,11 @@ const char *app_callback(int client, const char *prefix, const char *target, con
       return "";
    }
    if (!strcmp(suffix, "night"))
-   {
-      gfx_dark = 1;
+   {                            // Night mode, or can be sent with true/false to set night or day
+      if (jo_here(j) == JO_FALSE)
+         gfx_dark = 0;
+      else
+         gfx_dark = 1;
       return "";
    }
    if (!strcmp(suffix, "day"))
