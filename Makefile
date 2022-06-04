@@ -7,13 +7,27 @@ PROJECT_NAME := Env
 SUFFIX := $(shell components/ESP32-RevK/buildsuffix)
 MODELS := EnvMon2 EnvMon2-noco2 EnvMon2-nooled EnvMon2-flush EnvMon2-flush-nooled
 
-all:	tools
+all:	tools main/icons.h
 	@echo Make: $(PROJECT_NAME)$(SUFFIX).bin
 	@idf.py build
 	@cp build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
 	@echo Done: $(PROJECT_NAME)$(SUFFIX).bin
 
 tools: envlog envgraph taspowerlog taspowersvg taspowerse
+
+main/icons.h: $(patsubst %.svg,%.h,$(wildcard icons/*.svg))
+	cat icons/*.h > main/icons.h
+
+icons/%.png:	icons/%.svg
+	inkscape --export-png=$@ $<
+
+icons/%.gray:	icons/%.png
+	convert $< -resize 32x32 -depth 8 -grayscale average $@
+
+icons/%.h:	icons/%.gray
+	echo "const uint8_t icon_$(patsubst icons/%.h,%,$@)[]={" > $@
+	od -Anone -tx1 -v -w64 $< | sed 's/ \(.\). \(.\)./0x\1\2,/g' >> $@
+	echo "};" >> $@
 
 set:    wroom pico
 
