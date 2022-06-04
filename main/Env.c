@@ -15,8 +15,7 @@ const char TAG[] = "Env";
 #include "ds18b20.h"
 #include "gfx.h"
 
-#include "logo.h"
-#include "fan.h"
+#include "icons.h"
 /*
  * Setting for "logo" is 32 x32 bytes(4 bits per pixel) Note that MQTT config needs to allow a large enough message for the logo
  */
@@ -736,7 +735,7 @@ void app_main()
       int p;
       for (p = 0; p < sizeof(logo) && !logo[p]; p++);
       if (p == sizeof(logo))
-         memcpy(logo, aalogo, sizeof(logo));    /* default */
+         memcpy(logo, icon_logo, sizeof(icon_logo));    /* default */
    }
    if (co2sda >= 0 && co2scl >= 0)
    {
@@ -1084,7 +1083,7 @@ void app_main()
          if (fanlast >= 0)
          {
             gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
-            gfx_icon16(LOGOW, LOGOH, fanlast ? fan : NULL);
+            gfx_icon16(LOGOW, LOGOH, fanlast ? icon_modeF : NULL);
          }
       }
       y += 28 + space;
