@@ -2,15 +2,15 @@
 <export version="E">
   <design>
     <source>/Users/adrian/git/ESP32-EnvMon/KiCad/EnvMon2.kicad_sch</source>
-    <date>Saturday, 21 May 2022 at 14:58:21</date>
+    <date>Tuesday, 28 June 2022 at 15:07:08</date>
     <tool>Eeschema (6.0.5-0)</tool>
-    <textvar name="DATE">2022-05-20</textvar>
+    <textvar name="DATE">2022-06-09</textvar>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
         <title>1.5" OLED Module driver with GPIO</title>
         <company>Adrian Kennard / Andrews &amp; Arnold Ltd</company>
         <rev>4</rev>
-        <date>2022-05-20</date>
+        <date>2022-06-09</date>
         <source>EnvMon2.kicad_sch</source>
         <comment number="1" value="@TheRealRevK"/>
         <comment number="2" value="www.me.uk"/>
@@ -27,7 +27,7 @@
   <components>
     <comp ref="C1">
       <value>0.1uF</value>
-      <footprint>RevK:Hidden</footprint>
+      <footprint>RevK:C_0603_</footprint>
       <fields>
         <field name="Note">X7R or X5R 0603</field>
       </fields>
@@ -41,7 +41,7 @@
     </comp>
     <comp ref="C2">
       <value>2.2uF</value>
-      <footprint>RevK:Hidden</footprint>
+      <footprint>RevK:C_0805_</footprint>
       <fields>
         <field name="Note">0603 or 0805</field>
       </fields>
@@ -55,7 +55,7 @@
     </comp>
     <comp ref="C3">
       <value>10uF</value>
-      <footprint>RevK:Hidden</footprint>
+      <footprint>RevK:C_0805_</footprint>
       <fields>
         <field name="Note">0603 or 0805</field>
       </fields>
@@ -78,7 +78,7 @@
     </comp>
     <comp ref="D1">
       <value>Schottky</value>
-      <footprint>RevK:Hidden</footprint>
+      <footprint>RevK:D_1206_</footprint>
       <datasheet>https://www.mouser.co.uk/datasheet/2/54/CD1206-B220_B2100-777245.pdf</datasheet>
       <fields>
         <field name="Manufacturer">Bourns</field>
@@ -136,7 +136,7 @@
     </comp>
     <comp ref="L1">
       <value>6.8uH</value>
-      <footprint>RevK:Hidden</footprint>
+      <footprint>RevK:L_4x4_</footprint>
       <datasheet>https://www.mouser.co.uk/datasheet/2/987/Laird_Performance_TYA4020_series__Rev_A_-1877538.pdf</datasheet>
       <fields>
         <field name="Manufacturer">Laird</field>
@@ -730,7 +730,7 @@
     </net>
     <net code="4" name="BUTTON1">
       <node ref="SW1" pin="1" pinfunction="1" pintype="passive"/>
-      <node ref="U4" pin="19" pinfunction="IO12" pintype="bidirectional"/>
+      <node ref="U4" pin="24" pinfunction="IO4" pintype="bidirectional"/>
     </net>
     <net code="5" name="BUTTON2">
       <node ref="SW2" pin="1" pinfunction="1" pintype="passive"/>
@@ -990,11 +990,11 @@
     <net code="63" name="unconnected-(U4-Pad10)">
       <node ref="U4" pin="10" pinfunction="I35" pintype="input+no_connect"/>
     </net>
-    <net code="64" name="unconnected-(U4-Pad22)">
-      <node ref="U4" pin="22" pinfunction="IO2" pintype="bidirectional+no_connect"/>
+    <net code="64" name="unconnected-(U4-Pad19)">
+      <node ref="U4" pin="19" pinfunction="IO12" pintype="bidirectional+no_connect"/>
     </net>
-    <net code="65" name="unconnected-(U4-Pad24)">
-      <node ref="U4" pin="24" pinfunction="IO4" pintype="bidirectional+no_connect"/>
+    <net code="65" name="unconnected-(U4-Pad22)">
+      <node ref="U4" pin="22" pinfunction="IO2" pintype="bidirectional+no_connect"/>
     </net>
     <net code="66" name="unconnected-(U4-Pad25)">
       <node ref="U4" pin="25" pinfunction="NC" pintype="no_connect"/>
