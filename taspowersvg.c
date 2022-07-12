@@ -48,7 +48,7 @@ static inline unsigned int FNV32(const unsigned char *data, int count, int bits)
 void colour(xml_t g, const char *tag, const char *name)
 {
    unsigned int q = FNV32((unsigned char *) name, strlen(name), 24);
-   if ((q & 0x808080) == 0x808080)
+   if ((q>>16)+((q>>8)&0xFF)+(q&0xFF)>382)
       q ^= 0x808080;
    xml_addf(g, tag, "#%06X", q);
 }
