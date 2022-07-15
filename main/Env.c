@@ -39,7 +39,7 @@ const char TAG[] = "Env";
 	s8(co2address,0x62)	\
 	s8(co2places,-1)	\
 	u32(co2damp,100)	\
-	u32(startup,150)	\
+	u32(startup,300)	\
 	s8(tempplaces,1)	\
 	s8(rhplaces,0)	\
 	u32(rhdamp,10)	\
@@ -1074,7 +1074,7 @@ void app_main()
       int y = 0,
           space = (gfx_height() - 28 - 35 - 21 - 9) / 3;
       char co2col = (isnan(thisco2) ? 'K' : thisco2 > (fanco2on ? : 1000) ? 'R' : thisco2 > (fanco2off ? : 750) ? 'Y' : 'G');
-      char tempcol = (isnan(thistemp) ? 'K' : thistemp > temptargetmax + 0.25 ? 'R' : thistemp < temptargetmin - 0.25 ? 'G' : 'B');
+      char tempcol = (isnan(thistemp) ? 'K' : thistemp > temptargetmax + 0.25 ? 'R' : thistemp < temptargetmin - 0.25 ? 'B' : 'G');
       char rhcol = (isnan(thisrh) ? 'K' : 'C');
       {                         /* Colours for LED */
          static char cols[4];
