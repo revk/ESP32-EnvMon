@@ -21,11 +21,14 @@ int main(int argc, const char *argv[])
    const char *sqlpassword = NULL;
    const char *sqlconffile = NULL;
    const char *sqltable = "env";
+   const char *sqlweather = "weather";
+   const char *weathertag = NULL;
    const char *tag = NULL;
    const char *title = NULL;
    const char *control = NULL;
    const char *me = NULL;
    char *tempcol = "#f00";
+   char *tempcolo = "#800";
    char *co2col = "#080";
    char *rhcol = "#00f";
    char *date = NULL;
@@ -57,6 +60,8 @@ int main(int argc, const char *argv[])
          { "sql-username", 'U', POPT_ARG_STRING, &sqlusername, 0, "SQL username", "name" },
          { "sql-password", 'P', POPT_ARG_STRING, &sqlpassword, 0, "SQL password", "pass" },
          { "sql-table", 't', POPT_ARG_STRING | POPT_ARGFLAG_SHOW_DEFAULT, &sqltable, 0, "SQL table", "table" },
+         { "sql-weather", 0, POPT_ARG_STRING | POPT_ARGFLAG_SHOW_DEFAULT, &sqlweather, 0, "SQL weather table", "table" },
+         { "weather-tag", 0, POPT_ARG_STRING, &weathertag, 0, "SQL weather tag", "tag" },
          { "sql-debug", 'v', POPT_ARG_NONE, &sqldebug, 0, "SQL Debug" },
          { "x-size", 0, POPT_ARG_DOUBLE | POPT_ARGFLAG_SHOW_DEFAULT, &xsize, 0, "X size per hour", "pixels" },
          { "y-size", 0, POPT_ARG_DOUBLE | POPT_ARGFLAG_SHOW_DEFAULT, &ysize, 0, "Y size per step", "pixels" },
@@ -102,11 +107,12 @@ int main(int argc, const char *argv[])
       CO2,
       RH,
       TEMP,
+      TEMPO,
       MAX,
    };
 #define	ONLY_CO2	(1<<CO2)
 #define	ONLY_RH		(1<<RH)
-#define	ONLY_TEMP	(1<<TEMP)
+#define	ONLY_TEMP	((1<<TEMP)|(1<<TEMPO))
    struct data_s {
       const char *arg;
       const char *secondary;
@@ -142,6 +148,7 @@ int main(int argc, const char *argv[])
     { arg: "co2", secondary: "fan", scale: ysize / co2step, line: co2line, unit:"ppm" },
     { arg: "rh", scale: ysize / rhstep, line: rhline, unit:"%" },
     { arg: "temp", secondary: "heat", target1: "tempt1", target2: "tempt2", scale: ysize / tempstep, line: templine, unit:"℃" },
+    { arg: "tempc", scale: ysize / tempstep, line: templine, unit:"℃" },
    };
 
    if (control)
@@ -204,8 +211,12 @@ int main(int argc, const char *argv[])
       }
    }
    if (temptop)
+   {
       data[TEMP].max = temptop;
+      data[TEMPO].max = temptop;
+   }
    data[TEMP].colour = tempcol;
+   data[TEMPO].colour = tempcolo;
    if (co2top)
       data[CO2].max = co2top;
    data[CO2].colour = co2col;
@@ -243,9 +254,6 @@ int main(int argc, const char *argv[])
       mktime(&t);
       asprintf(&ldate, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
    }
-   SQL_RES *res = sql_safe_query_store_free(&sql,
-                                            sql_printf("SELECT * FROM `%#S` WHERE `tag`=%#s AND `utc`>=%#U AND `utc`<=%#U ORDER BY `utc`",
-                                                       sqltable, tag, stime, etime));
    int d;
    int day = 0;
    xml_t svg = xml_tree_new("svg");
@@ -336,83 +344,89 @@ int main(int argc, const char *argv[])
    int maxx = xsize * 24;
    sod();
    time_t start = stime;
-   while (sql_fetch_row(res))
-   {
-      const char *when = sql_col(res, "utc");
-      double x = (xml_time_utc(when) - start) * xsize / 3600;
-      void add(void) {
-         for (d = 0; d < MAX; d++)
-         {
-            if (only && !(only & (1 << d)))
-               continue;
-            const char *val = sql_col(res, data[d].arg);
-            if (!val)
-               continue;
-            double v = strtod(val, NULL);
-            if (!data[d].count || data[d].min > v)
-               data[d].min = v;
-            if ((!data[d].count && !data[d].max) || data[d].max < v)
-               data[d].max = v;
-            data[d].count++;
-            warnx("x=%lf", x);
-            double y = v * data[d].scale;
-            data[d].lastx = x;
-            data[d].lasty = y;
-            // Extra
-            if (data[d].secondary)
-            {                   // Control trace
-               char on = (*sql_colz(res, data[d].secondary) == 't');
-               if (on || data[d].m2 == 'L')
-                  fprintf(data[d].f2, "%c%.1lf,%.1lf", data[d].m2, x, y);
-               data[d].m2 = (on ? 'L' : 'M');
-            }
-            fprintf(data[d].f, "%c%.1lf,%.1lf", data[d].m, x, y);
-            if (data[d].m2 == 'L')
-               data[d].m = 'M';
-            else
-               data[d].m = 'L';
-            if (data[d].target1)
-            {                   // Target trace
-               const char *val = sql_col(res, data[d].target1);
-               if (val)
-               {
-                  double v = strtod(val, NULL);
-                  double y = v * data[d].scale;
-                  fprintf(data[d].f3, "%c%.1lf,%.1lf", data[d].m3, x, y);
-                  data[d].m3 = 'L';
-               } else
-                  data[d].m3 = 'M';
-            }
-            if (data[d].target2)
-            {                   // Target trace
-               const char *val = sql_col(res, data[d].target2);
-               if (val)
-               {
-                  double v = strtod(val, NULL);
-                  double y = v * data[d].scale;
-                  fprintf(data[d].f4, "%c%.1lf,%.1lf", data[d].m4, x, y);
-                  data[d].m4 = 'L';
-               } else
-                  data[d].m4 = 'M';
+   void run(SQL_RES * res) {
+      if (!res)
+         return;
+      while (sql_fetch_row(res))
+      {
+         const char *when = sql_col(res, "utc");
+         double x = (xml_time_utc(when) - start) * xsize / 3600;
+         void add(void) {
+            for (d = 0; d < MAX; d++)
+            {
+               if (only && !(only & (1 << d)))
+                  continue;
+               const char *val = sql_col(res, data[d].arg);
+               if (!val)
+                  continue;
+               double v = strtod(val, NULL);
+               if (!data[d].count || data[d].min > v)
+                  data[d].min = v;
+               if ((!data[d].count && !data[d].max) || data[d].max < v)
+                  data[d].max = v;
+               data[d].count++;
+               double y = v * data[d].scale;
+               data[d].lastx = x;
+               data[d].lasty = y;
+               // Extra
+               if (data[d].secondary)
+               {                // Control trace
+                  char on = (*sql_colz(res, data[d].secondary) == 't');
+                  if (on || data[d].m2 == 'L')
+                     fprintf(data[d].f2, "%c%.1lf,%.1lf", data[d].m2, x, y);
+                  data[d].m2 = (on ? 'L' : 'M');
+               }
+               fprintf(data[d].f, "%c%.1lf,%.1lf", data[d].m, x, y);
+               if (data[d].m2 == 'L')
+                  data[d].m = 'M';
+               else
+                  data[d].m = 'L';
+               if (data[d].target1)
+               {                // Target trace
+                  const char *val = sql_col(res, data[d].target1);
+                  if (val)
+                  {
+                     double v = strtod(val, NULL);
+                     double y = v * data[d].scale;
+                     fprintf(data[d].f3, "%c%.1lf,%.1lf", data[d].m3, x, y);
+                     data[d].m3 = 'L';
+                  } else
+                     data[d].m3 = 'M';
+               }
+               if (data[d].target2)
+               {                // Target trace
+                  const char *val = sql_col(res, data[d].target2);
+                  if (val)
+                  {
+                     double v = strtod(val, NULL);
+                     double y = v * data[d].scale;
+                     fprintf(data[d].f4, "%c%.1lf,%.1lf", data[d].m4, x, y);
+                     data[d].m4 = 'L';
+                  } else
+                     data[d].m4 = 'M';
+               }
             }
          }
+         if (x >= maxx)
+         {                      // New day
+            if (start && x <= floor((maxx + xsize - 1) / xsize) * xsize)
+               add();           // End of day
+            struct tm t;
+            localtime_r(&start, &t);
+            t.tm_mday++;
+            t.tm_isdst = -1;
+            start = mktime(&t);
+            eod();
+            sod();
+            x = 0;
+         }
+         add();
       }
-      if (x >= maxx)
-      {                         // New day
-         if (start && x <= floor((maxx + xsize - 1) / xsize) * xsize)
-            add();              // End of day
-         struct tm t;
-         localtime_r(&start, &t);
-         t.tm_mday++;
-         t.tm_isdst = -1;
-         start = mktime(&t);
-         eod();
-         sod();
-         x = 0;
-      }
-      add();
+      sql_free_result(res);
    }
-   sql_free_result(res);
+   run(sql_safe_query_store_free(&sql, sql_printf("SELECT * FROM `%#S` WHERE `tag`=%#s AND `utc`>=%#U AND `utc`<=%#U ORDER BY `utc`", sqltable, tag, stime, etime)));
+   if (sqlweather && weathertag)
+      run(sql_safe_query_store_free(&sql, sql_printf("SELECT * FROM `%#S` WHERE `tag`=%#s AND `utc`>=%#U AND `utc`<=%#U ORDER BY `utc`", sqlweather, weathertag, stime, etime)));
    sql_close(&sql);
    eod();
    for (d = 0; d < MAX; d++)
@@ -444,6 +458,7 @@ int main(int argc, const char *argv[])
    for (d = 0; d < MAX; d++)
       if (data[d].count)
          data[d].max = data[d].min + (double) maxy / data[d].scale;
+   data[TEMPO].max = data[TEMP].max;
    if (!nogrid)
    {                            // Grid
       xml_add(grid, "@stroke", "black");
@@ -469,37 +484,37 @@ int main(int argc, const char *argv[])
       xml_add(top, "@font-size", "15");
       int x = 0;
       for (d = 0; d < MAX; d++)
-         if (data[d].count)
-         {
-            xml_t g = xml_element_add(data[d].g, "g");
-            xml_add(g, "@opacity", "0.5");
-            xml_add(g, "@text-anchor", "end");
-            xml_add(g, "@fill", data[d].colour);
-            for (double v = data[d].min + ysize / data[d].scale; v < data[d].max; v += ysize / data[d].scale)
+         if (d != TEMPO)
+            if (data[d].count)
             {
-               if (d == RH && v < 0)
-                  continue;
-               if (d == RH && v > 100)
-                  break;
-               if (d == CO2 && v < 0)
-                  continue;
-               xml_t t = xml_addf(g, "+text", "%.0f", v);
-               xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) (v * data[d].scale - 5));
-               //xml_add(t, "@alignment-baseline", "middle"); // Does not convert to pdf, hence -5
+               xml_t g = xml_element_add(data[d].g, "g");
+               xml_add(g, "@opacity", "0.5");
+               xml_add(g, "@text-anchor", "end");
+               xml_add(g, "@fill", data[d].colour);
+               for (double v = data[d].min + ysize / data[d].scale; v < data[d].max; v += ysize / data[d].scale)
+               {
+                  if (d == RH && v < 0)
+                     continue;
+                  if (d == RH && v > 100)
+                     break;
+                  if (d == CO2 && v < 0)
+                     continue;
+                  xml_t t = xml_addf(g, "+text", "%.0f", v);
+                  xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) (v * data[d].scale - 5));
+                  //xml_add(t, "@alignment-baseline", "middle"); // Does not convert to pdf, hence -5
+               }
+               xml_t t = xml_add(g, "+text", data[d].unit);
+               xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) ((data[d].max - 0.1) * data[d].scale - 10));
+               //xml_add(t, "@alignment-baseline", "hanging"); // Does not convert to pdf, hence -10
+               if (data[d].line)
+               {                // Reference line
+                  int y = data[d].line * data[d].scale;
+                  xml_t l = xml_element_add(g, "path");
+                  xml_addf(l, "@d", "M0,%dL%d,%d", y, maxx, y);
+                  xml_add(l, "@stroke-dasharray", "1 2");
+               }
+               x++;
             }
-            xml_t t = xml_add(g, "+text", data[d].unit);
-            xml_addf(t, "@transform", "translate(%d,%d)scale(1,-1)", x * 40 + 40, (int) ((data[d].max - 0.1) * data[d].scale - 10));
-            //xml_add(t, "@alignment-baseline", "hanging"); // Does not convert to pdf, hence -10
-            if (data[d].line)
-            {
-               // Reference line
-               int y = data[d].line * data[d].scale;
-               xml_t l = xml_element_add(g, "path");
-               xml_addf(l, "@d", "M0,%dL%d,%d", y, maxx, y);
-               xml_add(l, "@stroke-dasharray", "1 2");
-            }
-            x++;
-         }
       for (int x = xsize; x < maxx; x += xsize)
       {
          xml_t t = xml_addf(axis, "+text", "%02d", (int) (x / xsize) % 24);
