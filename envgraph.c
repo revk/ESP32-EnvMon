@@ -423,12 +423,12 @@ int main(int argc, const char *argv[])
          add();
       }
       sql_free_result(res);
+   eod();
    }
    run(sql_safe_query_store_free(&sql, sql_printf("SELECT * FROM `%#S` WHERE `tag`=%#s AND `utc`>=%#U AND `utc`<=%#U ORDER BY `utc`", sqltable, tag, stime, etime)));
    if (sqlweather && weathertag)
       run(sql_safe_query_store_free(&sql, sql_printf("SELECT * FROM `%#S` WHERE `tag`=%#s AND `utc`>=%#U AND `utc`<=%#U ORDER BY `utc`", sqlweather, weathertag, stime, etime)));
    sql_close(&sql);
-   eod();
    for (d = 0; d < MAX; d++)
       if (data[d].lastx && data[d].lastx < 24 * xsize)
       {
