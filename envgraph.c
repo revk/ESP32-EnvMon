@@ -342,11 +342,11 @@ int main(int argc, const char *argv[])
       }
    }
    int maxx = xsize * 24;
-   sod();
-   time_t start = stime;
    void run(SQL_RES * res) {
       if (!res)
          return;
+      sod();
+      time_t start = stime;
       while (sql_fetch_row(res))
       {
          const char *when = sql_col(res, "utc");
@@ -458,7 +458,10 @@ int main(int argc, const char *argv[])
    for (d = 0; d < MAX; d++)
       if (data[d].count)
          data[d].max = data[d].min + (double) maxy / data[d].scale;
-   data[TEMPO].max = data[TEMP].max;
+   if (data[TEMP].max > data[TEMPO].max)
+      data[TEMPO].max = data[TEMP].max;
+   else
+      data[TEMP].max = data[TEMPO].max;
    if (!nogrid)
    {                            // Grid
       xml_add(grid, "@stroke", "black");
@@ -484,7 +487,7 @@ int main(int argc, const char *argv[])
       xml_add(top, "@font-size", "15");
       int x = 0;
       for (d = 0; d < MAX; d++)
-         if (d != TEMPO)
+         if (d != TEMPO || !data[TEMP].count)
             if (data[d].count)
             {
                xml_t g = xml_element_add(data[d].g, "g");
