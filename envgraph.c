@@ -51,6 +51,7 @@ int main(int argc, const char *argv[])
    int temptop = 0;
    int co2top = 0;
    int rhtop = 0;
+   int rainbow = 0;
    {                            // POPT
       poptContext optCon;       // context for parsing command-line options
       const struct poptOption optionsTable[] = {
@@ -84,6 +85,7 @@ int main(int argc, const char *argv[])
          { "no-grid", 0, POPT_ARG_NONE, &nogrid, 0, "No grid" },
          { "no-axis", 0, POPT_ARG_NONE, &noaxis, 0, "No axis" },
          { "no-date", 0, POPT_ARG_NONE, &nodate, 0, "No date" },
+         { "rainbow", 0, POPT_ARG_NONE, &rainbow, 0, "Rainbow first trace" },
          { "debug", 'V', POPT_ARG_NONE, &debug, 0, "Debug" },
          { "me", 0, POPT_ARG_STRING | POPT_ARGFLAG_DOC_HIDDEN, &me, 0, "Me link", "URL" },
          POPT_AUTOHELP { }
@@ -291,14 +293,24 @@ int main(int argc, const char *argv[])
          }
       }
    }
+   unsigned int rainbowrgb(int day, int days) {
+      day = day * 2 - 1;
+      days *= 2;
+      double a = M_PI * 2 * day / days;
+      int r = 255 * (sin(a) + 1) / 2;
+      int g = 255 * (sin(a + M_PI * 2 / 3) + 1) / 2;
+      int b = 255 * (sin(a + M_PI * 2 * 2 / 3) + 1) / 2;
+      return (r << 16) + (g << 8) + b;
+   }
    void eod(void) {
       day++;
+      int found = 0;
       for (d = 0; d < MAX; d++)
       {
          if (data[d].target1)
          {
             fclose(data[d].f3);
-            if (*data[d].path3)
+            if (*data[d].path3 && data[d].size3)
             {
                xml_t p = xml_element_add(data[d].g, "path");
                xml_addf(p, "@opacity", "%.1f", (double) day / days);
@@ -310,7 +322,7 @@ int main(int argc, const char *argv[])
          if (data[d].target2)
          {
             fclose(data[d].f4);
-            if (*data[d].path4)
+            if (*data[d].path4 && data[d].size4)
             {
                xml_t p = xml_element_add(data[d].g, "path");
                xml_addf(p, "@opacity", "%.1f", (double) day / days);
@@ -320,17 +332,21 @@ int main(int argc, const char *argv[])
             free(data[d].path4);
          }
          fclose(data[d].f);
-         if (*data[d].path)
+         if (*data[d].path && data[d].size)
          {
             xml_t p = xml_element_add(data[d].g, "path");
-            xml_addf(p, "@opacity", "%.1f", (double) day / days);
+            if (!found && rainbow)
+               xml_addf(p, "@stroke", "#%06X", rainbowrgb(day, days));
+            else
+               xml_addf(p, "@opacity", "%.1f", (double) day / days);
             xml_add(p, "@d", data[d].path);
             free(data[d].path);
+            found++;
          }
          if (data[d].secondary)
          {
             fclose(data[d].f2);
-            if (*data[d].path2)
+            if (*data[d].path2 && data[d].size2)
             {
                xml_t p = xml_element_add(data[d].g, "path");
                xml_addf(p, "@opacity", "%.1f", (double) day / days);
@@ -345,6 +361,7 @@ int main(int argc, const char *argv[])
    void run(SQL_RES * res) {
       if (!res)
          return;
+      day = 0;
       sod();
       time_t start = stime;
       while (sql_fetch_row(res))
@@ -423,7 +440,7 @@ int main(int argc, const char *argv[])
          add();
       }
       sql_free_result(res);
-   eod();
+      eod();
    }
    run(sql_safe_query_store_free(&sql, sql_printf("SELECT * FROM `%#S` WHERE `tag`=%#s AND `utc`>=%#U AND `utc`<=%#U ORDER BY `utc`", sqltable, tag, stime, etime)));
    if (sqlweather && weathertag)
@@ -552,17 +569,41 @@ int main(int argc, const char *argv[])
       free(txt);
       if (!nodate)
       {
-         y += 17;
-         xml_t t = xml_element_add(top, "text");
-         if (strcmp(sdate, ldate))
-            asprintf(&txt, "%s⇒%s", sdate, ldate);
-         else
-            asprintf(&txt, "%s", date);
-         xml_element_set_content(t, txt);
-         xml_addf(t, "@x", "%d", maxx);
-         xml_addf(t, "@y", "%d", y);
-         xml_add(t, "@text-anchor", "end");
-         free(txt);
+         if (rainbow)
+         {
+            for (int d = 0; d < days; d++)
+            {
+               struct tm tm;
+               time_t now = now = xml_time(date);
+               localtime_r(&now, &tm);
+               tm.tm_mday += d;
+               tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
+               tm.tm_isdst = -1;
+               mktime(&tm);
+               y += 17;
+               xml_t t = xml_element_add(top, "text");
+               asprintf(&txt, "%04d-%02d-%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+               xml_element_set_content(t, txt);
+               xml_addf(t, "@x", "%d", maxx);
+               xml_addf(t, "@y", "%d", y);
+               xml_addf(t, "@fill", "#%06X", rainbowrgb(d + 1, days));
+               xml_add(t, "@text-anchor", "end");
+               free(txt);
+            }
+         } else
+         {
+            y += 17;
+            xml_t t = xml_element_add(top, "text");
+            if (strcmp(sdate, ldate))
+               asprintf(&txt, "%s⇒%s", sdate, ldate);
+            else
+               asprintf(&txt, "%s", date);
+            xml_element_set_content(t, txt);
+            xml_addf(t, "@x", "%d", maxx);
+            xml_addf(t, "@y", "%d", y);
+            xml_add(t, "@text-anchor", "end");
+            free(txt);
+         }
       }
    }
    xml_addf(svg, "@width", "%d", maxx + 1);
