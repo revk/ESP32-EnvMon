@@ -297,9 +297,9 @@ int main(int argc, const char *argv[])
       day = day * 2 - 1;
       days *= 2;
       double a = M_PI * 2 * day / days;
-      int r = 255 * (sin(a) + 1) / 2;
-      int g = 255 * (sin(a + M_PI * 2 / 3) + 1) / 2;
-      int b = 255 * (sin(a + M_PI * 2 * 2 / 3) + 1) / 2;
+      int r = 255 * (sin(a + M_PI * 2 * 1 / 3) + 1) / 2;
+      int g = 255 * (sin(a + M_PI * 2 * 2 / 3) + 1) / 2;
+      int b = 255 * (sin(a + M_PI * 2 * 3 / 3) + 1) / 2;
       return (r << 16) + (g << 8) + b;
    }
    void eod(void) {
