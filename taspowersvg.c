@@ -79,8 +79,7 @@ int main(int argc, const char *argv[])
        nogrid = 0,
        nodate = 0,
        nokey = 0,
-       background = 0,
-       raw = 0;
+       background = 0;
    int xsize = 40,
        ysize = 10,
        tsize = 9,
@@ -112,7 +111,6 @@ int main(int argc, const char *argv[])
          { "no-grid", 0, POPT_ARG_NONE, &nogrid, 0, "No grid" },
          { "no-date", 0, POPT_ARG_NONE, &nodate, 0, "No date" },
          { "no-key", 0, POPT_ARG_NONE, &nokey, 0, "No key" },
-         { "no-factor", 0, POPT_ARG_NONE, &raw, 0, "Don't apply power factor" },
          { "x-size", 0, POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &xsize, 0, "Units per period" },
          { "y-size", 0, POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &ysize, 0, "Units per kWh" },
          { "text-size", 0, POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &tsize, 0, "Text size" },
@@ -166,11 +164,6 @@ int main(int argc, const char *argv[])
                yesterday = 1;
             else if (!strcasecmp(date, "D"))
                today = 1;
-         }
-         if (c && *c == '^')
-         {
-            raw = 1;
-            c++;
          }
          if (c && *c == '-')
          {
@@ -273,12 +266,11 @@ int main(int argc, const char *argv[])
    while (ysize * ystep * 1000 < 3 * ydiv)
       ystep = 10;
    int periods = 0;
-   const char *factor = (raw ? "" : "/if(`factor` IS NULL OR `factor`<0.3,1,`factor`)"); // Factor is always recorded +ve regardless by logging
    char *q = NULL;
    if (!M)
    {                            // Year
       periods = 12;
-      q = sql_printf("SELECT *,substring(`ts`,6,2) AS `P`,sum(`wh`%s) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%%' GROUP BY `device`,`P` ORDER BY `device`,`P`", factor, sqltable, Y);
+      q = sql_printf("SELECT *,substring(`ts`,6,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%%' GROUP BY `device`,`P` ORDER BY `device`,`P`", sqltable, Y);
    } else if (!D)
    {                            // Month
       struct tm t = { };
@@ -288,15 +280,15 @@ int main(int argc, const char *argv[])
       t.tm_isdst = -1;
       timelocal(&t);
       periods = t.tm_mday;
-      q = sql_printf("SELECT *,substring(`ts`,9,2) AS `P`,sum(`wh`%s) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%%' GROUP BY `device`,`P` ORDER BY `device`,`P`", factor, sqltable, Y, M);
+      q = sql_printf("SELECT *,substring(`ts`,9,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%%' GROUP BY `device`,`P` ORDER BY `device`,`P`",  sqltable, Y, M);
    } else if (!trace)
    {                            // Day
       periods = 24;             // DST causes gap or double on change...
-      q = sql_printf("SELECT *,substring(`ts`,12,2) AS `P`,sum(`wh`%s) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`", factor, sqltable, Y, M, D);
+      q = sql_printf("SELECT *,substring(`ts`,12,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`",  sqltable, Y, M, D);
    } else
    {
       periods = 24;             // DST causes gap or double on change...
-      q = sql_printf("SELECT *,substring(`ts`,12,8) AS `P`,sum(if(`w` is null,`power`,`w`)) AS `T`,sum(if(`w` is null,`power`,`w`)%s) AS `TF` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`", factor, sqltable, Y, M, D);
+      q = sql_printf("SELECT *,substring(`ts`,12,8) AS `P`,sum(if(`w` is null,`power`,`w`)) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`",  sqltable, Y, M, D);
    }
    SQL_RES *res = sql_safe_query_store_free(&sql, q);
    // Plot
@@ -337,18 +329,12 @@ int main(int argc, const char *argv[])
          colour(t, "@stroke", d->device);
          xml_add(t, "@stroke-width", "0.1");
       }
-      char *path = NULL,
-          *path2 = NULL;
-      size_t len,
-       len2;
-      FILE *o = NULL,
-          *o2 = NULL;
+      char *path = NULL;
+      size_t len;
+      FILE *o = NULL;
       char tag = 'M';
       if (trace)
-      {
          o = open_memstream(&path, &len);
-         o2 = open_memstream(&path2, &len2);
-      }
       while (sql_fetch_row(res))
       {
          if (strcasecmp(d->device, sql_colz(res, "device")))
@@ -356,7 +342,6 @@ int main(int argc, const char *argv[])
          double T = strtod(sql_colz(res, "T"), NULL);
          if (trace)
          {
-            double TF = strtod(sql_colz(res, "TF"), NULL);
             const char *PS = sql_colz(res, "P");
             int P = atoi(PS);
             if (Y && !D)
@@ -365,16 +350,11 @@ int main(int argc, const char *argv[])
             if (D && strlen(PS) == 8)
                x = (double) (atoi(PS) * 3600 + atoi(PS + 3) * 60 + atoi(PS + 6)) * xsize / 3600;
             fprintf(o, "%c%f,%f", tag, x, T * ysize / ydiv);
-            fprintf(o2, "%c%f,%f", tag, x, TF * ysize / ydiv);
             tag = 'L';
             if (T > max)
                max = T;
-            if (TF > max)
-               max = TF;
             if (T < min)
                min = T;
-            if (TF < min)
-               min = TF;
          } else
          {
             int P = atoi(sql_colz(res, "P"));
@@ -410,25 +390,11 @@ int main(int argc, const char *argv[])
       if (trace)
       {
          fclose(o);
-         fclose(o2);
          t = xml_element_add(g, "path");
          xml_add(t, "@fill", "none");
          colour(t, "@stroke", d->device);
-         if (!raw)
-	 {
-            //xml_add(t, "@stroke-dasharray", "1 3");
-            xml_add(t, "@stroke-width", "0.1");
-	 }
          xml_add(t, "@d", path);
-         if (!raw)
-         {
-            t = xml_element_add(g, "path");
-            xml_add(t, "@fill", "none");
-            colour(t, "@stroke", d->device);
-            xml_add(t, "@d", path2);
-         }
          free(path);
-         free(path2);
       }
       d = d->next;
    }
