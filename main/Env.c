@@ -117,6 +117,8 @@ static float thistemp = NAN;
 static float thisrh = NAN;
 static float temptargetmin = NAN;
 static float temptargetmax = NAN;
+static float tempoverridemin = NAN;
+static float tempoverridemax = NAN;
 static int8_t co2port = -1;
 static int8_t num_owb = 0;
 static volatile uint32_t do_co2 = 0;
@@ -314,6 +316,22 @@ const char *app_callback(int client, const char *prefix, const char *target, con
 {
    if (client || !prefix || target || strcmp(prefix, "command") || !suffix)
       return NULL;
+   if (!strcmp(suffix, "override"))
+   {                            // Expects array of min/max
+      if (jo_here(j) == JO_ARRAY)
+      {
+         if (jo_next(j) == JO_NUMBER)
+            tempoverridemin = jo_read_float(j);
+         else
+            tempoverridemin = NAN;
+         if (jo_next(j) == JO_NUMBER)
+            tempoverridemax = jo_read_float(j);
+         else
+            tempoverridemax = tempoverridemin;
+      } else
+         tempoverridemin = tempoverridemax = NAN;       // Cancelled
+      return "";
+   }
    if (!strcmp(suffix, "send"))
    {
       sendall();
@@ -924,6 +942,10 @@ void app_main()
          temptargetmin = min;
          temptargetmax = max;
       }
+      if (!isnan(tempoverridemin))
+         temptargetmin = tempoverridemin;
+      if (!isnan(tempoverridemax))
+         temptargetmax = tempoverridemax;
       /* Report */
       if (up > 60 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
          reportall(now);        /* Don 't report right away if clock may be duff */
