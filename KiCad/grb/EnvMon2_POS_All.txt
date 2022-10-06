@@ -1,17 +1,17 @@
-### Module positions - created on 2022-10-05 15:58
+### Module positions - created on 2022-10-06 11:53
 ### Printed by pcb_positions plugin
 ## Unit = mm, Angle = deg.
 ## Pcb Height 37.050mm, Pcb Width 57.550mm [based on Edge bounding box]
 ## Side : ALL
 ## Board Aux Origin: 0.000mm ,0.000mm
 # Ref         Val                 Package                       PosX       PosY       Pin1_PosX  Pin1_PosY    Rot     Side      Type
+U6            VEML3235SL-RA       VEML3235SL-RA                 106.2000   -63.8000   107.5700   -64.4500      0.0    top       SMD
 SW1           SW_Push             SW_PUSH_6mm_H13mm             89.2500    -65.2500   89.2500    -65.2500      0.0    top       THD
 R1            100k 1% or 0R       R_0603                        131.4250   -86.7500   130.6000   -86.7500      0.0    top       SMD
 SW3           SW_Push             SW_PUSH_6mm_H13mm             89.3000    -80.2500   89.3000    -80.2500      0.0    top       THD
 U2            SCD41               SCD41                         92.5000    -94.5000   96.5000    -97.0000    180.0    top       SMD
 J3            TEMP                Molex_MiniSPOX_H3RA           111.2500   -90.8500   108.7500   -90.8500      0.0    top       VIRTUAL
 C2            2.2uF               C_0805_                       135.7500   -84.0500   0.0000     0.0000        0.0    top       SMD
-U6            VEML3235SL          VEML3235SL                    106.2000   -63.8000   104.8300   -64.4500      0.0    top       SMD
 J1            USB-C               USC16-TR-Round                122.2500   -100.0000  0.0000     0.0000        0.0    top       SMD
 R2            30k 1% or NF        R_0603                        131.4250   -88.0000   130.6000   -88.0000      0.0    top       SMD
 R10           4k7                 R_0603                        127.0500   -88.7250   127.0500   -89.5500     90.0    top       SMD
