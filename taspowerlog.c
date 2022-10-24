@@ -32,7 +32,6 @@ int main(int argc, const char *argv[])
    const char *mqtthostname = "mqtt";
    const char *mqttusername = NULL;
    const char *mqttpassword = NULL;
-   const char *mqttappname = "Env";
    const char *mqttid = NULL;
    int debug = 0;
    {                            // POPT
@@ -48,7 +47,6 @@ int main(int argc, const char *argv[])
          { "mqtt-hostname", 'h', POPT_ARG_STRING | POPT_ARGFLAG_SHOW_DEFAULT, &mqtthostname, 0, "MQTT hostname", "hostname" },
          { "mqtt-username", 'u', POPT_ARG_STRING, &mqttusername, 0, "MQTT username", "username" },
          { "mqtt-password", 'p', POPT_ARG_STRING, &mqttpassword, 0, "MQTT password", "password" },
-         { "mqtt-appname", 'a', POPT_ARG_STRING | POPT_ARGFLAG_SHOW_DEFAULT, &mqttappname, 0, "MQTT appname", "appname" },
          { "mqtt-id", 0, POPT_ARG_STRING, &mqttid, 0, "MQTT id", "id" },
          { "debug", 'V', POPT_ARG_NONE, &debug, 0, "Debug" },
          POPT_AUTOHELP { }
@@ -123,7 +121,10 @@ int main(int argc, const char *argv[])
 
       j_t data = j_create();
       if (j_read_mem(data, msg->payload, msg->payloadlen))
+      {
+         j_delete(&data);
          return;
+      }
       time_t ts = j_time(j_get(data, "Time"));
       if (ts)
       {

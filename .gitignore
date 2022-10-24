@@ -15,6 +15,7 @@ envgraph
 taspowerlog
 taspowersvg
 taspowerse
+glowlog
 icons/*.png
 icons/*.gray
 icons/*.h

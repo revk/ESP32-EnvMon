@@ -943,7 +943,10 @@ void app_main()
          temptargetmax = max;
       }
       if (!isnan(tempoverridemin))
+      {
          temptargetmin = tempoverridemin;
+         heat_target = temptargetmin * 1000;
+      }
       if (!isnan(tempoverridemax))
          temptargetmax = tempoverridemax;
       /* Report */

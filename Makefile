@@ -13,7 +13,7 @@ all:
 	@cp build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
 	@echo Done: $(PROJECT_NAME)$(SUFFIX).bin
 
-tools: envlog envgraph taspowerlog taspowersvg taspowerse
+tools: envlog envgraph taspowerlog taspowersvg taspowerse glowlog
 
 main/icons.h: $(patsubst %.svg,%.h,$(wildcard icons/*.svg))
 	cat icons/*.h > main/icons.h
@@ -107,6 +107,9 @@ taspowerse: taspowerse.c SQLlib/sqllib.o AJL/ajlcurl.o
 
 taspowersvg: taspowersvg.c SQLlib/sqllib.o AXL/axl.o
 	cc -O -o $@ $< -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAXL AXL/axl.o -lcurl ${OPTS}
+
+glowlog: glowlog.c SQLlib/sqllib.o AJL/ajl.o
+	cc -O -o $@ $< -lpopt -lmosquitto -ISQLlib SQLlib/sqllib.o -IAJL AJL/ajl.o ${OPTS}
 
 PCBCase/case: PCBCase/case.c
 	make -C PCBCase
