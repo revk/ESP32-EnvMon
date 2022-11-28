@@ -1,21 +1,20 @@
-### Module positions - created on 2022-10-06 12:36
+### Module positions - created on 2022-11-28 09:35
 ### Printed by pcb_positions plugin
 ## Unit = mm, Angle = deg.
 ## Pcb Height 37.050mm, Pcb Width 57.550mm [based on Edge bounding box]
 ## Side : ALL
 ## Board Aux Origin: 0.000mm ,0.000mm
 # Ref         Val                 Package                       PosX       PosY       Pin1_PosX  Pin1_PosY    Rot     Side      Type
+J1            USB-C               USC16-TR                      122.2500   -100.0000  0.0000     0.0000        0.0    top       SMD
 SW1           SW_Push             SW_PUSH_6mm_H13mm             89.2500    -65.2500   89.2500    -65.2500      0.0    top       THD
 R1            100k 1% or 0R       R_0603                        131.4250   -86.7500   130.6000   -86.7500      0.0    top       SMD
-SW3           SW_Push             SW_PUSH_6mm_H13mm             89.3000    -80.2500   95.8000    -80.2500      0.0    top       THD
+SW3           SW_Push             SW_PUSH_6mm_H13mm             89.3000    -80.2500   89.3000    -80.2500      0.0    top       THD
 U2            SCD41               SCD41                         92.5000    -94.5000   96.5000    -97.0000    180.0    top       SMD
 J3            TEMP                Molex_MiniSPOX_H3RA           111.2500   -90.8500   108.7500   -90.8500      0.0    top       VIRTUAL
 C2            2.2uF               C_0805_                       135.7500   -84.0500   0.0000     0.0000        0.0    top       SMD
 U6            VEML3235SL-RA       VEML3235SL-RA                 107.6000   -63.8000   108.9700   -64.4500      0.0    top       SMD
-J1            USB-C               USC16-TR-Round                122.2500   -100.0000  0.0000     0.0000        0.0    top       SMD
 R2            30k 1% or NF        R_0603                        131.4250   -88.0000   130.6000   -88.0000      0.0    top       SMD
 R10           4k7                 R_0603                        127.0500   -88.7250   127.0500   -89.5500     90.0    top       SMD
-U1            LMR16006+FB         RegulatorBlockFB              132.2000   -83.2000   133.5500   -84.1500     90.0    top       SMD
 R7            680R                R_0603                        137.0000   -68.6000   137.8250   -68.6000    180.0    top       SMD
 L1            6.8uH               L_4x4_                        132.2000   -79.3000   0.0000     0.0000       90.0    top       SMD
 R4            5K1                 R_0603                        124.6000   -91.8000   123.7750   -91.8000      0.0    top       SMD
@@ -34,14 +33,15 @@ R12           10k                 R_0603                        114.2500   -72.3
 Logo2         AJK                 AJK                           109.8500   -74.6250   0.0000     0.0000        0.0    top       VIRTUAL
 J2            DC                  Molex_MiniSPOX_H2RA           133.0000   -90.8500   131.7500   -90.8500      0.0    top       THD
 U4            ESP32-PICO-MINI-02  ESP32-PICO-MINI-02            122.2500   -73.9933   116.3500   -69.9933      0.0    top       SMD
-SW2           SW_Push             SW_PUSH_6mm_H13mm             89.2500    -72.7500   95.7500    -72.7500      0.0    top       THD
+SW2           SW_Push             SW_PUSH_6mm_H13mm             89.2500    -72.7500   89.2500    -72.7500      0.0    top       THD
 C4            10nF                C_0603                        128.2500   -88.7250   128.2500   -87.9500    -90.0    top       SMD
 R13           4k7                 R_0603                        112.5000   -88.6000   111.6750   -88.6000      0.0    top       SMD
 R9            220R                R_0603                        137.0000   -67.4000   137.8250   -67.4000    180.0    top       SMD
 U3            FT231XQ             QFN-20-1EP_4x4mm_P0.5mm_EP2.. 122.0500   -85.2500   120.1500   -84.2500      0.0    top       SMD
 D2            D                   D_1206                        136.0000   -87.2500   136.0000   -85.8500    -90.0    top       SMD
-Logo1         AJK                 AJK                           108.6500   -74.6250   0.0000     0.0000      180.0    bottom    VIRTUAL
+Logo1         AJK                 AJK                           109.6000   -74.6250   0.0000     0.0000      180.0    bottom    VIRTUAL
 U5            QR                  QR-ENVMON                     122.2500   -97.0000   0.0000     0.0000        0.0    bottom    VIRTUAL
+U1            LMR16006+FB         RegulatorBlockFB              132.2000   -83.2000   133.5500   -84.1500     90.0    top       SMD
 ## End
 ## 212 SMD pads
 ## 14 TH pads
