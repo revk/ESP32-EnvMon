@@ -118,6 +118,9 @@ int main(int argc, const char *argv[])
                const char *meter = j_get(j, "import.mpan") ? : j_get(j, "import.mprn");
                const char *import = j_get(j, "import.cumulative");
                const char *export = j_get(j, "export.cumulative");
+               const char *importunitrate = j_get(j, "import.price.unitrate");
+               const char *exportunitrate = j_get(j, "export.price.unitrate");
+               const char *standingcharge = j_get(j, "import.price.standingcharge");
                sql_string_t s = { };
                sql_sprintf(&s, "INSERT INTO `%s` SET `timestamp`=%#U,`meter`=%#s,`type`=%#s", sqltable, ts, meter, type);
                void fields(void) {
@@ -127,6 +130,12 @@ int main(int argc, const char *argv[])
                      sql_sprintf(&s, ",`export`=%s", export);
                   if (power)
                      sql_sprintf(&s, ",`power`=%s", power);
+                  if (importunitrate)
+                     sql_sprintf(&s, ",`importunitrate`=%s", importunitrate);
+                  if (exportunitrate)
+                     sql_sprintf(&s, ",`exportunitrate`=%s", exportunitrate);
+                  if (standingcharge)
+                     sql_sprintf(&s, ",`standingcharge`=%s", standingcharge);
                }
                fields();
                sql_sprintf(&s, " ON DUPLICATE KEY UPDATE `type`=%#s", type);

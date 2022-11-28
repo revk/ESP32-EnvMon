@@ -15,6 +15,9 @@ all:
 
 tools: envlog envgraph taspowerlog taspowersvg taspowerse glowlog
 
+zip:
+	zip -D ~/Desktop/ESP32-Env.zip KiCad/*.gbr KiCad/*.drl
+
 main/icons.h: $(patsubst %.svg,%.h,$(wildcard icons/*.svg))
 	cat icons/*.h > main/icons.h
 
