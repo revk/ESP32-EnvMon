@@ -591,7 +591,10 @@ void i2c_task(void *p)
             if ((cmd == 0x241d || cmd == 0x2416 || cmd == 0x2427) && !err)
             {
                err = co2_command(0x3615);       /* Persist */
-               sleep(5);
+               sleep(2);
+               if (!err)
+                  err = co2_command(0x3646);    /* Re-init */
+               sleep(2);
             }
             if ((cmd == 0x3682 || cmd == 0x241d || cmd == 0x2416 || cmd == 0x2427) && !err)
             {                   /* Get serial */
@@ -935,6 +938,8 @@ void app_main()
       showtemp = NAN;
       showrh = NAN;
    };
+   if (alsdark && sda && scl && alsaddress)
+      gfx_dark = 1;             // Start dark
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
       usleep(100000LL - (esp_timer_get_time() % 100000LL));     /* wait a bit */
