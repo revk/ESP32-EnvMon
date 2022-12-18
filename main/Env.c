@@ -591,9 +591,9 @@ void i2c_task(void *p)
             if ((cmd == 0x241d || cmd == 0x2416 || cmd == 0x2427) && !err)
             {
                err = co2_command(0x3615);       /* Persist */
-               sleep(1);
+               sleep(5);
             }
-            if (cmd == 0x3682 && !err)
+            if ((cmd == 0x3682 || cmd == 0x241d || cmd == 0x2416 || cmd == 0x2427) && !err)
             {                   /* Get serial */
                jo_t j = jo_object_alloc();
                uint8_t buf[9];
@@ -676,16 +676,16 @@ void i2c_task(void *p)
             float c = (float) ((buf[0] << 8) + buf[1]);
             float t = -45.0 + 175.0 * (float) ((buf[3] << 8) + buf[4]) / 65536.0;
             float r = 100.0 * (float) ((buf[6] << 8) + buf[7]) / 65536.0;
+            if (c > 0)
+            {
+               if (isnan(thisco2))
+                  thisco2 = c;  /* First */
+               else
+                  thisco2 = (thisco2 * co2damp + c) / (co2damp + 1);
+               lastco2 = report("co2", lastco2, thisco2, co2places);
+            }
             if (scd41_settled && scd41_settled < uptime())
             {
-               if (c > 0)
-               {
-                  if (isnan(thisco2))
-                     thisco2 = c;       /* First */
-                  else
-                     thisco2 = (thisco2 * co2damp + c) / (co2damp + 1);
-                  lastco2 = report("co2", lastco2, thisco2, co2places);
-               }
                if (r > 0)
                {
                   if (isnan(thisrh))
@@ -695,8 +695,7 @@ void i2c_task(void *p)
                   lastrh = report("rh", lastrh, thisrh, rhplaces);
                }
                if (!num_owb)
-                  lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);        /* Treat as temp not itemp as we trust the SCD41 to
-                                                                                         * be sane */
+                  lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);        /* Treat as temp not itemp as we trust the SCD41 to * be sane */
             }
          } else
          {                      /* Wait for data to be ready */
@@ -1162,13 +1161,6 @@ void app_main()
             gfx_text(1, s);
          }
       }
-      if (scd41 && isnan(thisco2) && scd41_settled >= up)
-      {
-         sprintf(s, "%d:%02d", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
-         gfx_colour('O');
-         gfx_pos(4, 0, GFX_T | GFX_L);
-         gfx_text(4, s);
-      }
       int y = 0,
           space = (gfx_height() - 28 - 35 - 21 - 9) / 3;
       char co2col = (isnan(thisco2) ? 'K' : thisco2 > (fanco2on ? : 1000) ? 'R' : thisco2 > (fanco2off ? : 750) ? 'Y' : 'G');
@@ -1208,11 +1200,15 @@ void app_main()
          }
       }
       y += 28 + space;
-      if (thistemp != showtemp && !isnan(thistemp))
+      gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
+      if (scd41 && scd41_settled >= up)
+      {
+         sprintf(s, "%d:%02d", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
+         gfx_colour('O');
+      } else if (thistemp != showtemp && !isnan(thistemp))
       {
          showtemp = thistemp;
          gfx_colour(tempcol);
-         gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
          if (f)
          {                      /* Fahrenheit */
             int fh = (showtemp + 40.0) * 1.8 - 40.0;
@@ -1231,13 +1227,14 @@ void app_main()
             else
                sprintf(s, "%4.1f", showtemp);
          }
-         gfx_text(5, s);
-         gfx_text(1, "o");
-         gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
-         gfx_text(2, f ? "F" : "C");
-         if (!num_owb && !scd41)
-            gfx_text(2, "~");
-      }
+      } else
+         strcpy(s, "  . ");
+      gfx_text(5, s);
+      gfx_text(1, "o");
+      gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
+      gfx_text(2, f ? "F" : "C");
+      if (!num_owb && !scd41)
+         gfx_text(2, "~");
       y += 35 + space;
       if (thisrh != showrh && !isnan(thisrh))
       {
