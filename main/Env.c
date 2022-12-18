@@ -123,6 +123,7 @@ static float temptargetmin = NAN;
 static float temptargetmax = NAN;
 static float tempoverridemin = NAN;
 static float tempoverridemax = NAN;
+static uint16_t tempoffset = 0;
 static int8_t i2cport = -1;
 static int8_t num_owb = 0;
 static volatile uint32_t do_co2 = 0;
@@ -387,6 +388,12 @@ const char *app_callback(int client, const char *prefix, const char *target, con
       return co2_setting(scd41 ? 0x362f : 0x5204, jo_read_int(j));      /* ppm */
    if (!strcmp(suffix, "co2tempoffset"))
       return co2_setting(scd41 ? 0x241d : 0x5403, jo_read_int(j));      /* Use T * 65536 / 175 */
+   if (!strcmp(suffix, "co2tempcal"))
+   { // Set the current temp in C
+      if (isnan(lasttemp))
+         return "No temp now";
+      return co2_setting(scd41 ? 0x241d : 0x5403, (jo_read_float(j) - lasttemp) * 65536 / 175 + tempoffset);
+   }
    if (!strcmp(suffix, "co2alt"))
       return co2_setting(scd41 ? 0x2427 : 0x5102, jo_read_int(j));      /* m */
    return NULL;
@@ -608,7 +615,10 @@ void i2c_task(void *p)
                if (!err)
                   err = co2_read(3, buf);
                if (!err && co2_crc(buf[0], buf[1]) == buf[2])
-                  jo_int(j, "temperature-offset", (buf[0] << 8) + buf[1]);
+               {
+                  tempoffset = (buf[0] << 8) + buf[1];
+                  jo_int(j, "temperature-offset", tempoffset);
+               }
                if (!err)
                   err = co2_command(0x2322);
                if (!err)
