@@ -1203,9 +1203,10 @@ void app_main()
       gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
       if (scd41 && scd41_settled >= up)
       {
-         sprintf(s, "%d:%02d", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
+         sprintf(s, "%d:%02d ", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
          gfx_colour('O');
-      } else if (thistemp != showtemp && !isnan(thistemp))
+         showtemp = NAN;
+      } else if (!isnan(thistemp) && thistemp != showtemp)
       {
          showtemp = thistemp;
          gfx_colour(tempcol);
@@ -1227,14 +1228,13 @@ void app_main()
             else
                sprintf(s, "%4.1f", showtemp);
          }
-      } else
-         strcpy(s, "  . ");
-      gfx_text(5, s);
-      gfx_text(1, "o");
-      gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
-      gfx_text(2, f ? "F" : "C");
-      if (!num_owb && !scd41)
-         gfx_text(2, "~");
+         gfx_text(5, s);
+         gfx_text(1, "o");
+         gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
+         gfx_text(2, f ? "F" : "C");
+         if (!num_owb && !scd41)
+            gfx_text(2, "~");
+      }
       y += 35 + space;
       if (thisrh != showrh && !isnan(thisrh))
       {
