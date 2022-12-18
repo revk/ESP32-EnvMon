@@ -389,10 +389,10 @@ const char *app_callback(int client, const char *prefix, const char *target, con
    if (!strcmp(suffix, "co2tempoffset"))
       return co2_setting(scd41 ? 0x241d : 0x5403, jo_read_int(j));      /* Use T * 65536 / 175 */
    if (!strcmp(suffix, "co2tempcal"))
-   { // Set the current temp in C
+   {                            // Set the current temp in C
       if (isnan(lasttemp))
          return "No temp now";
-      return co2_setting(scd41 ? 0x241d : 0x5403, (jo_read_float(j) - lasttemp) * 65536 / 175 + tempoffset);
+      return co2_setting(scd41 ? 0x241d : 0x5403, tempoffset - (jo_read_float(j) - lasttemp) * 65536.0 / 175.0);        // Oddly the offset seems to be negative
    }
    if (!strcmp(suffix, "co2alt"))
       return co2_setting(scd41 ? 0x2427 : 0x5102, jo_read_int(j));      /* m */
@@ -600,10 +600,12 @@ void i2c_task(void *p)
                err = co2_command(0x3615);       /* Persist */
                sleep(2);
                if (!err)
-                  err = co2_command(0x3646);    /* Re-init */
-               sleep(2);
+                  err = co2_command(0x3615);    /* Re init */
+               sleep(5);
+               if (!err)
+                  err = co2_command(cmd = 0x3682);      /* Serial */
             }
-            if ((cmd == 0x3682 || cmd == 0x241d || cmd == 0x2416 || cmd == 0x2427) && !err)
+            if (cmd == 0x3682 && !err)
             {                   /* Get serial */
                jo_t j = jo_object_alloc();
                uint8_t buf[9];
