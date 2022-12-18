@@ -1205,6 +1205,7 @@ void app_main()
       {
          sprintf(s, "%d:%02d ", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
          gfx_colour('O');
+         gfx_text(5, s);
          showtemp = NAN;
       } else if (!isnan(thistemp) && thistemp != showtemp)
       {
