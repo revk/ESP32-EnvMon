@@ -33,6 +33,7 @@ struct log_s {
    time_t when;
    vals_t co2;
    vals_t rh;
+   vals_t als;
    vals_t temp;
    vals_t tempt1;
    vals_t tempt2;
@@ -232,6 +233,8 @@ int main(int argc, const char *argv[])
                   sql_sprintf(&s, ",`tempt2`=%lf", l->tempt2.latest);
                if (l->rh.set)
                   sql_sprintf(&s, ",`rh`=%lf,`rhh`=%lf,`rhl`=%lf", l->rh.latest, l->rh.high, l->rh.low);
+               if (l->als.set)
+                  sql_sprintf(&s, ",`als`=%lf,`alsh`=%lf,`alsl`=%lf", l->als.latest, l->als.high, l->als.low);
                if (l->co2.set)
                   sql_sprintf(&s, ",`co2`=%lf,`co2h`=%lf,`co2l`=%lf", l->co2.latest, l->co2.high, l->co2.low);
                if (l->heat.set)
@@ -339,6 +342,8 @@ int main(int argc, const char *argv[])
                logval("rh", &l->rh, v);
             if ((v = j_get(data, "co2")))
                logval("co2", &l->co2, v);
+            if ((v = j_get(data, "als")))
+               logval("als", &l->als, v);
             v = j_get(data, "heat");
             logbool("heat", &l->heat, v && *v == 't');
             v = j_get(data, "fan");

@@ -34,9 +34,12 @@ const char TAG[] = "Env";
 #define settings	\
 	u32(reporting,60)	\
 	u8(lag,5)	\
-	s8(co2sda,-1)	\
-	s8(co2scl,-1)	\
+	s8(sda,22)	\
+	s8(scl,21)	\
 	s8(co2address,0x62)	\
+	s8(alsaddress,0x10)	\
+	u16(alsdark,1000)	\
+	s8(alsplaces,-2)	\
 	s8(co2places,-1)	\
 	u32(co2damp,100)	\
 	u32(startup,300)	\
@@ -81,7 +84,7 @@ const char TAG[] = "Env";
 	u16a(temphhmm,10)	\
 	s32a(tempheatmC,10)	\
 	s32a(tempcoolmC,10)	\
-	u8a(button,3)	\
+	u8a(button,3,4 13 15)	\
 
 #define u32(n,d)	uint32_t n;
 #define u16(n,d)	uint16_t n;
@@ -90,7 +93,7 @@ const char TAG[] = "Env";
 #define s32a(n,q)	int32_t n[q];
 #define s8(n,d)	int8_t n;
 #define u8(n,d)	uint8_t n;
-#define u8a(n,q)	uint8_t n[q];
+#define u8a(n,q,d)	uint8_t n[q];
 #define b(n) uint8_t n;
 #define s(n) char * n;
 settings
@@ -109,6 +112,7 @@ static uint32_t scd41_settled = 0;      /* uptime when started measurements */
 
 static uint8_t logo[LOGOW * LOGOH / 2];
 static float lastco2 = NAN;
+static float lastals = NAN;
 static float lastrh = NAN;
 static float lasttemp = NAN;
 static float lastotemp = NAN;
@@ -119,7 +123,8 @@ static float temptargetmin = NAN;
 static float temptargetmax = NAN;
 static float tempoverridemin = NAN;
 static float tempoverridemax = NAN;
-static int8_t co2port = -1;
+static uint16_t tempoffset = 0;
+static int8_t i2cport = -1;
 static int8_t num_owb = 0;
 static volatile uint32_t do_co2 = 0;
 static OneWireBus *owb = NULL;
@@ -304,11 +309,11 @@ static void sendconfig(void)
          revk_mqtt_send(NULL, 1, topic, &j);
       }
    }
-   if (ds18b20 >= 0 || co2port >= 0)
+   if (ds18b20 >= 0 || i2cport >= 0)
       add("Temp", "temperature", "°C", "temp");
-   if (co2port >= 0)
+   if (i2cport >= 0)
       add("R/H", "humidity", "%", "rh");
-   if (co2port >= 0)
+   if (i2cport >= 0)
       add("CO₂", "co2", "ppm", "co2");
 }
 
@@ -383,6 +388,12 @@ const char *app_callback(int client, const char *prefix, const char *target, con
       return co2_setting(scd41 ? 0x362f : 0x5204, jo_read_int(j));      /* ppm */
    if (!strcmp(suffix, "co2tempoffset"))
       return co2_setting(scd41 ? 0x241d : 0x5403, jo_read_int(j));      /* Use T * 65536 / 175 */
+   if (!strcmp(suffix, "co2tempcal"))
+   {                            // Set the current temp in C
+      if (isnan(lasttemp))
+         return "No temp now";
+      return co2_setting(scd41 ? 0x241d : 0x5403, tempoffset - (jo_read_float(j) - lasttemp) * 65536.0 / 175.0);        // Oddly the offset seems to be negative
+   }
    if (!strcmp(suffix, "co2alt"))
       return co2_setting(scd41 ? 0x2427 : 0x5102, jo_read_int(j));      /* m */
    return NULL;
@@ -429,7 +440,7 @@ static void co2_add(i2c_cmd_handle_t i, uint16_t v)
 static esp_err_t co2_done(i2c_cmd_handle_t * i)
 {                               /* Finish command */
    i2c_master_stop(*i);
-   esp_err_t err = i2c_master_cmd_begin(co2port, *i, 1000 / portTICK_PERIOD_MS);
+   esp_err_t err = i2c_master_cmd_begin(i2cport, *i, 1000 / portTICK_PERIOD_MS);
    i2c_cmd_link_delete(*i);
    *i = NULL;
    return err;
@@ -471,151 +482,215 @@ static const char *co2_setting(uint16_t cmd, uint16_t val)
    return "";
 }
 
-void co2_task(void *p)
+static uint16_t als_read(uint8_t cmd)
+{
+   uint8_t h = 0,
+       l = 0;
+   i2c_cmd_handle_t t = i2c_cmd_link_create();
+   i2c_master_start(t);
+   i2c_master_write_byte(t, (alsaddress << 1) | I2C_MASTER_WRITE, true);
+   i2c_master_write_byte(t, cmd, true);
+   i2c_master_start(t);
+   i2c_master_write_byte(t, (alsaddress << 1) | I2C_MASTER_READ, true);
+   i2c_master_read_byte(t, &l, I2C_MASTER_ACK);
+   i2c_master_read_byte(t, &h, I2C_MASTER_LAST_NACK);
+   i2c_master_stop(t);
+   i2c_master_cmd_begin(i2cport, t, 10 / portTICK_PERIOD_MS);
+   i2c_cmd_link_delete(t);
+   return (h << 8) + l;
+}
+
+static void als_write(uint8_t cmd, uint16_t val)
+{
+   i2c_cmd_handle_t t = i2c_cmd_link_create();
+   i2c_master_start(t);
+   i2c_master_write_byte(t, (alsaddress << 1) | I2C_MASTER_WRITE, true);
+   i2c_master_write_byte(t, cmd, true);
+   i2c_master_write_byte(t, val & 0xFF, true);
+   i2c_master_write_byte(t, val >> 8, true);
+   i2c_master_stop(t);
+   i2c_master_cmd_begin(i2cport, t, 10 / portTICK_PERIOD_MS);
+   i2c_cmd_link_delete(t);
+}
+
+void i2c_task(void *p)
 {
    p = p;
-   ESP_LOGI(TAG, "CO2 start");
+   ESP_LOGI(TAG, "I2C start");
    int try = 10;
    esp_err_t err = 0;
-   while (try--)
-   {
-      sleep(1);
-      if (scd41)
+   char co2 = 0,
+       als = 0;
+   if (co2address)
+   {                            // CO2
+      while (try--)
       {
-         err = co2_scd41_stop_measure();
-         if (!err)
-            err = co2_command(0x3646);  /* Reinit */
-         if (!err)
-            break;
-      } else
-      {                         /* Just try starting measurement */
-         err = co2_command(0x0010);     /* Start measurement */
-         if (!err)
-            break;
+         sleep(1);
+         if (scd41)
+         {
+            err = co2_scd41_stop_measure();
+            if (!err)
+               err = co2_command(0x3646);       /* Reinit */
+            if (!err)
+               break;
+         } else
+         {                      /* Just try starting measurement */
+            err = co2_command(0x0010);  /* Start measurement */
+            if (!err)
+               break;
+         }
+         ESP_LOGI(TAG, "CO2 retry");
       }
-      ESP_LOGI(TAG, "CO2 retry");
+      if (err)
+      {                         /* failed */
+         jo_t j = jo_object_alloc();
+         jo_string(j, "error", "Config fail");
+         jo_int(j, "code", err);
+         jo_string(j, "description", esp_err_to_name(err));
+         revk_error("CO2", &j);
+      } else
+         co2 = 1;
    }
-   if (err)
-   {                            /* failed */
-      jo_t j = jo_object_alloc();
-      jo_string(j, "error", "Config fail");
-      jo_int(j, "code", err);
-      jo_string(j, "description", esp_err_to_name(err));
-      revk_error("CO2", &j);
+   if (alsaddress)
+   {
+      uint16_t id = als_read(0x09);
+      if ((id & 0xFF) != 0x35)
+      {
+         jo_t j = jo_object_alloc();
+         jo_string(j, "error", "Fail");
+         jo_int(j, "id", id);
+         jo_string(j, "description", esp_err_to_name(err));
+         revk_error("ALS", &j);
+      } else
+      {
+         als = 1;
+         als_write(0x00, 0x0040);
+      }
+   }
+   if (!co2 && !als)
+   {                            // No I2C to do
       vTaskDelete(NULL);
       return;
    }
    /* Get measurements */
    while (1)
    {
-      usleep(100000);
-      if (do_co2)
-      {                         /* Do a command from mqtt */
-         uint16_t cmd = (do_co2 >> 16);
-         uint16_t val = do_co2;
-         do_co2 = 0;
-         if (scd41)
-            co2_scd41_stop_measure();
-         i2c_cmd_handle_t i = co2_setup(cmd);
-         if (cmd != 0x3632 && cmd != 0x3615 && cmd != 0x3646 && cmd != 0x3682)
-            co2_add(i, val);
-         err = co2_done(&i);
-         if (err)
-            ESP_LOGI(TAG, "CMD failed %s", esp_err_to_name(err));
-         if (cmd == 0x362f || cmd == 0x3615 || cmd == 0x3632)
-            sleep(1);
-         else if (cmd == 0x3639)
-            sleep(10);
-         if ((cmd == 0x241d || cmd == 0x2416 || cmd == 0x2427) && !err)
-         {
-            err = co2_command(0x3615);  /* Persist */
-            sleep(1);
-         }
-         if (cmd == 0x3682 && !err)
-         {                      /* Get serial */
-            jo_t j = jo_object_alloc();
-            uint8_t buf[9];
-            err = co2_read(9, buf);
-            if (!err && co2_crc(buf[0], buf[1]) == buf[2] && co2_crc(buf[3], buf[4]) == buf[5] && co2_crc(buf[6], buf[7]) == buf[8])
-               jo_stringf(j, "serial", "%02X%02X%02X%02X%02X%02X", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
-            if (!err)
-               err = co2_command(0x2318);
-            if (!err)
-               err = co2_read(3, buf);
-            if (!err && co2_crc(buf[0], buf[1]) == buf[2])
-               jo_int(j, "temperature-offset", (buf[0] << 8) + buf[1]);
-            if (!err)
-               err = co2_command(0x2322);
-            if (!err)
-               err = co2_read(3, buf);
-            if (!err && co2_crc(buf[0], buf[1]) == buf[2])
-               jo_int(j, "sensor-altitude", (buf[0] << 8) + buf[1]);
-            if (!err)
-               err = co2_command(0x2313);
-            if (!err)
-               err = co2_read(3, buf);
-            if (!err && co2_crc(buf[0], buf[1]) == buf[2])
-               jo_bool(j, "automatic-self-calibration", (buf[0] << 8) + buf[1]);
-            revk_info("CO2", &j);
-         }
-         if (scd41)
-            co2_scd41_start_measure();
-         continue;
-      }
-      {                         /* Ready status */
-         err = co2_command(scd41 ? 0xe4b8 : 0x0202);
-         if (err)
-         {
-            ESP_LOGI(TAG, "Tx GetReady %s", esp_err_to_name(err));
+      sleep(1);
+      if (co2)
+      {
+         if (do_co2)
+         {                      /* Do a command from mqtt */
+            uint16_t cmd = (do_co2 >> 16);
+            uint16_t val = do_co2;
+            do_co2 = 0;
+            if (scd41)
+               co2_scd41_stop_measure();
+            i2c_cmd_handle_t i = co2_setup(cmd);
+            if (cmd != 0x3632 && cmd != 0x3615 && cmd != 0x3646 && cmd != 0x3682)
+               co2_add(i, val);
+            err = co2_done(&i);
+            if (err)
+               ESP_LOGI(TAG, "CMD failed %s", esp_err_to_name(err));
+            if (cmd == 0x362f || cmd == 0x3615 || cmd == 0x3632)
+               sleep(1);
+            else if (cmd == 0x3639)
+               sleep(10);
+            if ((cmd == 0x241d || cmd == 0x2416 || cmd == 0x2427) && !err)
+            {
+               err = co2_command(0x3615);       /* Persist */
+               sleep(2);
+               if (!err)
+                  err = co2_command(0x3615);    /* Re init */
+               sleep(5);
+               if (!err)
+                  err = co2_command(cmd = 0x3682);      /* Serial */
+            }
+            if (cmd == 0x3682 && !err)
+            {                   /* Get serial */
+               jo_t j = jo_object_alloc();
+               uint8_t buf[9];
+               err = co2_read(9, buf);
+               if (!err && co2_crc(buf[0], buf[1]) == buf[2] && co2_crc(buf[3], buf[4]) == buf[5] && co2_crc(buf[6], buf[7]) == buf[8])
+                  jo_stringf(j, "serial", "%02X%02X%02X%02X%02X%02X", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
+               if (!err)
+                  err = co2_command(0x2318);
+               if (!err)
+                  err = co2_read(3, buf);
+               if (!err && co2_crc(buf[0], buf[1]) == buf[2])
+               {
+                  tempoffset = (buf[0] << 8) + buf[1];
+                  jo_int(j, "temperature-offset", tempoffset);
+               }
+               if (!err)
+                  err = co2_command(0x2322);
+               if (!err)
+                  err = co2_read(3, buf);
+               if (!err && co2_crc(buf[0], buf[1]) == buf[2])
+                  jo_int(j, "sensor-altitude", (buf[0] << 8) + buf[1]);
+               if (!err)
+                  err = co2_command(0x2313);
+               if (!err)
+                  err = co2_read(3, buf);
+               if (!err && co2_crc(buf[0], buf[1]) == buf[2])
+                  jo_bool(j, "automatic-self-calibration", (buf[0] << 8) + buf[1]);
+               revk_info("CO2", &j);
+            }
+            if (scd41)
+               co2_scd41_start_measure();
             continue;
          }
-         {                      /* Read status */
-            uint8_t buf[3];
+         {                      /* Ready status */
+            err = co2_command(scd41 ? 0xe4b8 : 0x0202);
+            if (err)
+            {
+               ESP_LOGI(TAG, "Tx GetReady %s", esp_err_to_name(err));
+               continue;
+            }
+            {                   /* Read status */
+               uint8_t buf[3];
+               err = co2_read(sizeof(buf), buf);
+               if (err)
+               {
+                  ESP_LOGI(TAG, "Rx GetReady %s", esp_err_to_name(err));
+                  continue;
+               }
+               if (co2_crc(buf[0], buf[1]) != buf[2])
+               {
+                  ESP_LOGI(TAG, "Rx GetReady CRC error %02X %02X", co2_crc(buf[0], buf[1]), buf[2]);
+                  continue;
+               }
+               if (scd41 && !(buf[0] & 0x80))
+                  co2_scd41_start_measure();    /* Undocumented but top bit 8 if not running */
+               if (!scd41 && (buf[0] << 8) + buf[1] != 1)
+                  continue;     /* Not ready(1 means ready) */
+               if (scd41 && !(buf[0] & 7) && !buf[1])
+                  continue;     /* Not ready(least 11 bits 0 means not ready) */
+            }
+         }
+         /* Data */
+         if (scd41)
+         {
+            err = co2_command(0xec05);  /* read data */
+            if (err)
+            {
+               ESP_LOGI(TAG, "Tx GetData %s", esp_err_to_name(err));
+               continue;
+            }
+            uint8_t buf[9];
             err = co2_read(sizeof(buf), buf);
             if (err)
             {
-               ESP_LOGI(TAG, "Rx GetReady %s", esp_err_to_name(err));
+               ESP_LOGI(TAG, "Rx Data %s", esp_err_to_name(err));
                continue;
             }
-            if (co2_crc(buf[0], buf[1]) != buf[2])
+            if (co2_crc(buf[0], buf[1]) != buf[2] || co2_crc(buf[3], buf[4]) != buf[5] || co2_crc(buf[6], buf[7]) != buf[8])
             {
-               ESP_LOGI(TAG, "Rx GetReady CRC error %02X %02X", co2_crc(buf[0], buf[1]), buf[2]);
+               ESP_LOGI(TAG, "Rx bad CRC");
                continue;
             }
-            if (scd41 && !(buf[0] & 0x80))
-               co2_scd41_start_measure();       /* Undocumented but top bit 8 if not running */
-            if (!scd41 && (buf[0] << 8) + buf[1] != 1)
-               continue;        /* Not ready(1 means ready) */
-            if (scd41 && !(buf[0] & 7) && !buf[1])
-               continue;        /* Not ready(least 11 bits 0 means not ready) */
-         }
-      }
-      /* Data */
-      if (scd41)
-      {
-         err = co2_command(0xec05);     /* read data */
-         if (err)
-         {
-            ESP_LOGI(TAG, "Tx GetData %s", esp_err_to_name(err));
-            continue;
-         }
-         uint8_t buf[9];
-         err = co2_read(sizeof(buf), buf);
-         if (err)
-         {
-            ESP_LOGI(TAG, "Rx Data %s", esp_err_to_name(err));
-            continue;
-         }
-         if (co2_crc(buf[0], buf[1]) != buf[2] || co2_crc(buf[3], buf[4]) != buf[5] || co2_crc(buf[6], buf[7]) != buf[8])
-         {
-            ESP_LOGI(TAG, "Rx bad CRC");
-            continue;
-         }
-         float c = (float) ((buf[0] << 8) + buf[1]);
-         float t = -45.0 + 175.0 * (float) ((buf[3] << 8) + buf[4]) / 65536.0;
-         float r = 100.0 * (float) ((buf[6] << 8) + buf[7]) / 65536.0;
-         if (scd41_settled && scd41_settled < uptime())
-         {
+            float c = (float) ((buf[0] << 8) + buf[1]);
+            float t = -45.0 + 175.0 * (float) ((buf[3] << 8) + buf[4]) / 65536.0;
+            float r = 100.0 * (float) ((buf[6] << 8) + buf[7]) / 65536.0;
             if (c > 0)
             {
                if (isnan(thisco2))
@@ -624,77 +699,83 @@ void co2_task(void *p)
                   thisco2 = (thisco2 * co2damp + c) / (co2damp + 1);
                lastco2 = report("co2", lastco2, thisco2, co2places);
             }
-            if (r > 0)
+            if (scd41_settled && scd41_settled < uptime())
             {
-               if (isnan(thisrh))
-                  thisrh = r;   /* First */
-               else
-                  thisrh = (thisrh * rhdamp + r) / (rhdamp + 1);
-               lastrh = report("rh", lastrh, thisrh, rhplaces);
+               if (r > 0)
+               {
+                  if (isnan(thisrh))
+                     thisrh = r;        /* First */
+                  else
+                     thisrh = (thisrh * rhdamp + r) / (rhdamp + 1);
+                  lastrh = report("rh", lastrh, thisrh, rhplaces);
+               }
+               if (!num_owb)
+                  lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);        /* Treat as temp not itemp as we trust the SCD41 to * be sane */
             }
-            if (!num_owb)
-               lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);   /* Treat as temp not itemp as we trust the SCD41 to
-                                                                                 * be sane */
-         }
-      } else
-      {                         /* Wait for data to be ready */
-         err = co2_command(0x0300);
-         if (err)
-         {
-            ESP_LOGI(TAG, "Tx GetData %s", esp_err_to_name(err));
-            continue;
-         }
-         {
-            uint8_t buf[18];
-            err = co2_read(sizeof(buf), buf);
+         } else
+         {                      /* Wait for data to be ready */
+            err = co2_command(0x0300);
             if (err)
             {
-               ESP_LOGI(TAG, "Rx Data %s", esp_err_to_name(err));
+               ESP_LOGI(TAG, "Tx GetData %s", esp_err_to_name(err));
                continue;
             }
-            /* ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, 18, ESP_LOG_INFO); */
-            uint8_t d[4];
-            d[3] = buf[0];
-            d[2] = buf[1];
-            d[1] = buf[3];
-            d[0] = buf[4];
-            float co2 = *(float *) d;
-            if (co2_crc(buf[0], buf[1]) != buf[2] || co2_crc(buf[3], buf[4]) != buf[5])
-               co2 = -1;
-            d[3] = buf[6];
-            d[2] = buf[7];
-            d[1] = buf[9];
-            d[0] = buf[10];
-            float t = *(float *) d;
-            if (co2_crc(buf[6], buf[7]) != buf[8] || co2_crc(buf[9], buf[10]) != buf[11])
-               t = -1000;
-            d[3] = buf[12];
-            d[2] = buf[13];
-            d[1] = buf[15];
-            d[0] = buf[16];
-            float rh = *(float *) d;
-            if (co2_crc(buf[12], buf[13]) != buf[14] || co2_crc(buf[15], buf[16]) != buf[17])
-               rh = -1000;
-            if (co2 > 100)
-            {                   /* Have a reading */
-               if (isnan(thisco2))
-                  thisco2 = co2;        /* First */
-               else
-                  thisco2 = (thisco2 * co2damp + co2) / (co2damp + 1);
+            {
+               uint8_t buf[18];
+               err = co2_read(sizeof(buf), buf);
+               if (err)
+               {
+                  ESP_LOGI(TAG, "Rx Data %s", esp_err_to_name(err));
+                  continue;
+               }
+               /* ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, 18, ESP_LOG_INFO); */
+               uint8_t d[4];
+               d[3] = buf[0];
+               d[2] = buf[1];
+               d[1] = buf[3];
+               d[0] = buf[4];
+               float co2 = *(float *) d;
+               if (co2_crc(buf[0], buf[1]) != buf[2] || co2_crc(buf[3], buf[4]) != buf[5])
+                  co2 = -1;
+               d[3] = buf[6];
+               d[2] = buf[7];
+               d[1] = buf[9];
+               d[0] = buf[10];
+               float t = *(float *) d;
+               if (co2_crc(buf[6], buf[7]) != buf[8] || co2_crc(buf[9], buf[10]) != buf[11])
+                  t = -1000;
+               d[3] = buf[12];
+               d[2] = buf[13];
+               d[1] = buf[15];
+               d[0] = buf[16];
+               float rh = *(float *) d;
+               if (co2_crc(buf[12], buf[13]) != buf[14] || co2_crc(buf[15], buf[16]) != buf[17])
+                  rh = -1000;
+               if (co2 > 100)
+               {                /* Have a reading */
+                  if (isnan(thisco2))
+                     thisco2 = co2;     /* First */
+                  else
+                     thisco2 = (thisco2 * co2damp + co2) / (co2damp + 1);
+               }
+               if (rh > 0)
+               {                /* Have a reading */
+                  if (isnan(thisrh))
+                     thisrh = rh;       /* First */
+                  else
+                     thisrh = (thisrh * rhdamp + rh) / (rhdamp + 1);
+               }
+               if (!num_owb && t >= -1000)
+                  lasttemp = report("itemp", lasttemp, thistemp = t, tempplaces);
+               /* Use temp here as no DS18B20 */
+               lastco2 = report("co2", lastco2, thisco2, co2places);
+               lastrh = report("rh", lastrh, thisrh, rhplaces);
             }
-            if (rh > 0)
-            {                   /* Have a reading */
-               if (isnan(thisrh))
-                  thisrh = rh;  /* First */
-               else
-                  thisrh = (thisrh * rhdamp + rh) / (rhdamp + 1);
-            }
-            if (!num_owb && t >= -1000)
-               lasttemp = report("itemp", lasttemp, thistemp = t, tempplaces);
-            /* Use temp here as no DS18B20 */
-            lastco2 = report("co2", lastco2, thisco2, co2places);
-            lastrh = report("rh", lastrh, thisrh, rhplaces);
          }
+      }
+      if (als)
+      {
+         lastals = report("als", lastals, als_read(0x05), alsplaces);
       }
    }
 }
@@ -735,7 +816,7 @@ void app_main()
 #define s32a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,SETTING_SIGNED|SETTING_LIVE);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define u8a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,0);
+#define u8a(n,q,d) revk_register(#n,q,sizeof(*n),&n,#d,0);
 #define s(n) revk_register(#n,0,0,&n,NULL,0);
    settings
 #undef u32
@@ -760,35 +841,35 @@ void app_main()
       if (p == sizeof(logo))
          memcpy(logo, icon_logo, sizeof(icon_logo));    /* default */
    }
-   if (co2sda >= 0 && co2scl >= 0)
+   if (sda >= 0 && scl >= 0)
    {
       scd41 = (co2address == 0x62 ? 1 : 0);
-      co2port = 0;
-      if (i2c_driver_install(co2port, I2C_MODE_MASTER, 0, 0, 0))
+      i2cport = 0;
+      if (i2c_driver_install(i2cport, I2C_MODE_MASTER, 0, 0, 0))
       {
          jo_t j = jo_object_alloc();
          jo_string(j, "error", "Install fail");
          revk_error("CO2", &j);
-         co2port = -1;
+         i2cport = -1;
       } else
       {
          i2c_config_t config = {
             .mode = I2C_MODE_MASTER,
-            .sda_io_num = co2sda,
-            .scl_io_num = co2scl,
+            .sda_io_num = sda,
+            .scl_io_num = scl,
             .sda_pullup_en = true,
             .scl_pullup_en = true,
             .master.clk_speed = 100000,
          };
-         if (i2c_param_config(co2port, &config))
+         if (i2c_param_config(i2cport, &config))
          {
-            i2c_driver_delete(co2port);
+            i2c_driver_delete(i2cport);
             jo_t j = jo_object_alloc();
             jo_string(j, "error", "Config fail");
-            revk_error("CO2", &j);
-            co2port = -1;
+            revk_error("I2C", &j);
+            i2cport = -1;
          } else
-            i2c_set_timeout(co2port, 80000 * 5);        /* 5 ms ? allow for clock stretching */
+            i2c_set_timeout(i2cport, 80000 * 5);        /* 5 ms ? allow for clock stretching */
       }
    }
    if (gfxmosi)
@@ -813,8 +894,8 @@ void app_main()
    gfx_colour('B');
    gfx_box(gfx_width(), gfx_height(), 255);
    gfx_unlock();
-   if (co2port >= 0)
-      revk_task("CO2", co2_task, NULL);
+   if (i2cport >= 0)
+      revk_task("CO2", i2c_task, NULL);
    if (ds18b20 >= 0)
    {                            /* DS18B20 init */
       owb = owb_rmt_initialize(&rmt_driver_info, ds18b20, RMT_CHANNEL_1, RMT_CHANNEL_0);
@@ -869,6 +950,8 @@ void app_main()
       showtemp = NAN;
       showrh = NAN;
    };
+   if (alsdark && sda && scl && alsaddress)
+      gfx_dark = 1;             // Start dark
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
       usleep(100000LL - (esp_timer_get_time() % 100000LL));     /* wait a bit */
@@ -879,8 +962,14 @@ void app_main()
       uint32_t up = uptime();
       if (!reportconfig && up > 10)
          sendconfig();
-      if (hhmmnight || hhmmday)
-      {                         /* Auto day / night */
+      if (!isnan(lastals))
+      {                         // ALS based night mode
+         if (lastals > alsdark)
+            gfx_dark = 0;
+         else
+            gfx_dark = 1;
+      } else if (hhmmnight || hhmmday)
+      {                         /* Time bases night mode */
          if (hhmmnight > hhmmday && hhmm >= hhmmnight)
             gfx_dark = 1;
          else if (hhmm >= hhmmday)
@@ -1089,13 +1178,6 @@ void app_main()
             gfx_text(1, s);
          }
       }
-      if (scd41 && isnan(thisco2) && scd41_settled >= up)
-      {
-         sprintf(s, "%d:%02d", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
-         gfx_colour('O');
-         gfx_pos(4, 0, GFX_T | GFX_L);
-         gfx_text(4, s);
-      }
       int y = 0,
           space = (gfx_height() - 28 - 35 - 21 - 9) / 3;
       char co2col = (isnan(thisco2) ? 'K' : thisco2 > (fanco2on ? : 1000) ? 'R' : thisco2 > (fanco2off ? : 750) ? 'Y' : 'G');
@@ -1135,11 +1217,17 @@ void app_main()
          }
       }
       y += 28 + space;
-      if (thistemp != showtemp && !isnan(thistemp))
+      gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
+      if (scd41 && scd41_settled >= up)
+      {
+         sprintf(s, "%d:%02d ", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
+         gfx_colour('O');
+         gfx_text(5, s);
+         showtemp = NAN;
+      } else if (!isnan(thistemp) && thistemp != showtemp)
       {
          showtemp = thistemp;
          gfx_colour(tempcol);
-         gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
          if (f)
          {                      /* Fahrenheit */
             int fh = (showtemp + 40.0) * 1.8 - 40.0;
