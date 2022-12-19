@@ -1,6 +1,6 @@
 "Source:","/Users/adrian/git/ESP32-EnvMon/KiCad/EnvMon2.kicad_sch"
-"Date:","Wednesday, 05 October 2022 at 15:58:11"
-"Tool:","Eeschema (6.0.5-0)"
+"Date:","Sunday, 18 December 2022 at 07:36:10"
+"Tool:","Eeschema (6.0.9-0)"
 "Generator:","/Applications/KiCad/KiCad.app/Contents/SharedSupport/plugins/bom_csv_grouped_by_value.py"
 "Component Count:","31"
 
@@ -14,7 +14,7 @@
 "","","D1","Schottky","RevK:Hidden","RevK:D_1206_","https://www.mouser.co.uk/datasheet/2/54/CD1206-B220_B2100-777245.pdf","","","Bourns","","","","CD1206-B2100",""
 "","","D2","D","Device:D","RevK:D_1206","~","","","","","","","",""
 "","","D3","RGB","Device:LED_ARGB","RevK:LED-RGB-1.6x1.6","~","","","","","","","",""
-"","","J1","USB-C","RevK:USB-C","RevK:USC16-TR-Round","https://www.usb.org/sites/default/files/documents/usb_type-c.zip","","","","","","","",""
+"","","J1","USB-C","RevK:USB-C","RevK:USC16-TR","https://www.usb.org/sites/default/files/documents/usb_type-c.zip","","","","","","","",""
 "","","J2","DC","RevK:PowerIn","RevK:Molex_MiniSPOX_H2RA","","","","","","Not fitted","","",""
 "","","L1","6.8uH","RevK:Hidden","RevK:L_4x4_","https://www.mouser.co.uk/datasheet/2/987/Laird_Performance_TYA4020_series__Rev_A_-1877538.pdf","","","Laird","","","","TYA4020",""
 "","","R1","100k 1% or 0R","Device:R","RevK:R_0603","~","","","","","","","",""
@@ -37,7 +37,7 @@
 "","","U2","SCD41","RevK:SCD41","RevK:SCD41","https://www.mouser.co.uk/datasheet/2/682/Sensirion_CO2_Sensors_SCD4x_Datasheet-2321195.pdf","","","","","","","",""
 "","","U3","FT231XQ","RevK:FT231XQ","RevK:QFN-20-1EP_4x4mm_P0.5mm_EP2.5x2.5mm","https://www.ftdichip.com/Support/Documents/DataSheets/ICs/DS_FT231X.pdf","","","","","","","",""
 "","","U4","ESP32-PICO-MINI-02","RevK:ESP32-PICO-MINI-02","RevK:ESP32-PICO-MINI-02","","Espressif","2.55mm","","","","v1.0","","Manufacturer Recommendations"
-"","","U6","VEML3235SL","RevK:VEML3235SL","RevK:VEML3235SL","","","","","","","","",""
+"","","U6","VEML3235SL-RA","RevK:VEML3235SL","RevK:VEML3235SL-RA","","","","","","","","",""
 
 
 
@@ -51,7 +51,7 @@
 "5","1","D1","Schottky","RevK:Hidden","RevK:D_1206_","https://www.mouser.co.uk/datasheet/2/54/CD1206-B220_B2100-777245.pdf","","","Bourns","","","","CD1206-B2100",""
 "6","1","D2","D","Device:D","RevK:D_1206","~","","","","","","","",""
 "7","1","D3","RGB","Device:LED_ARGB","RevK:LED-RGB-1.6x1.6","~","","","","","","","",""
-"8","1","J1","USB-C","RevK:USB-C","RevK:USC16-TR-Round","https://www.usb.org/sites/default/files/documents/usb_type-c.zip","","","","","","","",""
+"8","1","J1","USB-C","RevK:USB-C","RevK:USC16-TR","https://www.usb.org/sites/default/files/documents/usb_type-c.zip","","","","","","","",""
 "9","1","J2","DC","RevK:PowerIn","RevK:Molex_MiniSPOX_H2RA","","","","","","Not fitted","","",""
 "10","1","L1","6.8uH","RevK:Hidden","RevK:L_4x4_","https://www.mouser.co.uk/datasheet/2/987/Laird_Performance_TYA4020_series__Rev_A_-1877538.pdf","","","Laird","","","","TYA4020",""
 "11","1","R1","100k 1% or 0R","Device:R","RevK:R_0603","~","","","","","","","",""
@@ -68,4 +68,4 @@
 "22","1","U2","SCD41","RevK:SCD41","RevK:SCD41","https://www.mouser.co.uk/datasheet/2/682/Sensirion_CO2_Sensors_SCD4x_Datasheet-2321195.pdf","","","","","","","",""
 "23","1","U3","FT231XQ","RevK:FT231XQ","RevK:QFN-20-1EP_4x4mm_P0.5mm_EP2.5x2.5mm","https://www.ftdichip.com/Support/Documents/DataSheets/ICs/DS_FT231X.pdf","","","","","","","",""
 "24","1","U4","ESP32-PICO-MINI-02","RevK:ESP32-PICO-MINI-02","RevK:ESP32-PICO-MINI-02","","Espressif","2.55mm","","","","v1.0","","Manufacturer Recommendations"
-"25","1","U6","VEML3235SL","RevK:VEML3235SL","RevK:VEML3235SL","","","","","","","","",""
+"25","1","U6","VEML3235SL-RA","RevK:VEML3235SL","RevK:VEML3235SL-RA","","","","","","","","",""
