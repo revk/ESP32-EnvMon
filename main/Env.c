@@ -121,6 +121,8 @@ static float thistemp = NAN;
 static float thisrh = NAN;
 static float temptargetmin = NAN;
 static float temptargetmax = NAN;
+static int8_t temptimeprev = -1;
+static int8_t temptimenext = -1;
 static float tempoverridemin = NAN;
 static float tempoverridemax = NAN;
 static uint16_t tempoffset = 0;
@@ -142,6 +144,7 @@ static volatile uint8_t gfx_update = 0;
 static volatile uint8_t gfx_changed = 1;
 static volatile uint8_t gfx_dark = 0;
 static volatile uint32_t gfx_msg_time = 0;      /* message timer */
+static volatile uint32_t menu_time = 0; /* menu timer */
 static char gfx_msg[100];       /* message text */
 
 static const char *co2_setting(uint16_t cmd, uint16_t val);
@@ -800,12 +803,93 @@ void ds18b20_task(void *p)
    }
 }
 
-typedef uint8_t menufunc_t(char);
-uint8_t menufunc1(char key)
-{
-   return 0;
+void menuinit(void)
+{                               /* Common menu stuff */
+   gfx_set_contrast(gfxlight);
+   gfx_clear(0);
 }
 
+void gfx_temp(float t)
+{
+   char s[30];                  /* Temp string */
+   if (f)
+   {                            /* Fahrenheit */
+      int fh = (t + 40.0) * 1.8 - 40.0;
+      if (fh <= -100)
+         strcpy(s, "___");
+      else if (fh >= 1000)
+         strcpy(s, "^^^");
+      else
+         sprintf(s, "%3d", fh);
+   } else
+   {                            /* Celsius */
+      if (t <= -10)
+         strcpy(s, "__._");
+      else if (t >= 100)
+         strcpy(s, "^^.^");
+      else
+         sprintf(s, "%4.1f", t);
+   }
+   gfx_text(5, s);
+   gfx_text(1, "o");
+   gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
+   gfx_text(2, f ? "F" : "C");
+   if (!num_owb && !scd41)
+      gfx_text(2, "~");
+}
+
+uint8_t menufunc1(char key)
+{                               /* Initial menu: Temp control - eventually menu structure somehow... */
+   if (key == '2')
+      return 0;
+   int space = (gfx_height() - 35 * 3) / 4,
+       y = space;
+   menuinit();
+   float d = 0;
+   if (key == '1')
+      d = 0.1;
+   if (key == '3')
+      d = -0.1;
+   gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
+   gfx_colour('R');
+   gfx_temp(temptargetmax + d);
+   y += 35 + space;
+   gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
+   if (isnan(thistemp))
+   {
+      gfx_colour('O');
+      gfx_text(5, "WAIT");
+   } else
+   {
+      gfx_colour(thistemp < temptargetmin + d ? 'B' : thistemp > temptargetmax + d ? 'R' : 'G');
+      gfx_temp(thistemp);
+   }
+   y += 35 + space;
+   gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
+   gfx_colour('B');
+   gfx_temp(temptargetmin + d);
+   y += 35 + space;
+   if (temptimeprev < 0)
+      return 0;
+   if (key)
+   {                            /* store settings */
+      jo_t j = jo_object_alloc();
+      char s[30];
+      sprintf(s, "tempminmC%d", temptimeprev + 1);
+      jo_int(j, s, 1000 * d + tempminmC[temptimeprev]);
+      sprintf(s, "tempminmC%d", temptimenext + 1);
+      jo_int(j, s, 1000 * d + tempminmC[temptimenext]);
+      sprintf(s, "tempmaxmC%d", temptimeprev + 1);
+      jo_int(j, s, 1000 * d + tempmaxmC[temptimeprev]);
+      sprintf(s, "tempmaxmC%d", temptimenext + 1);
+      jo_int(j, s, 1000 * d + tempmaxmC[temptimenext]);
+      revk_setting(j);
+      jo_free(&j);
+   }
+   return 1;
+}
+
+typedef uint8_t menufunc_t(char);
 menufunc_t *menufunc[] = {
    menufunc1,
 };
@@ -994,31 +1078,32 @@ void app_main()
        * setting
        */
       int32_t heat_target = (gfx_dark ? heatnightmC : heatdaymC);
-      if (heat_target)
-      {                         /* Temp is set based on night / day, use that as heating basis(min) and no cooling set */
+      if (!tempminmC[0] && !tempmaxmC[0])
+      {                         /* Temp is set based on night / day, use that as heating basis(min) and no cooling set - legacy */
          temptargetmin = ((float) heat_target) / 1000.0;
          temptargetmax = 32.0;
+         temptimeprev = temptimenext = -1;
       } else
       {
          /* Setting from temphhmm / tempminmC / tempmaxmC */
 #define	TIMES	(sizeof(temphhmm)/sizeof(*temphhmm))
-         int i,
-          prev = 0,
-             next = 0;
+         int i;
+         temptimeprev = 0;
+         temptimenext = 0;
          for (i = 0; i < TIMES && (tempminmC[i] || tempmaxmC[i]) && temphhmm[i] <= hhmm; i++);
          if (!i)
          {                      /* wrap as first entry is later */
             for (i = 1; i < TIMES && (tempminmC[i] || tempmaxmC[i]); i++);
-            prev = i - 1;
-            next = 0;
+            temptimeprev = i - 1;
+            temptimenext = 0;
          } else if (i < TIMES && temphhmm[i] > hhmm)
          {                      /* Simple range */
-            prev = i - 1;
-            next = i;
+            temptimeprev = i - 1;
+            temptimenext = i;
          } else
-            prev = i - 1;       /* Next is 0, wrapping */
-         int sprev = (temphhmm[prev] / 100) * 3600 + (temphhmm[prev] % 100) * 60;
-         int snext = (temphhmm[next] / 100) * 3600 + (temphhmm[next] % 100) * 60;
+            temptimeprev = i - 1;       /* Next is 0, wrapping */
+         int sprev = (temphhmm[temptimeprev] / 100) * 3600 + (temphhmm[temptimeprev] % 100) * 60;
+         int snext = (temphhmm[temptimenext] / 100) * 3600 + (temphhmm[temptimenext] % 100) * 60;
          if (snext <= sprev)
             snext += 86400;
          int snow = t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec;
@@ -1028,12 +1113,12 @@ void app_main()
              max = NAN;
          int a,
           b;
-         if ((a = (tempminmC[prev] ? : tempmaxmC[prev])) && (b = (tempminmC[next] ? : tempmaxmC[next])))
+         if ((a = (tempminmC[temptimeprev] ? : tempmaxmC[temptimeprev])) && (b = (tempminmC[temptimenext] ? : tempmaxmC[temptimenext])))
          {                      /* Heat valid */
             heat_target = a + (b - a) * (snow - sprev) / (snext - sprev);
             min = ((float) heat_target) / 1000.0;
          }
-         if ((a = (tempmaxmC[prev] ? : tempminmC[prev])) && (b = (tempmaxmC[next] ? : tempminmC[next])))
+         if ((a = (tempmaxmC[temptimeprev] ? : tempminmC[temptimeprev])) && (b = (tempmaxmC[temptimenext] ? : tempminmC[temptimenext])))
             max = (float) (a + (b - a) * (snow - sprev) / (snext - sprev)) / 1000.0;    /* Cool valid */
          else
             max = min;          /* same as heat */
@@ -1044,9 +1129,13 @@ void app_main()
       {
          temptargetmin = tempoverridemin;
          heat_target = temptargetmin * 1000;
+         temptimeprev = temptimenext = -1;
       }
       if (!isnan(tempoverridemax))
+      {
          temptargetmax = tempoverridemax;
+         temptimeprev = temptimenext = -1;
+      }
       /* Report */
       if (up > 60 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
          reportall(now);        /* Don 't report right away if clock may be duff */
@@ -1135,20 +1224,12 @@ void app_main()
          }
          last1 = last0;
       }
-#if 1
-      if (key)
-      {
-         *gfx_msg = key;
-         gfx_msg[1] = 0;
-         gfx_msg_time = uptime() + 3;
-      }
-#else
       if (!menu && key)
       {
+         menu_time = uptime() + 5;
          menu = 1;              // Base menu
          key = 0;               // Don't pass initial key, used just to wake up...
       }
-#endif
       /* Display */
       char s[30];               /* Temp string */
       if (gfx_msg_time)
@@ -1169,15 +1250,21 @@ void app_main()
       gfx_lock();
       if (menu)
       {                         /* Display menu selection */
-         // Timeout
-         if (menu > sizeof(menufunc) / sizeof(*menufunc))
+         if (key)
+            menu_time = uptime() + 10;
+         if (menu_time < uptime())
             menu = 0;
-         else
+         else if (menu > sizeof(menufunc) / sizeof(*menufunc))
+            menu = 0;
+         else if (menu)
             menu = menufunc[menu - 1] (key);
          if (!menu)
-            reset();
+            reset();            // Exit menu
          else
+         {
+            gfx_unlock();
             continue;
+         }
       }
       if (gfx_dark)
       {                         /* Night mode */
@@ -1274,30 +1361,7 @@ void app_main()
       {
          showtemp = thistemp;
          gfx_colour(tempcol);
-         if (f)
-         {                      /* Fahrenheit */
-            int fh = (showtemp + 40.0) * 1.8 - 40.0;
-            if (fh <= -100)
-               strcpy(s, "___");
-            else if (fh >= 1000)
-               strcpy(s, "^^^");
-            else
-               sprintf(s, "%3d", fh);
-         } else
-         {                      /* Celsius */
-            if (showtemp <= -10)
-               strcpy(s, "__._");
-            else if (showtemp >= 100)
-               strcpy(s, "^^.^");
-            else
-               sprintf(s, "%4.1f", showtemp);
-         }
-         gfx_text(5, s);
-         gfx_text(1, "o");
-         gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
-         gfx_text(2, f ? "F" : "C");
-         if (!num_owb && !scd41)
-            gfx_text(2, "~");
+         gfx_temp(showtemp);
       }
       y += 35 + space;
       if (thisrh != showrh && !isnan(thisrh))
