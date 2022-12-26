@@ -82,8 +82,8 @@ const char TAG[] = "Env";
 	s32(heatdaymC,0)	\
 	s32(heatnightmC,0)	\
 	u16a(temphhmm,10)	\
-	s32a(tempheatmC,10)	\
-	s32a(tempcoolmC,10)	\
+	s32a(tempmaxmC,10)	\
+	s32a(tempminmC,10)	\
 	u8a(button,3,4 13 15)	\
 
 #define u32(n,d)	uint32_t n;
@@ -978,28 +978,27 @@ void app_main()
             gfx_dark = 1;
       }
       /* Reference temp */
-      /* heatdaymC or heatnightmC take priority.If not set(0) then temphhmm / tempheatmC / tempcoolmC apply */
+      /* heatdaymC or heatnightmC take priority.If not set(0) then temphhmm / tempminmC / tempmaxmC apply */
       /*
        * The temp are a set, with hhmm points(in order, can start 0000) and heating and cooling settings, and 0 means same as other
        * setting
        */
       int32_t heat_target = (gfx_dark ? heatnightmC : heatdaymC);
       if (heat_target)
-      {
-         /* Temp is set base don night / day, use that as heating basis(min) and no cooling set */
+      { /* Temp is set based on night / day, use that as heating basis(min) and no cooling set */
          temptargetmin = ((float) heat_target) / 1000.0;
          temptargetmax = 32.0;
       } else
       {
-         /* Setting from temphhmm / tempheatmC / tempcoolmC */
+         /* Setting from temphhmm / tempminmC / tempmaxmC */
 #define	TIMES	(sizeof(temphhmm)/sizeof(*temphhmm))
          int i,
           prev = 0,
              next = 0;
-         for (i = 0; i < TIMES && (tempheatmC[i] || tempcoolmC[i]) && temphhmm[i] <= hhmm; i++);
+         for (i = 0; i < TIMES && (tempminmC[i] || tempmaxmC[i]) && temphhmm[i] <= hhmm; i++);
          if (!i)
          {                      /* wrap as first entry is later */
-            for (i = 1; i < TIMES && (tempheatmC[i] || tempcoolmC[i]); i++);
+            for (i = 1; i < TIMES && (tempminmC[i] || tempmaxmC[i]); i++);
             prev = i - 1;
             next = 0;
          } else if (i < TIMES && temphhmm[i] > hhmm)
@@ -1019,12 +1018,12 @@ void app_main()
              max = NAN;
          int a,
           b;
-         if ((a = (tempheatmC[prev] ? : tempcoolmC[prev])) && (b = (tempheatmC[next] ? : tempcoolmC[next])))
+         if ((a = (tempminmC[prev] ? : tempmaxmC[prev])) && (b = (tempminmC[next] ? : tempmaxmC[next])))
          {                      /* Heat valid */
             heat_target = a + (b - a) * (snow - sprev) / (snext - sprev);
             min = ((float) heat_target) / 1000.0;
          }
-         if ((a = (tempcoolmC[prev] ? : tempheatmC[prev])) && (b = (tempcoolmC[next] ? : tempheatmC[next])))
+         if ((a = (tempmaxmC[prev] ? : tempminmC[prev])) && (b = (tempmaxmC[next] ? : tempminmC[next])))
             max = (float) (a + (b - a) * (snow - sprev) / (snext - sprev)) / 1000.0;    /* Cool valid */
          else
             max = min;          /* same as heat */
@@ -1073,7 +1072,7 @@ void app_main()
          }
       }
       static uint32_t heatwait = 0;
-      if (!isnan(thistemp) && heatwait < up && (heatnightmC || heatdaymC || tempheatmC[0] || heat_target || heatgpio >= 0 || heaton || heatoff))
+      if (!isnan(thistemp) && heatwait < up && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio >= 0 || heaton || heatoff))
       {                         /* Heat control */
          if (heat_target || heatlast == 1)
          {                      /* We have a reference temp to work with or we left on */
