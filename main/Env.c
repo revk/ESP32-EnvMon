@@ -893,7 +893,7 @@ void app_main()
          revk_error("GFX", &j);
       }
    }
-   for (int i = 0; i < sizeof(button) / sizeof(button); i++)
+   for (int i = 0; i < sizeof(button) / sizeof(*button); i++)
       if (button[i])
       {                         /* Control buttons */
          gpio_reset_pin(button[i]);
