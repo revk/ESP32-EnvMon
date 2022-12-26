@@ -1119,29 +1119,21 @@ void app_main()
       static uint8_t menu = 0;  /* Menu selection - 0 if idle */
       /* Handle key presses */
       char key = 0;
-      if (button[0])
-      {
-         static int c = 0;
-         if (gpio_get_level(button[0]))
-            c = 0;
-         else if (c++ == 5)
-            key = '1';
-      }
-      if (button[1])
-      {
-         static int c = 0;
-         if (gpio_get_level(button[1]))
-            c = 0;
-         else if (c++ == 5)
-            key = '2';
-      }
-      if (button[2])
-      {
-         static int c = 0;
-         if (gpio_get_level(button[2]))
-            c = 0;
-         else if (c++ == 5)
-            key = '3';
+      {                         /* Simple debounce */
+         uint8_t last0 = 0;
+         static uint8_t last1 = 0;
+         static uint8_t last2 = 0;
+         for (int i = 0; i < sizeof(button) / sizeof(*button); i++)
+            if (button[i] && !gpio_get_level(button[i]))
+               last0 |= (1 << i);
+         if (last0 == last1)
+         {                      // stable
+            for (int i = 0; i < sizeof(button) / sizeof(*button); i++)
+               if (!(last2 & (1 << i)) && (last1 & (1 << i)))
+                  key = '1' + i;
+            last2 = last1;
+         }
+         last1 = last0;
       }
 #if 1
       if (key)
