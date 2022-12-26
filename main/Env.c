@@ -800,6 +800,16 @@ void ds18b20_task(void *p)
    }
 }
 
+typedef uint8_t menufunc_t(char);
+uint8_t menufunc1(char key)
+{
+   return 0;
+}
+
+menufunc_t *menufunc[] = {
+   menufunc1,
+};
+
 void app_main()
 {
    revk_boot(&app_callback);
@@ -954,7 +964,7 @@ void app_main()
       gfx_dark = 1;             // Start dark
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
-      usleep(100000LL - (esp_timer_get_time() % 100000LL));     /* wait a bit */
+      usleep(10000LL - (esp_timer_get_time() % 10000LL));       /* wait a bit */
       time_t now = time(0);
       struct tm t;
       localtime_r(&now, &t);
@@ -985,7 +995,7 @@ void app_main()
        */
       int32_t heat_target = (gfx_dark ? heatnightmC : heatdaymC);
       if (heat_target)
-      { /* Temp is set based on night / day, use that as heating basis(min) and no cooling set */
+      {                         /* Temp is set based on night / day, use that as heating basis(min) and no cooling set */
          temptargetmin = ((float) heat_target) / 1000.0;
          temptargetmax = 32.0;
       } else
@@ -1108,7 +1118,45 @@ void app_main()
       }
       static uint8_t menu = 0;  /* Menu selection - 0 if idle */
       /* Handle key presses */
-      /* TODO */
+      char key = 0;
+      if (button[0])
+      {
+         static int c = 0;
+         if (gpio_get_level(button[0]))
+            c = 0;
+         else if (c++ == 5)
+            key = '1';
+      }
+      if (button[1])
+      {
+         static int c = 0;
+         if (gpio_get_level(button[1]))
+            c = 0;
+         else if (c++ == 5)
+            key = '2';
+      }
+      if (button[2])
+      {
+         static int c = 0;
+         if (gpio_get_level(button[2]))
+            c = 0;
+         else if (c++ == 5)
+            key = '3';
+      }
+#if 1
+      if (key)
+      {
+         *gfx_msg = key;
+         gfx_msg[1] = 0;
+         gfx_msg_time = uptime() + 3;
+      }
+#else
+      if (!menu && key)
+      {
+         menu = 1;              // Base menu
+         key = 0;               // Don't pass initial key, used just to wake up...
+      }
+#endif
       /* Display */
       char s[30];               /* Temp string */
       if (gfx_msg_time)
@@ -1129,8 +1177,15 @@ void app_main()
       gfx_lock();
       if (menu)
       {                         /* Display menu selection */
-
-         continue;
+         // Timeout
+         if (menu > sizeof(menufunc) / sizeof(*menufunc))
+            menu = 0;
+         else
+            menu = menufunc[menu - 1] (key);
+         if (!menu)
+            reset();
+         else
+            continue;
       }
       if (gfx_dark)
       {                         /* Night mode */
