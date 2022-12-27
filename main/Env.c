@@ -842,8 +842,8 @@ uint8_t menufunc1(char key)
 {                               /* Initial menu: Temp control - eventually menu structure somehow... */
    if (key == '2')
       return 0;
-   int space = (gfx_height() - 35 * 3) / 4,
-       y = space;
+   int space = (gfx_height() - 35 * 3) / 2,
+       y = 0;
    menuinit();
    float d = 0;
    if (key == '1')
@@ -852,7 +852,8 @@ uint8_t menufunc1(char key)
       d = -0.1;
    gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
    gfx_colour('R');
-   gfx_temp(temptargetmax + d);
+   if (!isnan(temptargetmax))
+      gfx_temp(temptargetmax + d);
    y += 35 + space;
    gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
    if (isnan(thistemp))
@@ -867,22 +868,28 @@ uint8_t menufunc1(char key)
    y += 35 + space;
    gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
    gfx_colour('B');
-   gfx_temp(temptargetmin + d);
-   y += 35 + space;
+   if (!isnan(temptargetmin))
+      gfx_temp(temptargetmin + d);
    if (temptimeprev < 0)
       return 0;
    if (key)
    {                            /* store settings */
       jo_t j = jo_object_alloc();
       char s[30];
-      sprintf(s, "tempminmC%d", temptimeprev + 1);
-      jo_int(j, s, 1000 * d + tempminmC[temptimeprev]);
-      sprintf(s, "tempminmC%d", temptimenext + 1);
-      jo_int(j, s, 1000 * d + tempminmC[temptimenext]);
-      sprintf(s, "tempmaxmC%d", temptimeprev + 1);
-      jo_int(j, s, 1000 * d + tempmaxmC[temptimeprev]);
-      sprintf(s, "tempmaxmC%d", temptimenext + 1);
-      jo_int(j, s, 1000 * d + tempmaxmC[temptimenext]);
+      if (!isnan(temptargetmin))
+      {
+         sprintf(s, "tempminmC%d", temptimeprev + 1);
+         jo_int(j, s, 1000 * d + tempminmC[temptimeprev]);
+         sprintf(s, "tempminmC%d", temptimenext + 1);
+         jo_int(j, s, 1000 * d + tempminmC[temptimenext]);
+      }
+      if (!isnan(temptargetmax))
+      {
+         sprintf(s, "tempmaxmC%d", temptimeprev + 1);
+         jo_int(j, s, 1000 * d + tempmaxmC[temptimeprev]);
+         sprintf(s, "tempmaxmC%d", temptimenext + 1);
+         jo_int(j, s, 1000 * d + tempmaxmC[temptimenext]);
+      }
       revk_setting(j);
       jo_free(&j);
    }
