@@ -32,14 +32,26 @@ icons/%.h:	icons/%.gray
 	od -Anone -tx1 -v -w64 $< | sed 's/ \(.\). \(.\)./0x\1\2,/g' >> $@
 	echo "};" >> $@
 
-set:    wroom pico
+set:    wroom wroom-mono wroom-blind pico-blind pico
 
 pico:
 	components/ESP32-RevK/setbuildsuffix -S1-PICO-SSD1351
 	@make
 
+pico-blind:
+	components/ESP32-RevK/setbuildsuffix -S1-PICO
+	@make
+
 wroom:
 	components/ESP32-RevK/setbuildsuffix -S1-SSD1351
+	@make
+
+wroom-blind:
+	components/ESP32-RevK/setbuildsuffix -S1
+	@make
+
+wroom-mono:
+	components/ESP32-RevK/setbuildsuffix -S1-SSD1680
 	@make
 
 solo:

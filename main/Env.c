@@ -989,7 +989,7 @@ void app_main()
    gfx_box(gfx_width(), gfx_height(), 255);
    gfx_unlock();
    if (i2cport >= 0)
-      revk_task("CO2", i2c_task, NULL);
+      revk_task("I2C", i2c_task, NULL);
    if (ds18b20 >= 0)
    {                            /* DS18B20 init */
       owb = owb_rmt_initialize(&rmt_driver_info, ds18b20, RMT_CHANNEL_1, RMT_CHANNEL_0);
