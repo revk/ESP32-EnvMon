@@ -190,6 +190,7 @@ static void reportall(time_t now)
          jo_bool(j, "heat", heatmax);
       if (fanmax >= 0)
          jo_bool(j, "fan", fanmax);
+      jo_bool(j, "dark", gfx_dark);
       fanmax = fanlast;
       heatmax = heatlast;
       if (!isnan(temptargetmin) && !isnan(temptargetmax))
