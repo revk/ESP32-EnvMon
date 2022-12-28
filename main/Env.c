@@ -552,6 +552,7 @@ void i2c_task(void *p)
          jo_int(j, "code", err);
          jo_string(j, "description", esp_err_to_name(err));
          revk_error("CO2", &j);
+         ESP_LOGE(TAG, "No CO2");
       } else
          co2 = 1;
    }
@@ -565,6 +566,7 @@ void i2c_task(void *p)
          jo_int(j, "id", id);
          jo_string(j, "description", esp_err_to_name(err));
          revk_error("ALS", &j);
+         ESP_LOGE(TAG, "No ALS");
          gfx_dark = 0;
       } else
       {
