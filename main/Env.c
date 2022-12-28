@@ -547,12 +547,12 @@ void i2c_task(void *p)
       }
       if (err)
       {                         /* failed */
+         ESP_LOGE(TAG, "No CO2");
          jo_t j = jo_object_alloc();
          jo_string(j, "error", "Config fail");
          jo_int(j, "code", err);
          jo_string(j, "description", esp_err_to_name(err));
          revk_error("CO2", &j);
-         ESP_LOGE(TAG, "No CO2");
       } else
          co2 = 1;
    }
@@ -561,13 +561,13 @@ void i2c_task(void *p)
       uint16_t id = als_read(0x09);
       if ((id & 0xFF) != 0x35)
       {
+         gfx_dark = 0;
+         ESP_LOGE(TAG, "No ALS");
          jo_t j = jo_object_alloc();
          jo_string(j, "error", "Fail");
          jo_int(j, "id", id);
          jo_string(j, "description", esp_err_to_name(err));
          revk_error("ALS", &j);
-         ESP_LOGE(TAG, "No ALS");
-         gfx_dark = 0;
       } else
       {
          als = 1;
