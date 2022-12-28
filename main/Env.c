@@ -565,6 +565,7 @@ void i2c_task(void *p)
          jo_int(j, "id", id);
          jo_string(j, "description", esp_err_to_name(err));
          revk_error("ALS", &j);
+         gfx_dark = 0;
       } else
       {
          als = 1;
