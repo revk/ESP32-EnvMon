@@ -343,7 +343,7 @@ const char *app_callback(int client, const char *prefix, const char *target, con
    }
    if (!strcmp(suffix, "connect"))
    {
-      if (scd41)
+      if (scd41 && uptime() < 300)
          co2_setting(0x3682, 0);
       fanlast = -1;
       heatlast = -1;
@@ -998,8 +998,8 @@ void app_main()
       revk_task("I2C", i2c_task, NULL);
    if (ds18b20 >= 0)
    {                            /* DS18B20 init */
-	   ds18b20_init(ds18b20);
-	   /* TODO */
+      ds18b20_init(ds18b20);
+      /* TODO */
       if (!num_owb)
       {
          jo_t j = jo_object_alloc();
