@@ -10,8 +10,6 @@ const char TAG[] = "Env";
 #include <math.h>
 #include <sntp.h>
 
-#include "owb.h"
-#include "owb_rmt.h"
 #include "ds18b20.h"
 #include "gfx.h"
 
@@ -129,9 +127,6 @@ static uint16_t tempoffset = 0;
 static int8_t i2cport = -1;
 static int8_t num_owb = 0;
 static volatile uint32_t do_co2 = 0;
-static OneWireBus *owb = NULL;
-static owb_rmt_driver_info rmt_driver_info;
-static DS18B20_Info *ds18b20s[MAX_OWB] = { 0 };
 
 static uint32_t fantime = 0;
 static uint32_t heattime = 0;
@@ -794,8 +789,7 @@ void ds18b20_task(void *p)
    while (1)
    {
       usleep(100000);
-      ds18b20_convert_all(owb);
-      ds18b20_wait_for_conversion(ds18b20s[0]);
+#if 0
       float readings[MAX_OWB] = { 0 };
       DS18B20_ERROR errors[MAX_OWB] = { 0 };
       for (int i = 0; i < num_owb; ++i)
@@ -804,6 +798,7 @@ void ds18b20_task(void *p)
          lasttemp = report("temp", lasttemp, thistemp = readings[0] + ((float) ds18b20mC) / 1000.0, tempplaces);
       if (num_owb > 1 && !errors[1])
          lastotemp = report("otemp", lastotemp, readings[1], tempplaces);
+#endif
    }
 }
 
@@ -1003,33 +998,8 @@ void app_main()
       revk_task("I2C", i2c_task, NULL);
    if (ds18b20 >= 0)
    {                            /* DS18B20 init */
-      owb = owb_rmt_initialize(&rmt_driver_info, ds18b20, RMT_CHANNEL_1, RMT_CHANNEL_0);
-      owb_use_crc(owb, true);   /* enable CRC check for ROM code */
-      OneWireBus_ROMCode device_rom_codes[MAX_OWB] = {
-         0
-      };
-      OneWireBus_SearchState search_state = { 0 };
-      bool found = false;
-      owb_search_first(owb, &search_state, &found);
-      while (found && num_owb < MAX_OWB)
-      {
-         char rom_code_s[17];
-         owb_string_from_rom_code(search_state.rom_code, rom_code_s, sizeof(rom_code_s));
-         device_rom_codes[num_owb] = search_state.rom_code;
-         ++num_owb;
-         owb_search_next(owb, &search_state, &found);
-      }
-      for (int i = 0; i < num_owb; i++)
-      {
-         DS18B20_Info *ds18b20_info = ds18b20_malloc(); /* heap allocation */
-         ds18b20s[i] = ds18b20_info;
-         if (num_owb == 1)
-            ds18b20_init_solo(ds18b20_info, owb);       /* only one device on bus */
-         else
-            ds18b20_init(ds18b20_info, owb, device_rom_codes[i]);       /* associate with bus and device */
-         ds18b20_use_crc(ds18b20_info, true);   /* enable CRC check for temperature readings */
-         ds18b20_set_resolution(ds18b20_info, DS18B20_RESOLUTION);
-      }
+	   ds18b20_init(ds18b20);
+	   /* TODO */
       if (!num_owb)
       {
          jo_t j = jo_object_alloc();
@@ -1364,7 +1334,7 @@ void app_main()
       gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
       if (scd41 && scd41_settled >= up)
       {
-         sprintf(s, "%d:%02d ", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
+         sprintf(s, "%ld:%02ld ", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
          gfx_colour('O');
          gfx_text(5, s);
          showtemp = NAN;

@@ -1,12 +1,6 @@
 [submodule "components/ESP32-RevK"]
 	path = components/ESP32-RevK
 	url = https://github.com/revk/ESP32-RevK
-[submodule "components/esp32-owb"]
-	path = components/esp32-owb
-	url = https://github.com/DavidAntliff/esp32-owb
-[submodule "components/esp32-ds18b20"]
-	path = components/esp32-ds18b20
-	url = https://github.com/DavidAntliff/esp32-ds18b20
 [submodule "SQLlib"]
 	path = SQLlib
 	url = https://github.com/revk/SQLlib
