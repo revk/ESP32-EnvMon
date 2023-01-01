@@ -82,7 +82,7 @@ const char TAG[] = "Env";
 	u16a(temphhmm,10)	\
 	s32a(tempmaxmC,10)	\
 	s32a(tempminmC,10)	\
-	u8a(button,3,4 13 15)	\
+	s8a(button,3,4 13 15)	\
 
 #define u32(n,d)	uint32_t n;
 #define u16(n,d)	uint16_t n;
@@ -91,7 +91,7 @@ const char TAG[] = "Env";
 #define s32a(n,q)	int32_t n[q];
 #define s8(n,d)	int8_t n;
 #define u8(n,d)	uint8_t n;
-#define u8a(n,q,d)	uint8_t n[q];
+#define s8a(n,q,d)	int8_t n[q];
 #define b(n) uint8_t n;
 #define s(n) char * n;
 settings
@@ -102,7 +102,7 @@ settings
 #undef s32a
 #undef s8
 #undef u8
-#undef u8a
+#undef s8a
 #undef b
 #undef s
 static uint8_t scd41 = 0;
@@ -125,8 +125,9 @@ static float tempoverridemin = NAN;
 static float tempoverridemax = NAN;
 static uint16_t tempoffset = 0;
 static int8_t i2cport = -1;
-static int8_t num_owb = 0;
 static volatile uint32_t do_co2 = 0;
+static int8_t num_ds18b20 = 0;
+static DeviceAddress adr_ds18b20[2];
 
 static uint32_t fantime = 0;
 static uint32_t heattime = 0;
@@ -711,7 +712,7 @@ void i2c_task(void *p)
                      thisrh = (thisrh * rhdamp + r) / (rhdamp + 1);
                   lastrh = report("rh", lastrh, thisrh, rhplaces);
                }
-               if (!num_owb)
+               if (!num_ds18b20)
                   lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);        /* Treat as temp not itemp as we trust the SCD41 to * be sane */
             }
          } else
@@ -767,7 +768,7 @@ void i2c_task(void *p)
                   else
                      thisrh = (thisrh * rhdamp + rh) / (rhdamp + 1);
                }
-               if (!num_owb && t >= -1000)
+               if (!num_ds18b20 && t >= -1000)
                   lasttemp = report("itemp", lasttemp, thistemp = t, tempplaces);
                /* Use temp here as no DS18B20 */
                lastco2 = report("co2", lastco2, thisco2, co2places);
@@ -785,20 +786,17 @@ void i2c_task(void *p)
 void ds18b20_task(void *p)
 {
    p = p;
-   ESP_LOGI(TAG, "DS18B20 retry");
+   ESP_LOGI(TAG, "DS18B20 start (%d sensor%s)", num_ds18b20, num_ds18b20 == 1 ? "" : "s");
+   ds18b20_setResolution(adr_ds18b20, num_ds18b20, 10);
    while (1)
    {
       usleep(100000);
-#if 0
-      float readings[MAX_OWB] = { 0 };
-      DS18B20_ERROR errors[MAX_OWB] = { 0 };
-      for (int i = 0; i < num_owb; ++i)
-         errors[i] = ds18b20_read_temp(ds18b20s[i], &readings[i]);
-      if (!errors[0])
-         lasttemp = report("temp", lasttemp, thistemp = readings[0] + ((float) ds18b20mC) / 1000.0, tempplaces);
-      if (num_owb > 1 && !errors[1])
+      float readings[num_ds18b20];
+      for (int i = 0; i < num_ds18b20; ++i)
+         readings[i] = ds18b20_getTempC(&adr_ds18b20[i]);
+      lasttemp = report("temp", lasttemp, thistemp = readings[0] + ((float) ds18b20mC) / 1000.0, tempplaces);
+      if (num_ds18b20 > 1)
          lastotemp = report("otemp", lastotemp, readings[1], tempplaces);
-#endif
    }
 }
 
@@ -833,7 +831,7 @@ void gfx_temp(float t)
    gfx_text(1, "o");
    gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
    gfx_text(2, f ? "F" : "C");
-   if (!num_owb && !scd41)
+   if (!num_ds18b20 && !scd41)
       gfx_text(2, "~");
 }
 
@@ -916,7 +914,7 @@ void app_main()
 #define s32a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,SETTING_SIGNED|SETTING_LIVE);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define u8a(n,q,d) revk_register(#n,q,sizeof(*n),&n,#d,0);
+#define s8a(n,q,d) revk_register(#n,q,sizeof(*n),&n,#d,SETTING_SIGNED);
 #define s(n) revk_register(#n,0,0,&n,NULL,0);
    settings
 #undef u32
@@ -926,7 +924,7 @@ void app_main()
 #undef s32a
 #undef s8
 #undef u8
-#undef u8a
+#undef s8a
 #undef b
 #undef s
        revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINDATA);    /* fixed logo */
@@ -999,12 +997,15 @@ void app_main()
    if (ds18b20 >= 0)
    {                            /* DS18B20 init */
       ds18b20_init(ds18b20);
-      /* TODO */
-      if (!num_owb)
+      ds18b20_reset_search();
+      while (num_ds18b20 < sizeof(adr_ds18b20) / sizeof(*adr_ds18b20) && ds18b20_search(adr_ds18b20[num_ds18b20], true))
+         num_ds18b20++;
+      if (!num_ds18b20)
       {
          jo_t j = jo_object_alloc();
-         jo_string(j, "error", "No OWB devices");
+         jo_string(j, "error", "No DS18B20 devices");
          revk_error("temp", &j);
+         ESP_LOGE(TAG, "No DS18B20");
       } else
          revk_task("DS18B20", ds18b20_task, NULL);
    }

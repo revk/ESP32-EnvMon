@@ -73,8 +73,8 @@ float ds18b20_getTempC(const DeviceAddress *deviceAddress);
 int16_t calculateTemperature(const DeviceAddress *deviceAddress, uint8_t* scratchPad);
 float ds18b20_get_temp(void);
 
-void reset_search();
-bool search(uint8_t *newAddr, bool search_mode);
+void ds18b20_reset_search();
+bool ds18b20_search(uint8_t *newAddr, bool search_mode);
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus

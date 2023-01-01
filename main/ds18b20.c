@@ -17,6 +17,7 @@
 #include "driver/gpio.h"
 #include "esp32/rom/ets_sys.h"
 #include "esp_timer.h"
+#include "esp_rom_gpio.h"
 #include "ds18b20.h"
 
 // OneWire commands
@@ -318,7 +319,7 @@ float ds18b20_get_temp(void) {
 
 void ds18b20_init(int GPIO) {
 	DS_GPIO = GPIO;
-	gpio_reset_pin(DS_GPIO);
+	esp_rom_gpio_pad_select_gpio(DS_GPIO);
 	init = 1;
 }
 
@@ -326,7 +327,7 @@ void ds18b20_init(int GPIO) {
 // You need to use this function to start a search again from the beginning.
 // You do not need to do it for the first search, though you could.
 //
-void reset_search() {
+void ds18b20_reset_search() {
 	devices=0;
 	// reset the search state
 	LastDiscrepancy = 0;
@@ -343,7 +344,7 @@ void reset_search() {
 // Return TRUE  : device found, ROM number in ROM_NO buffer
 //        FALSE : device not found, end of search
 
-bool search(uint8_t *newAddr, bool search_mode) {
+bool ds18b20_search(uint8_t *newAddr, bool search_mode) {
 	uint8_t id_bit_number;
 	uint8_t last_zero, rom_byte_number;
 	bool search_result;
