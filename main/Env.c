@@ -1015,6 +1015,7 @@ void app_main()
             i2c_set_timeout(i2cport, 80000 * 5);        /* 5 ms ? allow for clock stretching */
       }
    }
+#ifndef	CONFIG_GFX_NONE
    if (gfxmosi)
    {
     const char *e = gfx_init(cs: gfxcs & IO_MASK, sck: gfxsck & IO_MASK, mosi: gfxmosi & IO_MASK, dc: gfxdc & IO_MASK, rst: gfxrst & IO_MASK, flip:gfxflip);
@@ -1026,6 +1027,7 @@ void app_main()
          revk_error("GFX", &j);
       }
    }
+#endif
    for (int i = 0; i < sizeof(button) / sizeof(*button); i++)
       if (button[i])
       {                         /* Control buttons */
@@ -1081,6 +1083,7 @@ void app_main()
    };
    if (alsdark && sda && scl && alsaddress)
       gfx_dark = 1;             // Start dark
+   info();
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
       usleep(10000LL - (esp_timer_get_time() % 10000LL));       /* wait a bit */
