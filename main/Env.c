@@ -301,7 +301,8 @@ void info(void)
          jo_int(j, "temperature-offset", scd_tempoffset);
       if (scd_altitude)
          jo_int(j, "sensor-altitude", scd_altitude);
-      jo_bool(j, "automatic-self-calibration", scd_selfcal);
+      if (scd41)
+         jo_bool(j, "automatic-self-calibration", scd_selfcal);
       jo_close(j);
    }
    if (num_ds18b20)
