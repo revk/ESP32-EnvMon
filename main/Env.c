@@ -1253,7 +1253,7 @@ void app_main()
          static uint8_t last1 = 0;
          static uint8_t last2 = 0;
          for (int i = 0; i < sizeof(button) / sizeof(*button); i++)
-            if (button[i] && !gpio_get_level(button[i]))
+            if (button[i] && !gpio_get_level(button[i] & IO_MASK))
                last0 |= (1 << i);
          if (last0 == last1)
          {                      // stable
