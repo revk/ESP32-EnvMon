@@ -1374,7 +1374,7 @@ void app_main()
       }
       y += 28 + space;
       gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
-      if (scd41 && scd41_settled >= up)
+      if (!num_ds18b20 && scd41 && scd41_settled >= up)
       {
          sprintf(s, "%ld:%02ld ", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
          gfx_colour('O');
