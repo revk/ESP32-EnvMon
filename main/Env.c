@@ -578,7 +578,10 @@ void i2c_task(void *p)
       {                         /* failed */
          ESP_LOGE(TAG, "No CO2");
          jo_t j = jo_object_alloc();
-         jo_string(j, "error", "Config fail");
+         jo_string(j, "error", "No CO2 sensor");
+         jo_string(j, "device", scd41 ? "SCD41" : "SCD30");
+         jo_int(j, "sda", sda & IO_MASK);
+         jo_int(j, "scl", scl & IO_MASK);
          jo_int(j, "code", err);
          jo_string(j, "description", esp_err_to_name(err));
          revk_error("CO2", &j);
@@ -597,7 +600,9 @@ void i2c_task(void *p)
          gfx_dark = 0;
          ESP_LOGE(TAG, "No ALS");
          jo_t j = jo_object_alloc();
-         jo_string(j, "error", "Fail");
+         jo_string(j, "error", "No ALS");
+         jo_int(j, "sda", sda & IO_MASK);
+         jo_int(j, "scl", scl & IO_MASK);
          jo_int(j, "id", id);
          jo_string(j, "description", esp_err_to_name(err));
          revk_error("ALS", &j);
@@ -982,7 +987,9 @@ void app_main()
       {
          jo_t j = jo_object_alloc();
          jo_string(j, "error", "Install fail");
-         revk_error("CO2", &j);
+         jo_int(j, "sda", sda & IO_MASK);
+         jo_int(j, "scl", scl & IO_MASK);
+         revk_error("I2C", &j);
          i2cport = -1;
       } else
       {
@@ -999,6 +1006,8 @@ void app_main()
             i2c_driver_delete(i2cport);
             jo_t j = jo_object_alloc();
             jo_string(j, "error", "Config fail");
+            jo_int(j, "sda", sda & IO_MASK);
+            jo_int(j, "scl", scl & IO_MASK);
             revk_error("I2C", &j);
             i2cport = -1;
          } else
@@ -1046,6 +1055,7 @@ void app_main()
       {
          jo_t j = jo_object_alloc();
          jo_string(j, "error", "No DS18B20 devices");
+         jo_int(j, "port", ds18b20 & IO_MASK);
          revk_error("temp", &j);
          ESP_LOGE(TAG, "No DS18B20");
       } else
