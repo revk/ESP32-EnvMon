@@ -822,12 +822,13 @@ void ds18b20_task(void *p)
    while (1)
    {
       usleep(100000);
-      float readings[num_ds18b20];
+      float c[num_ds18b20];
       for (int i = 0; i < num_ds18b20; ++i)
-         readings[i] = ds18b20_getTempC(&adr_ds18b20[i]);
-      lasttemp = report("temp", lasttemp, thistemp = readings[0] + ((float) ds18b20mC) / 1000.0, tempplaces);
-      if (num_ds18b20 > 1)
-         lastotemp = report("otemp", lastotemp, readings[1], tempplaces);
+         c[i] = ds18b20_getTempC(&adr_ds18b20[i]);
+      if (c[0] != DEVICE_DISCONNECTED_C)
+         lasttemp = report("temp", lasttemp, thistemp = c[0] + ((float) ds18b20mC) / 1000.0, tempplaces);
+      if (num_ds18b20 > 1 && c[1] != DEVICE_DISCONNECTED_C)
+         lastotemp = report("otemp", lastotemp, c[1], tempplaces);
    }
 }
 

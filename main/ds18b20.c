@@ -281,7 +281,7 @@ float ds18b20_getTempC(const DeviceAddress *deviceAddress) {
 		// F = (C*1.8)+32 = (RAW/128*1.8)+32 = (RAW*0.0140625)+32
 		return (float) rawTemp/128.0f;
 	}
-	return DEVICE_DISCONNECTED_F;
+	return DEVICE_DISCONNECTED_C;
 }
 
 // reads scratchpad and returns fixed-point temperature, scaling factor 2^-7
