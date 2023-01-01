@@ -32,8 +32,8 @@ const char TAG[] = "Env";
 #define settings	\
 	u32(reporting,60)	\
 	u8(lag,5)	\
-	s8(sda,22)	\
-	s8(scl,21)	\
+	io(sda,22)	\
+	io(scl,21)	\
 	s8(co2address,0x62)	\
 	s8(alsaddress,0x10)	\
 	u16(alsdark,200)	\
@@ -44,13 +44,13 @@ const char TAG[] = "Env";
 	s8(tempplaces,1)	\
 	s8(rhplaces,0)	\
 	u32(rhdamp,10)	\
-	s8(ds18b20,-1)	\
+	io(ds18b20,)	\
 	s32(ds18b20mC,0)	\
-	u8(gfxmosi,)	\
-	u8(gfxsck,)	\
-	u8(gfxcs,)	\
-	u8(gfxdc,)	\
-	u8(gfxrst,)	\
+	io(gfxmosi,)	\
+	io(gfxsck,)	\
+	io(gfxcs,)	\
+	io(gfxdc,)	\
+	io(gfxrst,)	\
 	u8(gfxflip,)	\
 	u8(gfxlight,255)\
 	u8(gfxdark,1)	\
@@ -64,7 +64,7 @@ const char TAG[] = "Env";
 	u32(fanco2off,0)	\
 	u32(fanrhon,0)	\
 	u32(fanrhoff,0)	\
-	s8(fanco2gpio,-1)	\
+	io(fanco2gpio,)	\
 	u32(fanresend,600)	\
 	s(heaton)	\
 	s(heatoff)	\
@@ -72,7 +72,7 @@ const char TAG[] = "Env";
 	b(heatmonitor)	\
 	u8(heatswitch,30)	\
 	u32(heatresend,600)	\
-	s8(heatgpio,-1)	\
+	io(heatgpio,)	\
 	u16(hhmmnight,0)	\
 	u16(hhmmday,0)		\
 	b(nologo)	\
@@ -82,7 +82,7 @@ const char TAG[] = "Env";
 	u16a(temphhmm,10)	\
 	s32a(tempmaxmC,10)	\
 	s32a(tempminmC,10)	\
-	s8a(button,3,4 13 15)	\
+	ioa(button,3,4 13 15)	\
 
 #define u32(n,d)	uint32_t n;
 #define u16(n,d)	uint16_t n;
@@ -91,9 +91,12 @@ const char TAG[] = "Env";
 #define s32a(n,q)	int32_t n[q];
 #define s8(n,d)	int8_t n;
 #define u8(n,d)	uint8_t n;
-#define s8a(n,q,d)	int8_t n[q];
 #define b(n) uint8_t n;
 #define s(n) char * n;
+#define io(n,d)         uint8_t n;
+#define ioa(n,a,d)      uint8_t n[a];
+#define	IO_MASK	0x3F
+#define	IO_INV	0x40
 settings
 #undef u32
 #undef u16
@@ -102,9 +105,10 @@ settings
 #undef s32a
 #undef s8
 #undef u8
-#undef s8a
 #undef b
 #undef s
+#undef io
+#undef ioa
 static uint8_t scd41 = 0;
 static uint32_t scd41_settled = 0;      /* uptime when started measurements */
 
@@ -341,7 +345,7 @@ static void sendconfig(void)
          revk_mqtt_send(NULL, 1, topic, &j);
       }
    }
-   if (ds18b20 >= 0 || i2cport >= 0)
+   if (ds18b20 || i2cport >= 0)
       add("Temp", "temperature", "°C", "temp");
    if (i2cport >= 0)
       add("R/H", "humidity", "%", "rh");
@@ -581,8 +585,8 @@ void i2c_task(void *p)
       } else
       {
          co2_found = 1;
-	 if(scd41)
-	 co2_setting(0x3682,0); // Get serial, etc
+         if (scd41)
+            co2_setting(0x3682, 0);     // Get serial, etc
       }
    }
    if (alsaddress)
@@ -933,6 +937,7 @@ void app_main()
    revk_register("gfx", 0, sizeof(gfxmosi), &gfxmosi, NULL, SETTING_SECRET);
    revk_register("co2", 0, sizeof(co2places), &co2places, "-1", SETTING_SIGNED | SETTING_SECRET);
    revk_register("hhmm", 0, sizeof(hhmmday), &hhmmday, NULL, SETTING_SECRET);
+#define str(x) #x
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define u16(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
@@ -941,8 +946,9 @@ void app_main()
 #define s32a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,SETTING_SIGNED|SETTING_LIVE);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define s8a(n,q,d) revk_register(#n,q,sizeof(*n),&n,#d,SETTING_SIGNED);
 #define s(n) revk_register(#n,0,0,&n,NULL,0);
+#define io(n,d)         revk_register(#n,0,sizeof(n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD);
+#define ioa(n,a,d)      revk_register(#n,a,sizeof(*n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD);
    settings
 #undef u32
 #undef u16
@@ -951,22 +957,23 @@ void app_main()
 #undef s32a
 #undef s8
 #undef u8
-#undef s8a
 #undef b
 #undef s
+#undef io
+#undef ioa
        revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINDATA);    /* fixed logo */
    revk_start();
-   if (fanco2gpio >= 0)
-      gpio_set_direction(fanco2gpio, GPIO_MODE_OUTPUT);
-   if (heatgpio >= 0)
-      gpio_set_direction(heatgpio, GPIO_MODE_OUTPUT);
+   if (fanco2gpio)
+      gpio_set_direction(fanco2gpio & IO_MASK, GPIO_MODE_OUTPUT);
+   if (heatgpio)
+      gpio_set_direction(heatgpio & IO_MASK, GPIO_MODE_OUTPUT);
    {
       int p;
       for (p = 0; p < sizeof(logo) && !logo[p]; p++);
       if (p == sizeof(logo))
          memcpy(logo, icon_logo, sizeof(icon_logo));    /* default */
    }
-   if (sda >= 0 && scl >= 0)
+   if (sda && scl)
    {
       scd41 = (co2address == 0x62 ? 1 : 0);
       i2cport = 0;
@@ -980,8 +987,8 @@ void app_main()
       {
          i2c_config_t config = {
             .mode = I2C_MODE_MASTER,
-            .sda_io_num = sda,
-            .scl_io_num = scl,
+            .sda_io_num = sda & IO_MASK,
+            .scl_io_num = scl & IO_MASK,
             .sda_pullup_en = true,
             .scl_pullup_en = true,
             .master.clk_speed = 100000,
@@ -999,7 +1006,7 @@ void app_main()
    }
    if (gfxmosi)
    {
-    const char *e = gfx_init(cs: gfxcs, sck: gfxsck, mosi: gfxmosi, dc: gfxdc, rst: gfxrst, flip:gfxflip);
+    const char *e = gfx_init(cs: gfxcs & IO_MASK, sck: gfxsck & IO_MASK, mosi: gfxmosi & IO_MASK, dc: gfxdc & IO_MASK, rst: gfxrst & IO_MASK, flip:gfxflip);
       if (e)
       {
          jo_t j = jo_object_alloc();
@@ -1011,9 +1018,9 @@ void app_main()
    for (int i = 0; i < sizeof(button) / sizeof(*button); i++)
       if (button[i])
       {                         /* Control buttons */
-         gpio_reset_pin(button[i]);
-         gpio_set_direction(button[i], GPIO_MODE_INPUT);
-         gpio_set_pull_mode(button[i], GPIO_PULLUP_ONLY);
+         gpio_reset_pin(button[i] & IO_MASK);
+         gpio_set_direction(button[i] & IO_MASK, GPIO_MODE_INPUT);
+         gpio_set_pull_mode(button[i] & IO_MASK, GPIO_PULLUP_ONLY);
       }
    gfx_lock();
    gfx_colour('B');
@@ -1021,9 +1028,9 @@ void app_main()
    gfx_unlock();
    if (i2cport >= 0)
       revk_task("I2C", i2c_task, NULL);
-   if (ds18b20 >= 0)
+   if (ds18b20)
    {                            /* DS18B20 init */
-      ds18b20_init(ds18b20);
+      ds18b20_init(ds18b20 & IO_MASK);
       int try = 0;
       while (try++ < 3)
       {
@@ -1163,15 +1170,15 @@ void app_main()
          {                      /* Fan on */
             if (fanlast != 1)
             {                   /* Change */
-               if (fanco2gpio >= 0)
-                  gpio_set_level(fanco2gpio, 1);
+               if (fanco2gpio)
+                  gpio_set_level(fanco2gpio & IO_MASK, (fanco2gpio & IO_INV) ? 0 : 1);
                fan = fanon;
                fanlast = 1;
             }
          } else if (fanlast != 0)
          {                      /* Fan off, change */
-            if (fanco2gpio >= 0)
-               gpio_set_level(fanco2gpio, 0);
+            if (fanco2gpio)
+               gpio_set_level(fanco2gpio & IO_MASK, (fanco2gpio & IO_INV) ? 1 : 0);
             fan = fanoff;
             fanlast = 0;
          }
@@ -1187,7 +1194,7 @@ void app_main()
          }
       }
       static uint32_t heatwait = 0;
-      if (!isnan(thistemp) && heatwait < up && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio >= 0 || heaton || heatoff))
+      if (!isnan(thistemp) && heatwait < up && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
       {                         /* Heat control */
          if (heat_target || heatlast == 1)
          {                      /* We have a reference temp to work with or we left on */
@@ -1199,15 +1206,15 @@ void app_main()
             {                   /* Heat off */
                if (heatlast != 0)
                {                /* Change */
-                  if (heatgpio >= 0)
-                     gpio_set_level(heatgpio, 0);
+                  if (heatgpio)
+                     gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 1 : 0);
                   heat = heatoff;
                   heatlast = 0;
                }
             } else if (heatlast != 1)
             {                   /* Heat on, change */
-               if (heatgpio >= 0)
-                  gpio_set_level(heatgpio, 0);
+               if (heatgpio)
+                  gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 0 : 1);
                heat = heaton;
                heatlast = 1;
             }
