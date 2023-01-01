@@ -44,14 +44,14 @@ const char TAG[] = "Env";
 	s8(tempplaces,1)	\
 	s8(rhplaces,0)	\
 	u32(rhdamp,10)	\
-	io(ds18b20,)	\
+	io(ds18b20,14)	\
 	s32(ds18b20mC,0)	\
-	io(gfxmosi,)	\
-	io(gfxsck,)	\
-	io(gfxcs,)	\
-	io(gfxdc,)	\
-	io(gfxrst,)	\
-	u8(gfxflip,)	\
+	io(gfxmosi,32)	\
+	io(gfxsck,33)	\
+	io(gfxcs,25)	\
+	io(gfxdc,26)	\
+	io(gfxrst,27)	\
+	u8(gfxflip,3)	\
 	u8(gfxlight,255)\
 	u8(gfxdark,1)	\
 	u32(msgtime,30)	\
@@ -1033,14 +1033,14 @@ void app_main()
    {                            /* DS18B20 init */
       ds18b20_init(ds18b20 & IO_MASK);
       int try = 0;
-      while (try++ < 3)
+      while (try++ < 5)
       {
          ds18b20_reset_search();
          while (num_ds18b20 < sizeof(adr_ds18b20) / sizeof(*adr_ds18b20) && ds18b20_search(adr_ds18b20[num_ds18b20], true))
             num_ds18b20++;
          if (num_ds18b20)
             break;
-         sleep(1);
+         usleep(100000);
       }
       if (!num_ds18b20)
       {
