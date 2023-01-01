@@ -123,11 +123,16 @@ static int8_t temptimeprev = -1;
 static int8_t temptimenext = -1;
 static float tempoverridemin = NAN;
 static float tempoverridemax = NAN;
-static uint16_t tempoffset = 0;
+static uint16_t scd_tempoffset = 0;
+static uint16_t scd_altitude = 0;
+static uint16_t scd_selfcal = 0;
+static unsigned long long scd_serial = 0;
 static int8_t i2cport = -1;
 static volatile uint32_t do_co2 = 0;
 static int8_t num_ds18b20 = 0;
 static DeviceAddress adr_ds18b20[2];
+static char co2_found = 0;
+static char als_found = 0;
 
 static uint32_t fantime = 0;
 static uint32_t heattime = 0;
@@ -278,6 +283,33 @@ static void sendall(void)
    fantime = 0;
 }
 
+void info(void)
+{
+   if ((!co2_found && !num_ds18b20) || do_co2)
+      return;
+   jo_t j = jo_object_alloc();
+   if (co2_found)
+   {
+      jo_object(j, scd41 ? "SCD41" : "SCD30");
+      if (scd_serial)
+         jo_stringf(j, "serial", "%012llX", scd_serial);
+      if (scd_tempoffset)
+         jo_int(j, "temperature-offset", scd_tempoffset);
+      if (scd_altitude)
+         jo_int(j, "sensor-altitude", scd_altitude);
+      jo_bool(j, "automatic-self-calibration", scd_selfcal);
+      jo_close(j);
+   }
+   if (num_ds18b20)
+   {
+      jo_array(j, "DS18B20");
+      for (int i = 0; i < num_ds18b20; i++)
+         jo_stringf(j, NULL, "%016llX", *(unsigned long long *) &adr_ds18b20[i]);
+      jo_close(j);
+   }
+   revk_info("info", &j);
+}
+
 static void sendconfig(void)
 {
    if (!ha)
@@ -344,8 +376,7 @@ const char *app_callback(int client, const char *prefix, const char *target, con
    }
    if (!strcmp(suffix, "connect"))
    {
-      if (scd41 && uptime() < 300)
-         co2_setting(0x3682, 0);
+      info();
       fanlast = -1;
       heatlast = -1;
       sendall();
@@ -392,7 +423,7 @@ const char *app_callback(int client, const char *prefix, const char *target, con
    {                            // Set the current temp in C
       if (isnan(lasttemp))
          return "No temp now";
-      return co2_setting(scd41 ? 0x241d : 0x5403, tempoffset - (jo_read_float(j) - lasttemp) * 65536.0 / 175.0);        // Oddly the offset seems to be negative
+      return co2_setting(scd41 ? 0x241d : 0x5403, scd_tempoffset - (jo_read_float(j) - lasttemp) * 65536.0 / 175.0);    // Oddly the offset seems to be negative
    }
    if (!strcmp(suffix, "co2alt"))
       return co2_setting(scd41 ? 0x2427 : 0x5102, jo_read_int(j));      /* m */
@@ -519,8 +550,6 @@ void i2c_task(void *p)
    ESP_LOGI(TAG, "I2C start");
    int try = 10;
    esp_err_t err = 0;
-   char co2 = 0,
-       als = 0;
    if (co2address)
    {                            // CO2
       while (try--)
@@ -550,7 +579,11 @@ void i2c_task(void *p)
          jo_string(j, "description", esp_err_to_name(err));
          revk_error("CO2", &j);
       } else
-         co2 = 1;
+      {
+         co2_found = 1;
+	 if(scd41)
+	 co2_setting(0x3682,0); // Get serial, etc
+      }
    }
    if (alsaddress)
    {
@@ -566,11 +599,11 @@ void i2c_task(void *p)
          revk_error("ALS", &j);
       } else
       {
-         als = 1;
+         als_found = 1;
          als_write(0x00, 0x0040);
       }
    }
-   if (!co2 && !als)
+   if (!co2_found && !als_found)
    {                            // No I2C to do
       vTaskDelete(NULL);
       return;
@@ -579,7 +612,7 @@ void i2c_task(void *p)
    while (1)
    {
       sleep(1);
-      if (co2)
+      if (co2_found)
       {
          if (do_co2)
          {                      /* Do a command from mqtt */
@@ -609,34 +642,30 @@ void i2c_task(void *p)
                   err = co2_command(cmd = 0x3682);      /* Serial */
             }
             if (cmd == 0x3682 && !err)
-            {                   /* Get serial */
-               jo_t j = jo_object_alloc();
+            {                   /* Get serial/etc */
                uint8_t buf[9];
                err = co2_read(9, buf);
                if (!err && co2_crc(buf[0], buf[1]) == buf[2] && co2_crc(buf[3], buf[4]) == buf[5] && co2_crc(buf[6], buf[7]) == buf[8])
-                  jo_stringf(j, "serial", "%02X%02X%02X%02X%02X%02X", buf[0], buf[1], buf[3], buf[4], buf[6], buf[7]);
+                  scd_serial = ((unsigned long long) buf[0] << 40) + ((unsigned long long) buf[1] << 32) + ((unsigned long long) buf[3] << 24) + ((unsigned long long) buf[4] << 16) + ((unsigned long long) buf[6] << 8) + ((unsigned long long) buf[7]);
                if (!err)
                   err = co2_command(0x2318);
                if (!err)
                   err = co2_read(3, buf);
                if (!err && co2_crc(buf[0], buf[1]) == buf[2])
-               {
-                  tempoffset = (buf[0] << 8) + buf[1];
-                  jo_int(j, "temperature-offset", tempoffset);
-               }
+                  scd_tempoffset = (buf[0] << 8) + buf[1];
                if (!err)
                   err = co2_command(0x2322);
                if (!err)
                   err = co2_read(3, buf);
                if (!err && co2_crc(buf[0], buf[1]) == buf[2])
-                  jo_int(j, "sensor-altitude", (buf[0] << 8) + buf[1]);
+                  scd_altitude = (buf[0] << 8) + buf[1];
                if (!err)
                   err = co2_command(0x2313);
                if (!err)
                   err = co2_read(3, buf);
                if (!err && co2_crc(buf[0], buf[1]) == buf[2])
-                  jo_bool(j, "automatic-self-calibration", (buf[0] << 8) + buf[1]);
-               revk_info("CO2", &j);
+                  scd_selfcal = (buf[0] << 8) + buf[1];
+               info();
             }
             if (scd41)
                co2_scd41_start_measure();
@@ -776,10 +805,8 @@ void i2c_task(void *p)
             }
          }
       }
-      if (als)
-      {
+      if (als_found)
          lastals = report("als", lastals, als_read(0x05), alsplaces);
-      }
    }
 }
 
@@ -997,9 +1024,16 @@ void app_main()
    if (ds18b20 >= 0)
    {                            /* DS18B20 init */
       ds18b20_init(ds18b20);
-      ds18b20_reset_search();
-      while (num_ds18b20 < sizeof(adr_ds18b20) / sizeof(*adr_ds18b20) && ds18b20_search(adr_ds18b20[num_ds18b20], true))
-         num_ds18b20++;
+      int try = 0;
+      while (try++ < 3)
+      {
+         ds18b20_reset_search();
+         while (num_ds18b20 < sizeof(adr_ds18b20) / sizeof(*adr_ds18b20) && ds18b20_search(adr_ds18b20[num_ds18b20], true))
+            num_ds18b20++;
+         if (num_ds18b20)
+            break;
+         sleep(1);
+      }
       if (!num_ds18b20)
       {
          jo_t j = jo_object_alloc();
