@@ -18,7 +18,9 @@
 #include "esp32/rom/ets_sys.h"
 #include "esp_timer.h"
 #include "esp_rom_gpio.h"
+#include "esp_log.h"
 #include "ds18b20.h"
+#include "math.h"
 
 // OneWire commands
 #define GETTEMP			0x44  // Tells device to take a temperature reading and put it on the scratchpad
@@ -263,12 +265,12 @@ float ds18b20_getTempF(const DeviceAddress *deviceAddress) {
 	if (ds18b20_isConnected(deviceAddress, scratchPad)){
 		int16_t rawTemp = calculateTemperature(deviceAddress, scratchPad);
 		if (rawTemp <= DEVICE_DISCONNECTED_RAW)
-			return DEVICE_DISCONNECTED_F;
+			return NAN;
 		// C = RAW/128
 		// F = (C*1.8)+32 = (RAW/128*1.8)+32 = (RAW*0.0140625)+32
 		return ((float) rawTemp * 0.0140625f) + 32.0f;
 	}
-	return DEVICE_DISCONNECTED_F;
+	return NAN;
 }
 
 float ds18b20_getTempC(const DeviceAddress *deviceAddress) {
@@ -276,12 +278,12 @@ float ds18b20_getTempC(const DeviceAddress *deviceAddress) {
 	if (ds18b20_isConnected(deviceAddress, scratchPad)){
 		int16_t rawTemp = calculateTemperature(deviceAddress, scratchPad);
 		if (rawTemp <= DEVICE_DISCONNECTED_RAW)
-			return DEVICE_DISCONNECTED_F;
+			return NAN;
 		// C = RAW/128
 		// F = (C*1.8)+32 = (RAW/128*1.8)+32 = (RAW*0.0140625)+32
 		return (float) rawTemp/128.0f;
 	}
-	return DEVICE_DISCONNECTED_C;
+	return NAN;
 }
 
 // reads scratchpad and returns fixed-point temperature, scaling factor 2^-7
