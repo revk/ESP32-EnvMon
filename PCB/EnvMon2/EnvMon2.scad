@@ -1,6 +1,6 @@
-// Generated case design for KiCad/EnvMon2.kicad_pcb
+// Generated case design for PCB/EnvMon2/EnvMon2.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2023-01-05 14:26:33
+// Generated 2023-01-10 16:39:11
 // title:	EnvMon
 // date:	${DATE}
 // rev:	4
