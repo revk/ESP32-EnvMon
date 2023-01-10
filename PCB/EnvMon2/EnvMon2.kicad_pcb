@@ -2581,7 +2581,7 @@
   (gr_text "27" (at 100.838 89.154 90) (layer "B.SilkS") (tstamp eaa29450-aab1-4ea3-a04e-df1bb6f4d81b)
     (effects (font (size 0.75 0.75) (thickness 0.15)) (justify mirror))
   )
-  (gr_text "LED: 7/19/8" (at 139.5 69.5) (layer "B.SilkS") (tstamp ebaf0f0a-b082-4039-9eb0-5b6637c305e9)
+  (gr_text "LED: 8/7/19" (at 139.5 69.5) (layer "B.SilkS") (tstamp ebaf0f0a-b082-4039-9eb0-5b6637c305e9)
     (effects (font (size 0.75 0.75) (thickness 0.15)) (justify mirror))
   )
   (gr_text "Environmental Monitor" (at 138.6 81 90) (layer "F.SilkS") (tstamp 4aab0abb-c0dc-4708-9fb2-cc5371406308)
