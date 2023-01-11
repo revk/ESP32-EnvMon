@@ -2648,7 +2648,7 @@
     (in_bom yes) (on_board yes)
     (uuid 00000000-0000-0000-0000-000060a436c8)
     (property "Reference" "R9" (id 0) (at 113.03 144.145 90))
-    (property "Value" "220R" (id 1) (at 113.03 142.24 90))
+    (property "Value" "100R" (id 1) (at 113.03 142.24 90))
     (property "Footprint" "RevK:R_0603" (id 2) (at 113.03 140.462 90)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -2681,7 +2681,7 @@
     (in_bom yes) (on_board yes)
     (uuid 00000000-0000-0000-0000-000060cf9e4d)
     (property "Reference" "R7" (id 0) (at 113.03 133.985 90))
-    (property "Value" "680R" (id 1) (at 113.03 132.08 90))
+    (property "Value" "300R" (id 1) (at 113.03 132.08 90))
     (property "Footprint" "RevK:R_0603" (id 2) (at 113.03 130.302 90)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -2696,7 +2696,7 @@
     (in_bom yes) (on_board yes)
     (uuid 00000000-0000-0000-0000-000060cfbfaf)
     (property "Reference" "R8" (id 0) (at 113.03 139.065 90))
-    (property "Value" "2K" (id 1) (at 113.03 137.16 90))
+    (property "Value" "1K" (id 1) (at 113.03 137.16 90))
     (property "Footprint" "RevK:R_0603" (id 2) (at 113.03 135.382 90)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -3908,13 +3908,13 @@
       (reference "R6") (unit 1) (value "27R") (footprint "RevK:R_0603")
     )
     (path "/00000000-0000-0000-0000-000060cf9e4d"
-      (reference "R7") (unit 1) (value "680R") (footprint "RevK:R_0603")
+      (reference "R7") (unit 1) (value "300R") (footprint "RevK:R_0603")
     )
     (path "/00000000-0000-0000-0000-000060cfbfaf"
-      (reference "R8") (unit 1) (value "2K") (footprint "RevK:R_0603")
+      (reference "R8") (unit 1) (value "1K") (footprint "RevK:R_0603")
     )
     (path "/00000000-0000-0000-0000-000060a436c8"
-      (reference "R9") (unit 1) (value "220R") (footprint "RevK:R_0603")
+      (reference "R9") (unit 1) (value "100R") (footprint "RevK:R_0603")
     )
     (path "/e7149988-8da9-4254-8dc1-168b761f2899"
       (reference "R10") (unit 1) (value "4k7") (footprint "RevK:R_0603")
