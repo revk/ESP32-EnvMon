@@ -110,11 +110,12 @@ settings
 #undef io
 #undef ioa
 static uint8_t scd41 = 0;
-static uint32_t scd41_settled = 0;      /* uptime when started measurements */
+static uint32_t scd41_settled = 1;      /* uptime when started measurements */
 
 static uint8_t airconpower = 0;
 static char airconmode = 0;
 static uint32_t airconlast = 0;
+static char display_icon = 0;
 
 static uint8_t logo[LOGOW * LOGOH / 2];
 static float lastco2 = NAN;
@@ -215,6 +216,8 @@ static void reportall(time_t now)
             jo_close(j);
          }
       }
+      if (display_icon)
+         jo_litf(j, "icon", "\"%c\"", display_icon);
       revk_state("data", &j);
       if (*heataircon && !isnan(lasttemp))
       {                         /* Aircon control */
@@ -362,6 +365,7 @@ const char *app_callback(int client, const char *prefix, const char *target, con
    {                            // Expects array of min/max
       if (jo_here(j) == JO_ARRAY)
       {
+         scd41_settled = 0;     // Cancel startup
          if (jo_next(j) == JO_NUMBER)
             tempoverridemin = jo_read_float(j);
          else
@@ -508,7 +512,6 @@ static esp_err_t co2_read(int len, uint8_t * buf)
 
 static esp_err_t co2_scd41_stop_measure(void)
 {
-   scd41_settled = 0;
    esp_err_t err = co2_command(0x3f86); /* Stop measurement(SCD41) */
    sleep(1);
    return err;
@@ -749,7 +752,7 @@ void i2c_task(void *p)
                   thisco2 = (thisco2 * co2damp + c) / (co2damp + 1);
                lastco2 = report("co2", lastco2, thisco2, co2places);
             }
-            if (scd41_settled && scd41_settled < uptime())
+            if (!scd41_settled)
             {
                if (r > 0)
                {
@@ -1226,7 +1229,7 @@ void app_main()
       if (up > 60 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
          reportall(now);        /* Don 't report right away if clock may be duff */
       static uint32_t fanwait = 0;
-      if (!isnan(thisco2) && !isnan(thisrh) && fanwait < up && (fanco2on || fanco2off || fanrhon || fanrhoff))
+      if (!isnan(thisco2) && !isnan(thisrh) && (fanlast < 0 || fanwait < up) && (fanco2on || fanco2off || fanrhon || fanrhoff))
       {                         /* Fan control */
          const char *fan = NULL;
          if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)))
@@ -1255,11 +1258,11 @@ void app_main()
             if (fanlast > fanmax)
                fanmax = fanlast;
          }
-         if (fanon && *fanon && fanlast == 1)
-            icon = 'F';         // Fan icon
       }
+      if (fanon && *fanon && fanlast == 1)
+         icon = 'E';            // Extractor fan icon
       static uint32_t heatwait = 0;
-      if (!isnan(thistemp) && heatwait < up && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
+      if (!isnan(thistemp) && (heatlast < 0 || heatwait < up) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
       {                         /* Heat control */
          if (heat_target || heatlast == 1)
          {                      /* We have a reference temp to work with or we left on */
@@ -1291,10 +1294,10 @@ void app_main()
                if (heatlast > heatmax)
                   heatmax = heatlast;
             }
-            if (heaton && *heaton && heatlast == 1)
-               icon = 'R';      // Radiator icon
          }
       }
+      if (heaton && *heaton && heatlast == 1)
+         icon = 'R';            // Radiator icon
       static uint8_t menu = 0;  /* Menu selection - 0 if idle */
       /* Handle key presses */
       char key = 0;
@@ -1437,13 +1440,14 @@ void app_main()
       y += 28 + space;
       gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
       if (!num_ds18b20 && scd41 && scd41_settled >= up)
-      {
+      {                         // Waiting
          sprintf(s, "%ld:%02ld ", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
          gfx_colour('O');
          gfx_text(5, s);
          showtemp = NAN;
       } else if (!isnan(thistemp) && thistemp != showtemp)
       {
+         scd41_settled = 0;
          showtemp = thistemp;
          gfx_colour(tempcol);
          gfx_temp(showtemp);
@@ -1467,9 +1471,10 @@ void app_main()
       }
       y += 21 + space;
       // Status icon
+      display_icon = icon;
       gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
-      gfx_colour(icon == 'R' ? 'R' : icon == 'F' ? 'C' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : airconlast ? 'w' : 'W');
-      gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : airconlast ? icon_power : NULL);
+      gfx_colour(icon == 'R' ? 'r' : icon == 'F' ? 'C' : icon == 'E' ? 'g' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : airconlast ? 'w' : 'W');
+      gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'E' ? icon_fan : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : airconlast ? icon_power : NULL);
       gfx_unlock();
    }
 }
