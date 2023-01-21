@@ -115,6 +115,7 @@ static uint32_t scd41_settled = 0;      /* uptime when started measurements */
 static uint8_t airconpower = 0;
 static char airconmode = 0;
 static uint32_t airconlast = 0;
+static char display_icon = 0;
 
 static uint8_t logo[LOGOW * LOGOH / 2];
 static float lastco2 = NAN;
@@ -215,6 +216,8 @@ static void reportall(time_t now)
             jo_close(j);
          }
       }
+      if (display_icon)
+         jo_litf(j, "icon", "'%c'", display_icon);
       revk_state("data", &j);
       if (*heataircon && !isnan(lasttemp))
       {                         /* Aircon control */
@@ -1256,7 +1259,7 @@ void app_main()
                fanmax = fanlast;
          }
          if (fanon && *fanon && fanlast == 1)
-            icon = 'F';         // Fan icon
+            icon = 'E';         // Extractor fan icon
       }
       static uint32_t heatwait = 0;
       if (!isnan(thistemp) && heatwait < up && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
@@ -1467,9 +1470,10 @@ void app_main()
       }
       y += 21 + space;
       // Status icon
+      display_icon = icon;
       gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
-      gfx_colour(icon == 'R' ? 'R' : icon == 'F' ? 'C' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : airconlast ? 'w' : 'W');
-      gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : airconlast ? icon_power : NULL);
+      gfx_colour(icon == 'R' ? 'R' : icon == 'F' ? 'C' : icon == 'E' ? 'G' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : airconlast ? 'w' : 'W');
+      gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'E' ? icon_fan : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : airconlast ? icon_power : NULL);
       gfx_unlock();
    }
 }
