@@ -18,7 +18,7 @@ main/icons.h: $(patsubst %.svg,%.h,$(wildcard icons/*.svg))
 	cat icons/*.h > main/icons.h
 
 icons/%.png:	icons/%.svg
-	inkscape --export-png=$@ $<
+	inkscape --export-background=WHITE --export-type=png --export-filename=$@ $<
 
 icons/%.gray:	icons/%.png
 	convert $< -resize 32x32 -depth 8 -grayscale average $@
