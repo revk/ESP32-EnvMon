@@ -1445,12 +1445,15 @@ void app_main()
          gfx_colour('O');
          gfx_text(5, s);
          showtemp = NAN;
-      } else if (!isnan(thistemp) && thistemp != showtemp)
+      } else
       {
          scd41_settled = 0;
-         showtemp = thistemp;
-         gfx_colour(tempcol);
-         gfx_temp(showtemp);
+         if (!isnan(thistemp) && thistemp != showtemp)
+         {
+            showtemp = thistemp;
+            gfx_colour(tempcol);
+            gfx_temp(showtemp);
+         }
       }
       y += 35 + space;
       if (thisrh != showrh && !isnan(thisrh))
