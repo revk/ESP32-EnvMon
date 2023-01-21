@@ -1433,8 +1433,12 @@ void app_main()
             sprintf(s, "%4d", (int) showco2);
          gfx_pos(4, y, GFX_T | GFX_L | GFX_H);
          gfx_text(4, s);
-         gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
-         gfx_text(1, "CO2");
+         int x;
+         gfx_pos(x = gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_H);
+         gfx_text(1, "CO");
+         gfx_pos(gfx_x(), gfx_y() + 3, GFX_T | GFX_L | GFX_V);
+         gfx_text(0, "2");
+         gfx_pos(x, gfx_y(), GFX_T | GFX_L | GFX_V);
          gfx_text(-1, "ppm");
       }
       y += 28 + space;
