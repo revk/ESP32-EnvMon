@@ -118,6 +118,7 @@ static uint32_t airconlast = 0;
 static char display_icon = 0;
 
 static uint8_t logo[LOGOW * LOGOH / 2];
+static char lasticon = 0;
 static float lastco2 = NAN;
 static float lastals = NAN;
 static float lastrh = NAN;
@@ -1096,6 +1097,7 @@ void app_main()
       showco2 = NAN;
       showtemp = NAN;
       showrh = NAN;
+      lasticon = 0;
    };
    if (alsdark && sda && scl && alsaddress)
       gfx_dark = 1;             // Start dark
@@ -1447,7 +1449,7 @@ void app_main()
       {                         // Waiting
          sprintf(s, "%ld:%02ld ", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
          gfx_colour('O');
-         gfx_text(5, s);
+         gfx_text(5, scd41_settled == up ? "-:--" : s);
          showtemp = NAN;
       } else
       {
@@ -1477,11 +1479,14 @@ void app_main()
          gfx_text(1, "H");
       }
       y += 21 + space;
-      // Status icon
       display_icon = icon;
-      gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
-      gfx_colour(icon == 'R' ? 'r' : icon == 'F' ? 'C' : icon == 'E' ? 'g' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : airconlast ? 'w' : 'W');
-      gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'E' ? icon_fan : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : airconlast ? icon_power : NULL);
+      if (display_icon != lasticon)
+      {                         // Status icon
+         lasticon = display_icon;
+         gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
+         gfx_colour(icon == 'R' ? 'r' : icon == 'F' ? 'C' : icon == 'E' ? 'g' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : airconlast ? 'w' : 'W');
+         gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'E' ? icon_fan : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : airconlast ? icon_power : NULL);
+      }
       gfx_unlock();
    }
 }
