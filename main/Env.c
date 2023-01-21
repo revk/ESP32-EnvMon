@@ -1255,7 +1255,7 @@ void app_main()
             if (fanlast > fanmax)
                fanmax = fanlast;
          }
-         if (fanlast == 1)
+         if (fanon && *fanon && fanlast == 1)
             icon = 'F';         // Fan icon
       }
       static uint32_t heatwait = 0;
@@ -1291,7 +1291,7 @@ void app_main()
                if (heatlast > heatmax)
                   heatmax = heatlast;
             }
-            if (heatlast == 1)
+            if (heaton && *heaton && heatlast == 1)
                icon = 'R';      // Radiator icon
          }
       }
