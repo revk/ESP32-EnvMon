@@ -334,9 +334,9 @@ static void sendconfig(void)
 const char *app_callback(int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
 
-   if (prefix && !strcmp(prefix, "Daikin") && airconlast)
+   if (*heataircon && prefix && !strcmp(prefix, "Daikin") && target && !strcmp(target, heataircon) && airconlast)
       airconlast = uptime();
-   if (prefix && !strcmp(prefix, "state") && jo_here(j) == JO_OBJECT)
+   if (*heataircon && prefix && !strcmp(prefix, "state") && target && !strcmp(target, heataircon) && jo_here(j) == JO_OBJECT)
    {                            // Aircon state
       airconlast = uptime();
       jo_type_t t = jo_next(j); // Start object
