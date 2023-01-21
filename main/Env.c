@@ -1104,7 +1104,9 @@ void app_main()
          airconpower = 0;
          airconlast = 0;
       }
-      char icon = airconmode;   // Display icon
+      char icon = 0;
+      if (airconpower)
+         icon = airconmode;     // Display icon
       usleep(10000LL - (esp_timer_get_time() % 10000LL));       /* wait a bit */
       time_t now = time(0);
       struct tm t;
@@ -1463,8 +1465,8 @@ void app_main()
       }
       y += 21 + space;
       gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
-      gfx_colour(icon == 'R' ? 'R' : icon == 'F' ? 'C' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : 'W');
-      gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : NULL);
+      gfx_colour(icon == 'R' ? 'R' : icon == 'F' ? 'C' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : airconlast ? 'w' : 'W');
+      gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : airconlast ? icon_power : NULL);
       gfx_unlock();
    }
 }
