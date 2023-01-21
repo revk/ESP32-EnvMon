@@ -21,7 +21,7 @@ icons/%.png:	icons/%.svg
 	inkscape --export-background=WHITE --export-type=png --export-filename=$@ $<
 
 icons/%.gray:	icons/%.png
-	convert $< -resize 32x32 -depth 8 -grayscale average $@
+	convert $< -resize 32x32 -depth 8 -grayscale average -negate $@
 
 icons/%.h:	icons/%.gray
 	echo "const uint8_t icon_$(patsubst icons/%.h,%,$@)[]={" > $@

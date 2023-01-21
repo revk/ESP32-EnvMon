@@ -112,6 +112,10 @@ settings
 static uint8_t scd41 = 0;
 static uint32_t scd41_settled = 0;      /* uptime when started measurements */
 
+static uint8_t airconpower = 0;
+static char airconmode = 0;
+static uint32_t airconlast = 0;
+
 static uint8_t logo[LOGOW * LOGOH / 2];
 static float lastco2 = NAN;
 static float lastals = NAN;
@@ -329,6 +333,29 @@ static void sendconfig(void)
 
 const char *app_callback(int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
+
+   if (prefix && !strcmp(prefix, "Daikin") && airconlast)
+      airconlast = uptime();
+   if (prefix && !strcmp(prefix, "state") && jo_here(j) == JO_OBJECT)
+   {                            // Aircon state
+      airconlast = uptime();
+      jo_type_t t = jo_next(j); // Start object
+      while (t == JO_TAG)
+      {
+         char tag[10] = "",
+             val[10];
+         jo_strncpy(j, tag, sizeof(tag));
+         t = jo_next(j);
+         if (!strcmp(tag, "mode"))
+         {
+            jo_strncpy(j, val, sizeof(val));
+            airconmode = *val;
+         } else if (!strcmp(tag, "power"))
+            airconpower = (t == JO_TRUE);
+         t = jo_skip(j);
+      }
+      return "";
+   }
    if (client || !prefix || target || strcmp(prefix, "command") || !suffix)
       return NULL;
    if (!strcmp(suffix, "override"))
@@ -358,6 +385,14 @@ const char *app_callback(int client, const char *prefix, const char *target, con
       fanlast = -1;
       heatlast = -1;
       sendall();
+      if (*heataircon)
+      {
+         char temp[100];
+         snprintf(temp, sizeof(temp), "state/%s/status", heataircon);
+         lwmqtt_subscribe(revk_mqtt(0), temp);
+         snprintf(temp, sizeof(temp), "Daikin/%s", heataircon);
+         lwmqtt_subscribe(revk_mqtt(0), temp);
+      }
       return "";
    }
    if (!strcmp(suffix, "message"))
@@ -1063,6 +1098,13 @@ void app_main()
       gfx_dark = 1;             // Start dark
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
+      if (!airconlast || airconlast + 300 < uptime())
+      {
+         airconmode = 0;
+         airconpower = 0;
+         airconlast = 0;
+      }
+      char icon = airconmode;   // Display icon
       usleep(10000LL - (esp_timer_get_time() % 10000LL));       /* wait a bit */
       time_t now = time(0);
       struct tm t;
@@ -1194,6 +1236,7 @@ void app_main()
                fan = fanon;
                fanlast = 1;
             }
+            icon = 'F';         // Fan icon
          } else if (fanlast != 0)
          {                      /* Fan off, change */
             if (fanco2gpio)
@@ -1221,7 +1264,7 @@ void app_main()
                heatlast = -1;
             const char *heat = NULL;
             int32_t thismC = thistemp * 1000;
-            if (!heat_target || thismC > heat_target)
+            if (!heat_target || thismC > heat_target || (airconpower && airconmode != 'H'))
             {                   /* Heat off */
                if (heatlast != 0)
                {                /* Change */
@@ -1236,6 +1279,7 @@ void app_main()
                   gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 0 : 1);
                heat = heaton;
                heatlast = 1;
+               icon = 'R';      // Radiator icon
             }
             if (heat && *heat)
             {
@@ -1385,11 +1429,6 @@ void app_main()
          gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
          gfx_text(1, "CO2");
          gfx_text(-1, "ppm");
-         if (fanlast >= 0)
-         {
-            gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
-            gfx_icon16(LOGOW, LOGOH, fanlast ? icon_modeF : NULL);
-         }
       }
       y += 28 + space;
       gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
@@ -1423,6 +1462,9 @@ void app_main()
          gfx_text(1, "H");
       }
       y += 21 + space;
+      gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
+      gfx_colour(icon == 'R' ? 'R' : icon == 'F' ? 'C' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : 'W');
+      gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : NULL);
       gfx_unlock();
    }
 }
