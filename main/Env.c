@@ -1238,7 +1238,6 @@ void app_main()
                fan = fanon;
                fanlast = 1;
             }
-            icon = 'F';         // Fan icon
          } else if (fanlast != 0)
          {                      /* Fan off, change */
             if (fanco2gpio)
@@ -1256,6 +1255,8 @@ void app_main()
             if (fanlast > fanmax)
                fanmax = fanlast;
          }
+         if (fanlast)
+            icon = 'F';         // Fan icon
       }
       static uint32_t heatwait = 0;
       if (!isnan(thistemp) && heatwait < up && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
@@ -1281,7 +1282,6 @@ void app_main()
                   gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 0 : 1);
                heat = heaton;
                heatlast = 1;
-               icon = 'R';      // Radiator icon
             }
             if (heat && *heat)
             {
@@ -1291,6 +1291,8 @@ void app_main()
                if (heatlast > heatmax)
                   heatmax = heatlast;
             }
+            if (heatlast)
+               icon = 'R';      // Radiator icon
          }
       }
       static uint8_t menu = 0;  /* Menu selection - 0 if idle */
