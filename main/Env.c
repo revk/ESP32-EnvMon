@@ -137,6 +137,7 @@ static int8_t num_ds18b20 = 0;
 static DeviceAddress adr_ds18b20[2];
 static char co2_found = 0;
 static char als_found = 0;
+static char sendinfo = 0;
 
 static uint32_t fantime = 0;
 static uint32_t heattime = 0;
@@ -287,34 +288,6 @@ static void sendall(void)
    fantime = 0;
 }
 
-void info(void)
-{
-   if ((!co2_found && !num_ds18b20) || do_co2)
-      return;
-   jo_t j = jo_object_alloc();
-   if (co2_found)
-   {
-      jo_object(j, scd41 ? "SCD41" : "SCD30");
-      if (scd_serial)
-         jo_stringf(j, "serial", "%012llX", scd_serial);
-      if (scd_tempoffset)
-         jo_int(j, "temperature-offset", scd_tempoffset);
-      if (scd_altitude)
-         jo_int(j, "sensor-altitude", scd_altitude);
-      if (scd41)
-         jo_bool(j, "automatic-self-calibration", scd_selfcal);
-      jo_close(j);
-   }
-   if (num_ds18b20)
-   {
-      jo_array(j, "DS18B20");
-      for (int i = 0; i < num_ds18b20; i++)
-         jo_stringf(j, NULL, "%016llX", *(unsigned long long *) &adr_ds18b20[i]);
-      jo_close(j);
-   }
-   revk_info("info", &j);
-}
-
 static void sendconfig(void)
 {
    if (!ha)
@@ -381,7 +354,7 @@ const char *app_callback(int client, const char *prefix, const char *target, con
    }
    if (!strcmp(suffix, "connect"))
    {
-      info();
+      sendinfo = 1;
       fanlast = -1;
       heatlast = -1;
       sendall();
@@ -675,7 +648,7 @@ void i2c_task(void *p)
                   err = co2_read(3, buf);
                if (!err && co2_crc(buf[0], buf[1]) == buf[2])
                   scd_selfcal = (buf[0] << 8) + buf[1];
-               info();
+               sendinfo = 1;
             }
             if (scd41)
                co2_scd41_start_measure();
@@ -1064,7 +1037,10 @@ void app_main()
          revk_error("temp", &j);
          ESP_LOGE(TAG, "No DS18B20");
       } else
+      {
          revk_task("DS18B20", ds18b20_task, NULL);
+         sendinfo = 1;
+      }
    }
    gfx_lock();
    gfx_clear(0);
@@ -1085,7 +1061,6 @@ void app_main()
    };
    if (alsdark && sda && scl && alsaddress)
       gfx_dark = 1;             // Start dark
-   info();
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
       usleep(10000LL - (esp_timer_get_time() % 10000LL));       /* wait a bit */
@@ -1094,6 +1069,33 @@ void app_main()
       localtime_r(&now, &t);
       uint16_t hhmm = t.tm_hour * 100 + t.tm_min;
       uint32_t up = uptime();
+      if (sendinfo && (co2_found || num_ds18b20) && !do_co2)
+      {                         /* Send device info */
+         sendinfo = 0;
+         jo_t j = jo_object_alloc();
+         if (co2_found)
+         {
+            jo_object(j, scd41 ? "SCD41" : "SCD30");
+            if (scd_serial)
+               jo_stringf(j, "serial", "%012llX", scd_serial);
+            if (scd_tempoffset)
+               jo_int(j, "temperature-offset", scd_tempoffset);
+            if (scd_altitude)
+               jo_int(j, "sensor-altitude", scd_altitude);
+            if (scd41)
+               jo_bool(j, "automatic-self-calibration", scd_selfcal);
+            jo_close(j);
+         }
+         if (num_ds18b20)
+         {
+            jo_array(j, "DS18B20");
+            for (int i = 0; i < num_ds18b20; i++)
+               jo_stringf(j, NULL, "%016llX", *(unsigned long long *) &adr_ds18b20[i]);
+            jo_close(j);
+         }
+         revk_info("info", &j);
+      }
+
       if (!reportconfig && up > 10)
          sendconfig();
       if (!isnan(lastals))
