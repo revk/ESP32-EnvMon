@@ -334,9 +334,9 @@ static void sendconfig(void)
 const char *app_callback(int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
 
-   if (prefix && !strcmp(prefix, "Daikin") && airconlast)
+   if (*heataircon && prefix && !strcmp(prefix, "Daikin") && target && !strcmp(target, heataircon) && airconlast)
       airconlast = uptime();
-   if (prefix && !strcmp(prefix, "state") && jo_here(j) == JO_OBJECT)
+   if (*heataircon && prefix && !strcmp(prefix, "state") && target && !strcmp(target, heataircon) && jo_here(j) == JO_OBJECT)
    {                            // Aircon state
       airconlast = uptime();
       jo_type_t t = jo_next(j); // Start object
@@ -1099,12 +1099,14 @@ void app_main()
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
       if (!airconlast || airconlast + 300 < uptime())
-      {
+      {                         // Not seen aircon for a while
          airconmode = 0;
          airconpower = 0;
          airconlast = 0;
       }
-      char icon = airconmode;   // Display icon
+      char icon = 0;
+      if (airconpower)
+         icon = airconmode;     // Display icon
       usleep(10000LL - (esp_timer_get_time() % 10000LL));       /* wait a bit */
       time_t now = time(0);
       struct tm t;
@@ -1236,7 +1238,6 @@ void app_main()
                fan = fanon;
                fanlast = 1;
             }
-            icon = 'F';         // Fan icon
          } else if (fanlast != 0)
          {                      /* Fan off, change */
             if (fanco2gpio)
@@ -1254,6 +1255,8 @@ void app_main()
             if (fanlast > fanmax)
                fanmax = fanlast;
          }
+         if (fanon && *fanon && fanlast == 1)
+            icon = 'F';         // Fan icon
       }
       static uint32_t heatwait = 0;
       if (!isnan(thistemp) && heatwait < up && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
@@ -1279,7 +1282,6 @@ void app_main()
                   gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 0 : 1);
                heat = heaton;
                heatlast = 1;
-               icon = 'R';      // Radiator icon
             }
             if (heat && *heat)
             {
@@ -1289,6 +1291,8 @@ void app_main()
                if (heatlast > heatmax)
                   heatmax = heatlast;
             }
+            if (heaton && *heaton && heatlast == 1)
+               icon = 'R';      // Radiator icon
          }
       }
       static uint8_t menu = 0;  /* Menu selection - 0 if idle */
@@ -1462,9 +1466,10 @@ void app_main()
          gfx_text(1, "H");
       }
       y += 21 + space;
+      // Status icon
       gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
-      gfx_colour(icon == 'R' ? 'R' : icon == 'F' ? 'C' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : 'W');
-      gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : NULL);
+      gfx_colour(icon == 'R' ? 'R' : icon == 'F' ? 'C' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : airconlast ? 'w' : 'W');
+      gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : airconlast ? icon_power : NULL);
       gfx_unlock();
    }
 }
