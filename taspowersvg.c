@@ -366,6 +366,7 @@ int main(int argc, const char *argv[])
             if (href)
             {
                path = xml_element_add(path, "a");
+         colour(path, "@color", d->device);
                if (!D)
                   xml_addf(path, "@href", "%s/%s-%s/%s", href, date, sql_colz(res, "P"), d->device);
                else
@@ -514,6 +515,7 @@ int main(int argc, const char *argv[])
          if (href)
          {
             t = xml_element_add(t, "a");
+         colour(t, "@color", d->device);
             xml_addf(t, "@href", "%s/%s/%s", href, date, d->device);
          }
          t = xml_element_add(t, "text");
