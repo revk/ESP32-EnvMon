@@ -1222,6 +1222,7 @@ void app_main()
          static uint32_t lastmin = 0;
          if (now / 60 != lastmin)
          {
+            lastmin = now / 60;
             if (!isnan(thisco2) && !isnan(thisrh) && (fanco2on || fanco2off || fanrhon || fanrhoff))
             {                   /* Fan control */
                const char *fan = NULL;
@@ -1253,7 +1254,6 @@ void app_main()
                icon = 'E';      // Extractor fan icon
             if (!isnan(thistemp) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
             {                   /* Heat control */
-               lastmin = now / 60;
                static int32_t last1 = 0,
                    last2 = 0;
                int32_t thismC = thistemp * 1000;
