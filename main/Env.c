@@ -59,7 +59,6 @@ const char TAG[] = "Env";
 	b(ha)	\
 	s(fanon)	\
 	s(fanoff)	\
-	u8(fanswitch,30)	\
 	u32(fanco2on,0)	\
 	u32(fanco2off,0)	\
 	u32(fanrhon,0)	\
