@@ -146,10 +146,8 @@ static char sendinfo = 0;
 
 static uint32_t fantime = 0;
 static uint32_t heattime = 0;
-static int8_t fanlast = -1,
-    fanmax = -1;
-static int8_t heatlast = -1,
-    heatmax = -1;
+static int8_t fanlast = -1;
+static int8_t heatlast = -1;
 
 static volatile uint8_t gfx_update = 0;
 static volatile uint8_t gfx_changed = 1;
@@ -197,13 +195,11 @@ static void reportall(time_t now)
       for (v = values; v; v = v->next)
          if (!isnan(v->value))
             add(v->tag, v->value, v->places);
-      if (heatmax >= 0)
-         jo_bool(j, "heat", heatmax);
-      if (fanmax >= 0)
-         jo_bool(j, "fan", fanmax);
+      if (heatlast >= 0)
+         jo_bool(j, "heat", heatlast);
+      if (fanlast >= 0)
+         jo_bool(j, "fan", fanlast);
       jo_bool(j, "dark", gfx_dark);
-      fanmax = fanlast;
-      heatmax = heatlast;
       if (!isnan(temptargetmin) && !isnan(temptargetmax))
       {
          if (temptargetmin == temptargetmax)
@@ -1224,81 +1220,77 @@ void app_main()
          temptargetmax = tempoverridemax;
          temptimeprev = temptimenext = -1;
       }
-      static uint32_t fanwait = 0;
-      if (!isnan(thisco2) && !isnan(thisrh) && (fanlast < 0 || fanwait < up) && (fanco2on || fanco2off || fanrhon || fanrhoff))
-      {                         /* Fan control */
-         const char *fan = NULL;
-         if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)))
-         {                      /* Fan on */
-            if (fanlast != 1)
-            {                   /* Change */
-               if (fanco2gpio)
-                  gpio_set_level(fanco2gpio & IO_MASK, (fanco2gpio & IO_INV) ? 0 : 1);
-               fan = fanon;
-               fanlast = 1;
-            }
-         } else if (fanlast != 0)
-         {                      /* Fan off, change */
-            if (fanco2gpio)
-               gpio_set_level(fanco2gpio & IO_MASK, (fanco2gpio & IO_INV) ? 1 : 0);
-            fan = fanoff;
-            fanlast = 0;
-         }
-         if (!fan && fanresend && fantime < up && fanlast > 0)
-            fan = (fanlast ? fanon : fanoff);
-         if (fan && *fan)
-         {
-            fanwait = up + fanswitch;
-            fantime = up + fanresend;
-            revk_mqtt_send_str(fan);
-            if (fanlast > fanmax)
-               fanmax = fanlast;
-         }
-      }
-      if (fanon && *fanon && fanlast == 1)
-         icon = 'E';            // Extractor fan icon
-      if (!isnan(thistemp) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
-      {                         /* Heat control */
+      {                         // Per minute heat and fan
          static uint32_t lastmin = 0;
          if (now / 60 != lastmin)
-         {                      // Once per minue
-            lastmin = now / 60;
-            static int32_t last1 = 0,
-                last2 = 0;
-            int32_t thismC = thistemp * 1000;
-            if (heat_target || heatlast == 1)
-            {                   /* We have a reference temp to work with or we left on */
-               if (heatresend && heattime < up)
-                  heatlast = -1;
-               const char *heat = NULL;
-               if (heatahead && ((last2 >= last1 && last1 >= thismC) || (last2 <= last1 && last1 <= thismC)))
-                  thismC += heatahead * (thismC - last2) / 2;   // Predict
-               if (!heat_target || thismC > heat_target || (airconpower && airconmode != 'H'))
-               {                /* Heat off */
-                  if (heatlast != 0)
+         {
+            if (!isnan(thisco2) && !isnan(thisrh) && (fanco2on || fanco2off || fanrhon || fanrhoff))
+            {                   /* Fan control */
+               const char *fan = NULL;
+               if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)))
+               {                /* Fan on */
+                  if (fanlast != 1)
                   {             /* Change */
-                     if (heatgpio)
-                        gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 1 : 0);
-                     heat = heatoff;
-                     heatlast = 0;
+                     if (fanco2gpio)
+                        gpio_set_level(fanco2gpio & IO_MASK, (fanco2gpio & IO_INV) ? 0 : 1);
+                     fan = fanon;
+                     fanlast = 1;
                   }
-               } else if (heatlast != 1)
-               {                /* Heat on, change */
-                  if (heatgpio)
-                     gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 0 : 1);
-                  heat = heaton;
-                  heatlast = 1;
+               } else if (fanlast != 0)
+               {                /* Fan off, change */
+                  if (fanco2gpio)
+                     gpio_set_level(fanco2gpio & IO_MASK, (fanco2gpio & IO_INV) ? 1 : 0);
+                  fan = fanoff;
+                  fanlast = 0;
                }
-               if (heat && *heat)
+               if (!fan && fanresend && fantime < up && fanlast > 0)
+                  fan = (fanlast ? fanon : fanoff);
+               if (fan && *fan)
                {
-                  heattime = up + heatresend;
-                  revk_mqtt_send_str(heat);
-                  if (heatlast > heatmax)
-                     heatmax = heatlast;
+                  fantime = up + fanresend;
+                  revk_mqtt_send_str(fan);
                }
             }
-            last2 = last1;
-            last1 = thismC;
+            if (fanon && *fanon && fanlast == 1)
+               icon = 'E';      // Extractor fan icon
+            if (!isnan(thistemp) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
+            {                   /* Heat control */
+               lastmin = now / 60;
+               static int32_t last1 = 0,
+                   last2 = 0;
+               int32_t thismC = thistemp * 1000;
+               if (heat_target || heatlast == 1)
+               {                /* We have a reference temp to work with or we left on */
+                  if (heatresend && heattime < up)
+                     heatlast = -1;
+                  const char *heat = NULL;
+                  if (heatahead && ((last2 >= last1 && last1 >= thismC) || (last2 <= last1 && last1 <= thismC)))
+                     thismC += heatahead * (thismC - last2) / 2;        // Predict
+                  if (!heat_target || thismC > heat_target || (airconpower && airconmode != 'H'))
+                  {             /* Heat off */
+                     if (heatlast != 0)
+                     {          /* Change */
+                        if (heatgpio)
+                           gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 1 : 0);
+                        heat = heatoff;
+                        heatlast = 0;
+                     }
+                  } else if (heatlast != 1)
+                  {             /* Heat on, change */
+                     if (heatgpio)
+                        gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 0 : 1);
+                     heat = heaton;
+                     heatlast = 1;
+                  }
+                  if (heat && *heat)
+                  {
+                     heattime = up + heatresend;
+                     revk_mqtt_send_str(heat);
+                  }
+               }
+               last2 = last1;
+               last1 = thismC;
+            }
          }
       }
       if (heaton && *heaton && heatlast == 1)
