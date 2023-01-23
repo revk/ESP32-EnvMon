@@ -1263,9 +1263,9 @@ void app_main()
       if (!isnan(thistemp) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
       {                         /* Heat control */
          static uint32_t lastmin = 0;
-         if (up / 60 != lastmin)
+         if (now / 60 != lastmin)
          {                      // Once per minue
-            lastmin = up / 60;
+            lastmin = now / 60;
             static int32_t last1 = 0,
                 last2 = 0;
             int32_t thismC = thistemp * 1000;
