@@ -70,7 +70,6 @@ const char TAG[] = "Env";
 	s(heatoff)	\
 	s(heataircon)	\
 	b(heatmonitor)	\
-	u8(heatswitch,30)	\
 	u8(heatahead,8)		\
 	u32(heatresend,600)	\
 	io(heatgpio,)	\
@@ -1261,53 +1260,48 @@ void app_main()
       }
       if (fanon && *fanon && fanlast == 1)
          icon = 'E';            // Extractor fan icon
-      static uint32_t heatwait = 0;
-      if (!isnan(thistemp) && (heatlast < 0 || heatwait < up) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
+      if (!isnan(thistemp) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
       {                         /* Heat control */
-
-         if (heat_target || heatlast == 1)
-         {                      /* We have a reference temp to work with or we left on */
-            if (heatresend && heattime < up)
-               heatlast = -1;
-            const char *heat = NULL;
-            int32_t thismC = thistemp * 1000;
-            static uint32_t lastmin = 0;
+         static uint32_t lastmin = 0;
+         if (up / 60 != lastmin)
+         {                      // Once per minue
+            lastmin = up / 60;
             static int32_t last1 = 0,
-                last2 = 0,
-                last3 = 0;
-            if (up / 60 != lastmin)
-            {
-               lastmin = up / 60;
-               last3 = last2;
-               last2 = last1;
-               last1 = thismC;
-            }
-            if (heatahead && ((last3 >= last2 && last2 >= last1) || (last3 <= last2 && last2 <= last1)))
-               thismC += heatahead * (last1 - last3) / 2;       // Predict
-            if (!heat_target || thismC > heat_target || (airconpower && airconmode != 'H'))
-            {                   /* Heat off */
-               if (heatlast != 0)
-               {                /* Change */
+                last2 = 0;
+            int32_t thismC = thistemp * 1000;
+            if (heat_target || heatlast == 1)
+            {                   /* We have a reference temp to work with or we left on */
+               if (heatresend && heattime < up)
+                  heatlast = -1;
+               const char *heat = NULL;
+               if (heatahead && ((last2 >= last1 && last1 >= thismC) || (last2 <= last1 && last1 <= thismC)))
+                  thismC += heatahead * (thismC - last2) / 2;   // Predict
+               if (!heat_target || thismC > heat_target || (airconpower && airconmode != 'H'))
+               {                /* Heat off */
+                  if (heatlast != 0)
+                  {             /* Change */
+                     if (heatgpio)
+                        gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 1 : 0);
+                     heat = heatoff;
+                     heatlast = 0;
+                  }
+               } else if (heatlast != 1)
+               {                /* Heat on, change */
                   if (heatgpio)
-                     gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 1 : 0);
-                  heat = heatoff;
-                  heatlast = 0;
+                     gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 0 : 1);
+                  heat = heaton;
+                  heatlast = 1;
                }
-            } else if (heatlast != 1)
-            {                   /* Heat on, change */
-               if (heatgpio)
-                  gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 0 : 1);
-               heat = heaton;
-               heatlast = 1;
+               if (heat && *heat)
+               {
+                  heattime = up + heatresend;
+                  revk_mqtt_send_str(heat);
+                  if (heatlast > heatmax)
+                     heatmax = heatlast;
+               }
             }
-            if (heat && *heat)
-            {
-               heatwait = up + heatswitch;
-               heattime = up + heatresend;
-               revk_mqtt_send_str(heat);
-               if (heatlast > heatmax)
-                  heatmax = heatlast;
-            }
+            last2 = last1;
+            last1 = thismC;
          }
       }
       if (heaton && *heaton && heatlast == 1)
