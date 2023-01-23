@@ -69,7 +69,7 @@ const char TAG[] = "Env";
 	s(heatoff)	\
 	s(heataircon)	\
 	b(heatmonitor)	\
-	u8(heatahead,8)		\
+	u8(heatahead,15)	\
 	u32(heatresend,600)	\
 	io(heatgpio,)	\
 	u16(hhmmnight,0)	\
