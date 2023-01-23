@@ -1263,9 +1263,10 @@ void app_main()
                   if (heatresend && heattime < up)
                      heatlast = -1;
                   const char *heat = NULL;
+                  int32_t predict = thismC;
                   if (heatahead && ((last2 >= last1 && last1 >= thismC) || (last2 <= last1 && last1 <= thismC)))
-                     thismC += heatahead * (thismC - last2) / 2;        // Predict
-                  if (!heat_target || thismC > heat_target || (airconpower && airconmode != 'H'))
+                     predict += heatahead * (thismC - last2) / 2;       // Predict
+                  if (!heat_target || predict > heat_target || (airconpower && airconmode != 'H'))
                   {             /* Heat off */
                      if (heatlast != 0)
                      {          /* Change */
