@@ -71,6 +71,7 @@ const char TAG[] = "Env";
 	s(heataircon)	\
 	b(heatmonitor)	\
 	u8(heatswitch,30)	\
+	u8(heatahead,8)		\
 	u32(heatresend,600)	\
 	io(heatgpio,)	\
 	u16(hhmmnight,0)	\
@@ -1263,12 +1264,26 @@ void app_main()
       static uint32_t heatwait = 0;
       if (!isnan(thistemp) && (heatlast < 0 || heatwait < up) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
       {                         /* Heat control */
+
          if (heat_target || heatlast == 1)
          {                      /* We have a reference temp to work with or we left on */
             if (heatresend && heattime < up)
                heatlast = -1;
             const char *heat = NULL;
             int32_t thismC = thistemp * 1000;
+            static uint32_t lastmin = 0;
+            static int32_t last1 = 0,
+                last2 = 0,
+                last3 = 0;
+            if (up / 60 != lastmin)
+            {
+               lastmin = up / 60;
+               last3 = last2;
+               last2 = last1;
+               last1 = thismC;
+            }
+            if (heatahead && ((last3 >= last2 && last2 >= last1) || (last3 <= last2 && last2 <= last1)))
+               thismC += heatahead * (last1 - last3) / 2;       // Predict
             if (!heat_target || thismC > heat_target || (airconpower && airconmode != 'H'))
             {                   /* Heat off */
                if (heatlast != 0)
