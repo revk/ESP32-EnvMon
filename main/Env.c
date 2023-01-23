@@ -1224,9 +1224,6 @@ void app_main()
          temptargetmax = tempoverridemax;
          temptimeprev = temptimenext = -1;
       }
-      /* Report */
-      if (up > 60 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
-         reportall(now);        /* Don 't report right away if clock may be duff */
       static uint32_t fanwait = 0;
       if (!isnan(thisco2) && !isnan(thisrh) && (fanlast < 0 || fanwait < up) && (fanco2on || fanco2off || fanrhon || fanrhoff))
       {                         /* Fan control */
@@ -1331,6 +1328,9 @@ void app_main()
          menu = 1;              // Base menu
          key = 0;               // Don't pass initial key, used just to wake up...
       }
+      /* Report */
+      if (up > 60 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
+         reportall(now);        /* Don 't report right away if clock may be duff */
       /* Display */
       char s[30];               /* Temp string */
       if (gfx_msg_time)
