@@ -40,7 +40,7 @@ const char TAG[] = "Env";
 	s8(alsplaces,-2)	\
 	s8(co2places,-1)	\
 	u32(co2damp,100)	\
-	u32(startup,300)	\
+	u32(startup,240)	\
 	s8(tempplaces,1)	\
 	s8(rhplaces,0)	\
 	u32(rhdamp,10)	\
@@ -358,7 +358,6 @@ const char *app_callback(int client, const char *prefix, const char *target, con
    {                            // Expects array of min/max
       if (jo_here(j) == JO_ARRAY)
       {
-         scd41_settled = 0;     // Cancel startup
          if (jo_next(j) == JO_NUMBER)
             tempoverridemin = jo_read_float(j);
          else
@@ -746,7 +745,7 @@ void i2c_task(void *p)
                lastco2 = report("co2", lastco2, thisco2, co2places);
             }
             if (!scd41_settled)
-            {
+            {                   // Settled, so get temp
                if (r > 0)
                {
                   if (isnan(thisrh))
@@ -1320,6 +1319,8 @@ void app_main()
          menu = 1;              // Base menu
          key = 0;               // Don't pass initial key, used just to wake up...
       }
+      if (scd41_settled && scd41_settled < up)
+         scd41_settled = 0;     // Settled
       /* Report */
       if (up > 60 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
          reportall(now);        /* Don 't report right away if clock may be duff */
@@ -1443,15 +1444,14 @@ void app_main()
       }
       y += 28 + space;
       gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
-      if (!num_ds18b20 && scd41 && scd41_settled >= up)
+      if (!num_ds18b20 && scd41 && scd41_settled)
       {                         // Waiting
          sprintf(s, "%ld:%02ld ", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
          gfx_colour('O');
-         gfx_text(5, scd41_settled == up ? "-:--" : s);
+         gfx_text(5, scd41_settled <= up ? "-:--" : s);
          showtemp = NAN;
       } else
       {
-         scd41_settled = 0;
          if (!isnan(thistemp) && thistemp != showtemp)
          {
             showtemp = thistemp;
