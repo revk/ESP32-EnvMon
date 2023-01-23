@@ -31,7 +31,7 @@ const char TAG[] = "Env";
 
 #define settings	\
 	u32(reporting,60)	\
-	u8(lag,5)	\
+	u8l(lag,5)	\
 	io(sda,22)	\
 	io(scl,21)	\
 	s8(co2address,0x62)	\
@@ -69,7 +69,7 @@ const char TAG[] = "Env";
 	s(heatoff)	\
 	s(heataircon)	\
 	b(heatmonitor)	\
-	u8(heatahead,15)	\
+	u8l(heatahead,15)	\
 	u32(heatresend,600)	\
 	io(heatgpio,)	\
 	u16(hhmmnight,0)	\
@@ -90,6 +90,7 @@ const char TAG[] = "Env";
 #define s32a(n,q)	int32_t n[q];
 #define s8(n,d)	int8_t n;
 #define u8(n,d)	uint8_t n;
+#define u8l(n,d)	uint8_t n;
 #define b(n) uint8_t n;
 #define s(n) char * n;
 #define io(n,d)         uint8_t n;
@@ -104,6 +105,7 @@ settings
 #undef s32a
 #undef s8
 #undef u8
+#undef u8l
 #undef b
 #undef s
 #undef io
@@ -958,6 +960,7 @@ void app_main()
 #define s32a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,SETTING_SIGNED|SETTING_LIVE);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
+#define u8l(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_LIVE);
 #define s(n) revk_register(#n,0,0,&n,NULL,0);
 #define io(n,d)         revk_register(#n,0,sizeof(n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD);
 #define ioa(n,a,d)      revk_register(#n,a,sizeof(*n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD);
@@ -969,6 +972,7 @@ void app_main()
 #undef s32a
 #undef s8
 #undef u8
+#undef u8l
 #undef b
 #undef s
 #undef io
