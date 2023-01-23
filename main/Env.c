@@ -115,7 +115,6 @@ static uint32_t scd41_settled = 1;      /* uptime when started measurements */
 static uint8_t airconpower = 0;
 static char airconmode = 0;
 static uint32_t airconlast = 0;
-static char display_icon = 0;
 
 static uint8_t logo[LOGOW * LOGOH / 2];
 static char lasticon = 0;
@@ -217,8 +216,6 @@ static void reportall(time_t now)
             jo_close(j);
          }
       }
-      if (display_icon)
-         jo_litf(j, "icon", "\"%c\"", display_icon);
       revk_state("data", &j);
       if (*heataircon && !isnan(lasttemp))
       {                         /* Aircon control */
@@ -1483,10 +1480,9 @@ void app_main()
          icon = 'P';            // power
       if (!icon && revk_link_down())
          icon = 'N';
-      display_icon = icon;
-      if (display_icon != lasticon)
+      if (icon != lasticon)
       {                         // Status icon
-         lasticon = display_icon;
+         lasticon = icon;
          gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
          gfx_colour(icon == 'R' ? 'r' : icon == 'F' ? 'C' : icon == 'E' ? 'g' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : icon == 'P' ? 'w' : icon == 'N' ? 'M' : 'W');
          gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'E' ? icon_fan : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : icon == 'P' ? icon_power : icon == 'N' ? icon_nowifi : NULL);
