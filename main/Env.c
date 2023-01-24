@@ -69,7 +69,7 @@ const char TAG[] = "Env";
 	s(heatoff)	\
 	s(heataircon)	\
 	b(heatmonitor)	\
-	u8l(heatahead,15)	\
+	u8l(heatahead,30)	\
 	u32(heatresend,600)	\
 	io(heatgpio,)	\
 	u16(hhmmnight,0)	\
@@ -1267,8 +1267,8 @@ void app_main()
                      heatlast = -1;
                   const char *heat = NULL;
                   int32_t predict = thismC;
-                  if ((lastmin & 1) && (heatahead && ((last2 >= last1 && last1 >= thismC) || (last2 <= last1 && last1 <= thismC))))
-                     predict += heatahead * (thismC - last2) / 2;       // Predict - but do every other minute... Try and gradually bring in predicted changes
+                  if ((lastmin & 2) && (heatahead && ((last2 >= last1 && last1 >= thismC) || (last2 <= last1 && last1 <= thismC))))
+                     predict += heatahead * (thismC - last2) / 2;       // Predict - but do every other couple of minutes... Try and gradually bring in predicted changes
                   if (!heat_target || predict > heat_target || (airconpower && airconmode != 'H'))
                   {             /* Heat off */
                      if (heatlast != 0)
