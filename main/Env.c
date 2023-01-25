@@ -1267,8 +1267,8 @@ void app_main()
                      heatlast = -1;
                   const char *heat = NULL;
                   int32_t predict = thismC;
-                  if ((lastmin & 2) && (heatahead && ((last2 >= last1 && last1 >= thismC) || (last2 <= last1 && last1 <= thismC))))
-                     predict += heatahead * (thismC - last2) / 2;       // Predict - but do every other couple of minutes... Try and gradually bring in predicted changes
+                  if ((lastmin & 4) && (heatahead && ((last2 >= last1 && last1 >= thismC) || (last2 <= last1 && last1 <= thismC))))
+                     predict += heatahead * (thismC - last2) / 2;       // Predict - but 50% cycle - allow response time for cycle
                   if (!heat_target || predict > heat_target || (airconpower && airconmode != 'H'))
                   {             /* Heat off */
                      if (heatlast != 0)
