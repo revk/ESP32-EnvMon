@@ -1267,8 +1267,10 @@ void app_main()
                      heatlast = -1;
                   const char *heat = NULL;
                   int32_t predict = thismC;
-                  if ((lastmin & 4) && (heatahead && ((last2 >= last1 && last1 >= thismC) || (last2 <= last1 && last1 <= thismC))))
-                     predict += heatahead * (thismC - last2) / 2;       // Predict - but 50% cycle - allow response time for cycle
+                  if (heatahead && ((last2 <= last1 && last1 <= thismC) ||      // going up - turn off early if predict above target
+                                    ((last2 >= last1 && last1 >= thismC) &&     // going down - turn on early in 10 min stages if predict is below target
+                                     ((lastmin % 10) < (heat_target + 1000 - thismC) / 100))))
+                     predict += heatahead * (thismC - last2) / 2;       // Use predicted value, i.e. turn on/off early
                   if (!heat_target || predict > heat_target || (airconpower && airconmode != 'H'))
                   {             /* Heat off */
                      if (heatlast != 0)
