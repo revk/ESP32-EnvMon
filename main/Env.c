@@ -842,8 +842,8 @@ void ds18b20_task(void *p)
          c[i] = ds18b20_getTempC(&adr_ds18b20[i]);
       if (!isnan(c[0]))
       {
-         static float last = NAN;       // DS18B20 can be a tad jittery, average the first reading a bit
-         c[0] += ((float) ds18b20mC) / 1000.0;
+         static float last = NAN;       // DS18B20 can be a tad jittery, average the reading a bit for main temp
+         c[0] += ((float) ds18b20mC) / 1000.0; // Offset compensation
          if (isnan(last))
             thistemp = c[0];
          else
