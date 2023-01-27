@@ -70,6 +70,8 @@ const char TAG[] = "Env";
 	s(heataircon)	\
 	b(heatmonitor)	\
 	u8l(heatahead,30)	\
+	u8l(heatfadem,10)	\
+	u32(heatfademC,1000)	\
 	u32(heatresend,600)	\
 	io(heatgpio,)	\
 	u16(hhmmnight,0)	\
@@ -1278,7 +1280,7 @@ void app_main()
                   int32_t predict = thismC;
                   if (heatahead && ((last2 <= last1 && last1 <= thismC) ||      // going up - turn off early if predict above target
                                     ((last2 >= last1 && last1 >= thismC) &&     // going down - turn on early in 10 min stages if predict is below target
-                                     ((lastmin % 10) < (heat_target + 1000 - thismC) / 100))))
+                                     (!heatfademC || !heatfadem || (lastmin % heatfadem) < (heat_target + heatfademC - thismC) * heatfadem / heatfademC))))
                      predict += heatahead * (thismC - last2) / 2;       // Use predicted value, i.e. turn on/off early
                   if (!heat_target || predict > heat_target || (airconpower && airconmode != 'H'))
                   {             /* Heat off */
