@@ -839,7 +839,16 @@ void ds18b20_task(void *p)
       for (int i = 0; i < num_ds18b20; ++i)
          c[i] = ds18b20_getTempC(&adr_ds18b20[i]);
       if (!isnan(c[0]))
-         lasttemp = report("temp", lasttemp, thistemp = c[0] + ((float) ds18b20mC) / 1000.0, tempplaces);
+      {
+         static float last = NAN;       // DS18B20 can be a tad jittery, average the first reading a bit
+         c[0] += ((float) ds18b20mC) / 1000.0;
+         if (isnan(last))
+            thistemp = c[0];
+         else
+            thistemp = (c[0] + last) / 2.0;
+         lasttemp = report("temp", lasttemp, thistemp, tempplaces);
+         last = c[0];
+      }
       if (num_ds18b20 > 1 && !isnan(c[1]))
          lastotemp = report("otemp", lastotemp, c[1], tempplaces);
    }
