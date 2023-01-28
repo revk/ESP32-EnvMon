@@ -116,6 +116,8 @@ static uint8_t scd41 = 0;
 static uint32_t scd41_settled = 1;      /* uptime when started measurements */
 
 static uint8_t airconpower = 0;
+static uint8_t airconslave = 0;
+static uint8_t airconantifreeze = 0;
 static char airconmode = 0;
 static uint32_t airconlast = 0;
 
@@ -352,10 +354,15 @@ const char *app_callback(int client, const char *prefix, const char *target, con
             airconmode = *val;
          } else if (!strcmp(tag, "power"))
             airconpower = (t == JO_TRUE);
+         else if (!strcmp(tag, "slave"))
+            airconslave = (t == JO_TRUE);
+         else if (!strcmp(tag, "antifreeze"))
+            airconantifreeze = (t == JO_TRUE);
          t = jo_skip(j);
       }
       return "";
    }
+
    if (client || !prefix || target || strcmp(prefix, "command") || !suffix)
       return NULL;
    if (!strcmp(suffix, "override"))
@@ -842,14 +849,19 @@ void ds18b20_task(void *p)
          c[i] = ds18b20_getTempC(&adr_ds18b20[i]);
       if (!isnan(c[0]))
       {
-         static float last = NAN;       // DS18B20 can be a tad jittery, average the reading a bit for main temp
-         c[0] += ((float) ds18b20mC) / 1000.0; // Offset compensation
-         if (isnan(last))
-            thistemp = c[0];
-         else
-            thistemp = (c[0] + last) / 2.0;
+#define N 10
+         static float last[N] = { 0 }, tot = 0;
+         static int p = 0;
+         c[0] += ((float) ds18b20mC) / 1000.0;  // Offset compensation
+         // Moving average
+         if (++p >= N)
+            p = 0;
+         tot -= last[p];
+         last[p] = c[0];
+         tot += last[p];
+         thistemp = tot / N;
          lasttemp = report("temp", lasttemp, thistemp, tempplaces);
-         last = c[0];
+#undef N
       }
       if (num_ds18b20 > 1 && !isnan(c[1]))
          lastotemp = report("otemp", lastotemp, c[1], tempplaces);
@@ -1117,7 +1129,12 @@ void app_main()
       }
       char icon = 0;
       if (airconpower)
-         icon = airconmode;     // Display icon
+      {
+         if ((airconslave || airconantifreeze) && (airconmode == 'H' || airconmode == 'C'))
+            icon = tolower(airconmode);
+         else
+            icon = airconmode;  // Display icon
+      }
       usleep(10000LL - (esp_timer_get_time() % 10000LL));       /* wait a bit */
       time_t now = time(0);
       struct tm t;
@@ -1502,8 +1519,10 @@ void app_main()
       {                         // Status icon
          lasticon = icon;
          gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
-         gfx_colour(icon == 'R' ? 'r' : icon == 'F' ? 'C' : icon == 'E' ? 'g' : icon == 'C' ? 'B' : icon == 'H' ? 'R' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : icon == 'P' ? 'w' : icon == 'N' ? 'M' : 'W');
-         gfx_icon16(LOGOW, LOGOH, icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'E' ? icon_fan : icon == 'C' ? icon_modeC : icon == 'H' ? icon_modeH : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : icon == 'P' ? icon_power : icon == 'N' ? icon_nowifi : NULL);
+         gfx_colour(icon == 'R' ? 'r' : icon == 'F' ? 'C' : icon == 'E' ? 'g' : icon == 'C' ? 'B' : icon == 'c' ? 'Y' : icon == 'H' ? 'R' : icon == 'h' ? 'Y' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : icon == 'P' ? 'w' : icon == 'N' ? 'M' : 'W');
+         gfx_icon16(LOGOW, LOGOH,
+                    icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'E' ? icon_fan : icon == 'C' ? icon_modeC : icon == 'c' ? icon_modeCS : icon == 'H' ? icon_modeH : icon == 'h' ? icon_modeHS : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : icon == 'P' ? icon_power : icon ==
+                    'N' ? icon_nowifi : NULL);
       }
       gfx_unlock();
    }
