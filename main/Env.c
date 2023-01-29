@@ -335,9 +335,11 @@ static void sendconfig(void)
 
 const char *app_callback(int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
-
    if (*heataircon && prefix && !strcmp(prefix, "Daikin") && target && !strcmp(target, heataircon) && airconlast)
+   {
       airconlast = uptime();
+      return "";
+   }
    if (*heataircon && prefix && !strcmp(prefix, "state") && target && !strcmp(target, heataircon) && jo_here(j) == JO_OBJECT)
    {                            // Aircon state
       airconlast = uptime();
@@ -1121,8 +1123,14 @@ void app_main()
       gfx_dark = 1;             // Start dark
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
+      usleep(10000LL - (esp_timer_get_time() % 10000LL));       /* wait a bit */
+      time_t now = time(0);
+      struct tm t;
+      localtime_r(&now, &t);
+      uint16_t hhmm = t.tm_hour * 100 + t.tm_min;
+      uint32_t up = uptime();
       if (!airconlast || airconlast + 300 < uptime())
-      {                         // Not seen aircon for a while
+      {                         // Not seen aircon for a while (should update every 60 seconds, so 5 mins is plenty)
          airconmode = 0;
          airconpower = 0;
          airconlast = 0;
@@ -1131,16 +1139,10 @@ void app_main()
       if (airconpower)
       {
          if ((airconslave || airconantifreeze) && (airconmode == 'H' || airconmode == 'C'))
-            icon = tolower(airconmode);
+            icon = tolower(airconmode); // Display icon in slave mode
          else
             icon = airconmode;  // Display icon
       }
-      usleep(10000LL - (esp_timer_get_time() % 10000LL));       /* wait a bit */
-      time_t now = time(0);
-      struct tm t;
-      localtime_r(&now, &t);
-      uint16_t hhmm = t.tm_hour * 100 + t.tm_min;
-      uint32_t up = uptime();
       if (sendinfo && (co2_found || num_ds18b20) && !do_co2)
       {                         /* Send device info */
          sendinfo = 0;
