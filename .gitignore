@@ -1,7 +1,6 @@
 *~
 *.o
 .DS_Store
-*.bin
 */*.bin
 *.old
 *.BAK
