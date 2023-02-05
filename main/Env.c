@@ -9,6 +9,7 @@ const char TAG[] = "Env";
 #include <hal/spi_types.h>
 #include <math.h>
 #include <sntp.h>
+#include "esp_http_server.h"
 
 #include "ds18b20.h"
 #include "gfx.h"
@@ -160,6 +161,8 @@ static volatile uint8_t gfx_dark = 0;
 static volatile uint32_t gfx_msg_time = 0;      /* message timer */
 static volatile uint32_t menu_time = 0; /* menu timer */
 static char gfx_msg[100];       /* message text */
+
+static httpd_handle_t webserver = NULL;
 
 static const char *co2_setting(uint16_t cmd, uint16_t val);
 
@@ -968,6 +971,149 @@ menufunc_t *menufunc[] = {
    menufunc1,
 };
 
+jo_t env_status(void)
+{
+   jo_t j = jo_object_alloc();
+   if (!isnan(thisco2))
+      jo_int(j, "CO2", thisco2);
+   if (!isnan(thisrh))
+      jo_int(j, "RH", thisrh);
+   if (!isnan(thistemp))
+      jo_litf(j, "TEMP", "%.1f", thistemp);
+   return j;
+}
+
+static void web_head(httpd_req_t * req, const char *title)
+{
+   httpd_resp_set_type(req, "text/html; charset=utf-8");
+   httpd_resp_sendstr_chunk(req, "<meta name='viewport' content='width=device-width, initial-scale=1'>");
+   httpd_resp_sendstr_chunk(req, "<html><head><title>");
+   if (title)
+      httpd_resp_sendstr_chunk(req, title);
+   httpd_resp_sendstr_chunk(req, "</title></head><style>"       //
+                            "body{font-family:sans-serif;background:#8cf;}"     //
+                            ".on{opacity:1;transition:1s;}"     //
+                            ".off{opacity:0;transition:1s;}"    //
+                            ".switch,.box{position:relative;display:inline-block;width:64px;height:34px;margin:3px;}"   //
+                            ".switch input,.box input{opacity:0;width:0;height:0;}"     //
+                            ".slider,.button{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#ccc;-webkit-transition:.4s;transition:.4s;}"      //
+                            ".slider:before{position:absolute;content:\"\";height:26px;width:26px;left:4px;bottom:3px;background-color:white;-webkit-transition:.4s;transition:.4s;}"   //
+                            "input:checked+.slider,input:checked+.button{background-color:#12bd20;}"    //
+                            "input:checked+.slider:before{-webkit-transform:translateX(30px);-ms-transform:translateX(30px);transform:translateX(30px);}"       //
+                            "span.slider:before{border-radius:50%;}"    //
+                            "span.slider,span.button{border-radius:34px;padding-top:8px;padding-left:10px;border:1px solid gray;box-shadow:3px 3px 3px #0008;}" //
+                            "</style><body><h1>");
+   if (title)
+      httpd_resp_sendstr_chunk(req, title);
+   httpd_resp_sendstr_chunk(req, "</h1>");
+}
+
+static esp_err_t web_foot(httpd_req_t * req)
+{
+   httpd_resp_sendstr_chunk(req, "<hr><address>");
+   char temp[20];
+   snprintf(temp, sizeof(temp), "%012llX", revk_binid);
+   httpd_resp_sendstr_chunk(req, temp);
+   httpd_resp_sendstr_chunk(req, "</address></body></html>");
+   httpd_resp_sendstr_chunk(req, NULL);
+   return ESP_OK;
+}
+
+static esp_err_t web_icon(httpd_req_t * req)
+{                               // serve image -  maybe make more generic file serve
+   extern const char start[] asm("_binary_apple_touch_icon_png_start");
+   extern const char end[] asm("_binary_apple_touch_icon_png_end");
+   httpd_resp_set_type(req, "image/png");
+   httpd_resp_send(req, start, end - start);
+   return ESP_OK;
+}
+
+static esp_err_t web_root(httpd_req_t * req)
+{
+   // TODO cookies
+   if (revk_link_down())
+      return revk_web_config(req);      // Direct to web set up
+   web_head(req, *hostname ? hostname : appname);
+   httpd_resp_sendstr_chunk(req, "<table id=top>");
+   httpd_resp_sendstr_chunk(req, "<tr><td>CO₂</td><td id=CO2 align=right></td><td>ppm</td></tr>");
+   httpd_resp_sendstr_chunk(req, "<tr><td>RH</td><td id=RH align=right></td><td>%</td></tr>");
+   httpd_resp_sendstr_chunk(req, "<tr><td>Temp</td><td id=TEMP align=right></td><td>℃</td></tr>");
+   httpd_resp_sendstr_chunk(req, "</table>");
+   httpd_resp_sendstr_chunk(req, "<p><a href='wifi'>WiFi Setup</a></p>");
+   httpd_resp_sendstr_chunk(req, "<script>"     //
+                            "var ws=0;" //
+                            "var temp=0;"       //
+                            "function g(n){return document.getElementById(n);};"        //
+                            "function s(n,v){var d=g(n);if(d)d.textContent=v;}" //
+                            "function c(){"     //
+                            "ws=new WebSocket('ws://'+window.location.host+'/status');" //
+                            "ws.onopen=function(v){g('top').className='on';};"  //
+                            "ws.onclose=function(v){g('top').className='off';setTimeout(function() {c();},1000);};"     //
+                            "ws.onerror=function(v){g('top').className='off';setTimeout(function() {c();},10000);};"    //
+                            "ws.onmessage=function(v){" //
+                            "o=JSON.parse(v.data);"     //
+                            "s('CO2',o.CO2);"   //
+                            "s('RH',o.RH);"     //
+                            "s('TEMP',o.TEMP);" //
+                            "};};c();"  //
+                            "setInterval(function() {ws.send('');},1000);"      //
+                            "</script>");
+   return web_foot(req);
+}
+
+
+static esp_err_t web_status(httpd_req_t * req)
+{                               // Web socket status report
+   // TODO cookies
+   int fd = httpd_req_to_sockfd(req);
+   void wsend(jo_t * jp) {
+      char *js = jo_finisha(jp);
+      if (js)
+      {
+         httpd_ws_frame_t ws_pkt;
+         memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+         ws_pkt.payload = (uint8_t *) js;
+         ws_pkt.len = strlen(js);
+         ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+         httpd_ws_send_frame_async(req->handle, fd, &ws_pkt);
+         free(js);
+      }
+   }
+   esp_err_t status(void) {
+      jo_t j = env_status();
+      wsend(&j);
+      return ESP_OK;
+   }
+   if (req->method == HTTP_GET)
+      return status();          // Send status on initial connect
+   // received packet
+   httpd_ws_frame_t ws_pkt;
+   uint8_t *buf = NULL;
+   memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+   ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+   esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
+   if (ret)
+      return ret;
+   if (!ws_pkt.len)
+      return status();          // Empty string
+   buf = calloc(1, ws_pkt.len + 1);
+   if (!buf)
+      return ESP_ERR_NO_MEM;
+   ws_pkt.payload = buf;
+   ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+   if (!ret)
+   {
+      jo_t j = jo_parse_mem(buf, ws_pkt.len);
+      if (j)
+      {
+         // TODO
+         jo_free(&j);
+      }
+   }
+   free(buf);
+   return status();
+}
+
 void app_main()
 {
    revk_boot(&app_callback);
@@ -1121,6 +1267,46 @@ void app_main()
    };
    if (alsdark && sda && scl && alsaddress)
       gfx_dark = 1;             // Start dark
+
+   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+   if (!httpd_start(&webserver, &config))
+   {
+      {
+         httpd_uri_t uri = {
+            .uri = "/",
+            .method = HTTP_GET,
+            .handler = web_root,
+         };
+         REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+      }
+      {
+         httpd_uri_t uri = {
+            .uri = "/apple-touch-icon.png",
+            .method = HTTP_GET,
+            .handler = web_icon,
+         };
+         REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+      }
+      {
+         httpd_uri_t uri = {
+            .uri = "/wifi",
+            .method = HTTP_GET,
+            .handler = revk_web_config,
+         };
+         REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+      }
+      {
+         httpd_uri_t uri = {
+            .uri = "/status",
+            .method = HTTP_GET,
+            .handler = web_status,
+            .is_websocket = true,
+         };
+         REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+      }
+      revk_web_config_start(webserver);
+   }
+
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
       usleep(10000LL - (esp_timer_get_time() % 10000LL));       /* wait a bit */

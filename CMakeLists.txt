@@ -4,3 +4,4 @@ cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(Env)
+target_add_binary_data(Env.elf "main/apple-touch-icon.png" BINARY)
