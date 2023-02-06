@@ -31,6 +31,7 @@ const char TAG[] = "Env";
 /* temp targets of 0 mean off, so use 1 or - 1 if really targeting 0 */
 
 #define settings	\
+	u8(webcontrol,2)	\
 	u32(reporting,60)	\
 	u8l(lag,5)	\
 	io(sda,22)	\
@@ -1031,7 +1032,10 @@ static esp_err_t web_icon(httpd_req_t * req)
 static esp_err_t web_root(httpd_req_t * req)
 {
    // TODO cookies
-   if (revk_link_down())
+   // webcontrol=0 means no web
+   // webcontrol=1 means user settings, not wifi settings
+   // webcontrol=2 means all
+   if (revk_link_down() && webcontrol >= 2)
       return revk_web_config(req);      // Direct to web set up
    web_head(req, *hostname ? hostname : appname);
    httpd_resp_sendstr_chunk(req, "<table id=top>");
@@ -1039,7 +1043,8 @@ static esp_err_t web_root(httpd_req_t * req)
    httpd_resp_sendstr_chunk(req, "<tr><td>RH</td><td id=RH align=right></td><td>%</td></tr>");
    httpd_resp_sendstr_chunk(req, "<tr><td>Temp</td><td id=TEMP align=right></td><td>℃</td></tr>");
    httpd_resp_sendstr_chunk(req, "</table>");
-   httpd_resp_sendstr_chunk(req, "<p><a href='wifi'>WiFi Setup</a></p>");
+   if (webcontrol >= 2)
+      httpd_resp_sendstr_chunk(req, "<p><a href='wifi'>WiFi Setup</a></p>");
    httpd_resp_sendstr_chunk(req, "<script>"     //
                             "var ws=0;" //
                             "var temp=0;"       //
@@ -1271,38 +1276,42 @@ void app_main()
    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
    if (!httpd_start(&webserver, &config))
    {
+      if (webcontrol)
       {
-         httpd_uri_t uri = {
-            .uri = "/",
-            .method = HTTP_GET,
-            .handler = web_root,
-         };
-         REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
-      }
-      {
-         httpd_uri_t uri = {
-            .uri = "/apple-touch-icon.png",
-            .method = HTTP_GET,
-            .handler = web_icon,
-         };
-         REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
-      }
-      {
-         httpd_uri_t uri = {
-            .uri = "/wifi",
-            .method = HTTP_GET,
-            .handler = revk_web_config,
-         };
-         REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
-      }
-      {
-         httpd_uri_t uri = {
-            .uri = "/status",
-            .method = HTTP_GET,
-            .handler = web_status,
-            .is_websocket = true,
-         };
-         REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+         {
+            httpd_uri_t uri = {
+               .uri = "/",
+               .method = HTTP_GET,
+               .handler = web_root,
+            };
+            REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+         }
+         {
+            httpd_uri_t uri = {
+               .uri = "/apple-touch-icon.png",
+               .method = HTTP_GET,
+               .handler = web_icon,
+            };
+            REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+         }
+         if (webcontrol >= 2)
+         {
+            httpd_uri_t uri = {
+               .uri = "/wifi",
+               .method = HTTP_GET,
+               .handler = revk_web_config,
+            };
+            REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+         }
+         {
+            httpd_uri_t uri = {
+               .uri = "/status",
+               .method = HTTP_GET,
+               .handler = web_status,
+               .is_websocket = true,
+            };
+            REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+         }
       }
       revk_web_config_start(webserver);
    }
