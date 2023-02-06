@@ -1631,6 +1631,7 @@ void app_main()
          showtime = now;
          if (t.tm_year > 100)
          {
+            gfx_colour('w');
             strftime(s, sizeof(s), "%F\004%T %Z", &t);
             gfx_pos(0, gfx_height() - 1, GFX_B | GFX_L);
             gfx_text(1, s);
