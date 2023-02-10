@@ -125,6 +125,12 @@ int main(int argc, const char *argv[])
          errx(1, "MQTT subscribe failed %s (%s)", mosquitto_strerror(e), sub);
       if (debug)
          warnx("MQTT Sub %s", sub);
+      sub = "info/BlueCoinT/+/report";
+      e = mosquitto_subscribe(mqtt, NULL, sub, 0);
+      if (e)
+         errx(1, "MQTT subscribe failed %s (%s)", mosquitto_strerror(e), sub);
+      if (debug)
+         warnx("MQTT Sub %s", sub);
       sub = "tele/+/SENSOR";
       e = mosquitto_subscribe(mqtt, NULL, sub, 0);
       if (e)
@@ -175,50 +181,54 @@ int main(int argc, const char *argv[])
          return;
       }
       *tag++ = 0;
-      log_t *find(const char *tag) {
-         log_t *l;
-         for (l = logs; l && strcmp(l->tag, tag); l = l->next);
-         if (!l)
-         {
-            l = malloc(sizeof(*l));
-            memset(l, 0, sizeof(*l));
-            l->tag = strdup(tag);
-            l->next = logs;
-            logs = l;
-            if (debug)
-               warnx("New device [%s]", tag);
-         }
-         return l;
-      }
-      if (debug)
-         warnx("Tag [%s] Type [%s] Val [%.*s]", tag, type, msg->payloadlen, (char *) msg->payload);
-      time_t now = (time(0) / interval) * interval;
-      void logval(const char *type, vals_t * v, const char *val) {      // Store value
-         if (!val)
-            return;
-         double value = strtod(val, NULL);
-         v->latest = value;
-         if (!v->set || v->high < value)
-            v->high = value;
-         if (!v->set || v->low > value)
-            v->low = value;
-         v->set = 1;
-      }
-      void clearval(vals_t * v) {
-         v->set = 0;
-      }
-      void logbool(const char *type, bools_t * b, int val) {
-         b->set = 1;
-         b->val = (val ? 1 : 0);
-      }
-      void clearbool(bools_t * b) {
-      }
       j_t data = j_create();
       const char *e = j_read_mem(data, msg->payload, msg->payloadlen);
       if (e)
          warnx("Bad JSON [%s] Type [%s] Val [%.*s]", tag, type, msg->payloadlen, (char *) msg->payload);
       else
       {
+         log_t *find(const char *t) {
+            char *tag = strdupa(t);
+            for (char *p = tag; *p; p++)
+               if (*p == ' ')
+                  *p = '_';
+            log_t *l;
+            for (l = logs; l && strcmp(l->tag, tag); l = l->next);
+            if (!l)
+            {
+               l = malloc(sizeof(*l));
+               memset(l, 0, sizeof(*l));
+               l->tag = strdup(tag);
+               l->next = logs;
+               logs = l;
+               if (debug)
+                  warnx("New device [%s]", tag);
+            }
+            return l;
+         }
+         if (debug)
+            warnx("Tag [%s] Type [%s] Val [%.*s]", tag, type, msg->payloadlen, (char *) msg->payload);
+         time_t now = (time(0) / interval) * interval;
+         void logval(const char *type, vals_t * v, const char *val) {   // Store value
+            if (!val)
+               return;
+            double value = strtod(val, NULL);
+            v->latest = value;
+            if (!v->set || v->high < value)
+               v->high = value;
+            if (!v->set || v->low > value)
+               v->low = value;
+            v->set = 1;
+         }
+         void clearval(vals_t * v) {
+            v->set = 0;
+         }
+         void logbool(const char *type, bools_t * b, int val) {
+            b->set = 1;
+            b->val = (val ? 1 : 0);
+         }
+         void clearbool(bools_t * b) {
+         }
          void done(log_t * l, int force) {
             if (l->when != now || force)
             {                   // Log to SQL
@@ -252,7 +262,15 @@ int main(int argc, const char *argv[])
             }
          }
          const char *v;
-         if (!strcmp(type, "RESULT"))
+         if (!strcmp(topic, "info/BlueCoinT"))
+         {
+            log_t *l = find(j_get(data, "name"));
+            if ((v = j_get(data, "temp")))
+            {
+               logval("temp", &l->temp, v);
+               done(l, 1);
+            }
+         } else if (!strcmp(type, "RESULT"))
          {                      // Tasmota (power control) - log as heat
             j_t j = j_first(data);
             if (j)
