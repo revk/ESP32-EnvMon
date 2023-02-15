@@ -86,6 +86,7 @@ const char TAG[] = "Env";
 	s32a(tempmaxmC,10)	\
 	s32a(tempminmC,10)	\
 	ioa(button,3,4 13 15)	\
+	s(bluecoint)		\
 
 #define u32(n,d)	uint32_t n;
 #define u16(n,d)	uint16_t n;
@@ -1315,6 +1316,8 @@ void app_main()
       }
       revk_web_config_start(webserver);
    }
+
+   if(*bluecoint)ela_run();
 
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
