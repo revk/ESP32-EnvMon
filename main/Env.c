@@ -917,7 +917,11 @@ void gfx_temp(float t)
    gfx_text(1, "o");
    gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
    gfx_text(2, f ? "F" : "C");
-   if (!num_ds18b20 && !scd41)
+   if (bletemp && !bletemp->missing)
+      gfx_text(2, "T");
+   else if (num_ds18b20 || scd41)
+      gfx_text(2, " ");
+   else
       gfx_text(2, "~");
 }
 
