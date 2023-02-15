@@ -1343,6 +1343,7 @@ void app_main()
          for (ela_t * e = ela; e; e = e->next)
             if (!strcmp(e->name, bluecoint))
             {
+               ESP_LOGI(TAG, "Found BLE %s", bluecoint);
                bletemp = e;
                break;
             }
