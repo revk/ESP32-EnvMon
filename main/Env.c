@@ -10,11 +10,11 @@ const char TAG[] = "Env";
 #include <math.h>
 #include <sntp.h>
 #include "esp_http_server.h"
-
 #include "ds18b20.h"
 #include "gfx.h"
-
 #include "icons.h"
+#include "ela.h"
+
 /*
  * Setting for "logo" is 32 x32 bytes(4 bits per pixel) Note that MQTT config needs to allow a large enough message for the logo
  */
