@@ -20,3 +20,6 @@
 [submodule "components/ESP32-GFX"]
 	path = components/ESP32-GFX
 	url = https://github.com/revk/ESP32-GFX
+[submodule "ESP32-BlueCoinT"]
+	path = ESP32-BlueCoinT
+	url = https://github.com/revk/ESP32-BlueCoinT
