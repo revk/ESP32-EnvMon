@@ -1339,16 +1339,25 @@ void app_main()
       localtime_r(&now, &t);
       uint16_t hhmm = t.tm_hour * 100 + t.tm_min;
       uint32_t up = uptime();
-      if (*bluecoint && !bletemp)
-         for (ela_t * e = ela; e; e = e->next)
-            if (!strcmp(e->name, bluecoint))
-            {
-               ESP_LOGI(TAG, "Found BLE %s", bluecoint);
-               bletemp = e;
-               break;
-            }
-      if (bletemp && !bletemp->missing)
-         thistemp = bletemp->temp / 100.0;
+      uint32_t lastup = 0;
+      if (up != lastup)
+      {                         // every second
+         lastup = up;
+         if (*bluecoint)
+         {                      // BLE working
+            ela_expire(60);
+            if (!bletemp)
+               for (ela_t * e = ela; e; e = e->next)
+                  if (!strcmp(e->name, bluecoint))
+                  {
+                     ESP_LOGI(TAG, "Found BLE %s", bluecoint);
+                     bletemp = e;
+                     break;
+                  }
+            if (bletemp && !bletemp->missing)
+               lasttemp = report("temp", lasttemp, thistemp = bletemp->temp / 100.0, tempplaces);       // use BLE temp
+         }
+      }
       if (!airconlast || airconlast + 300 < uptime())
       {                         // Not seen aircon for a while (should update every 60 seconds, so 5 mins is plenty)
          airconmode = 0;
