@@ -133,6 +133,7 @@ static float lasttemp = NAN;
 static float lastotemp = NAN;
 static float thisco2 = NAN;
 static float thistemp = NAN;
+static ela_t *bletemp = NULL;
 static float thisrh = NAN;
 static float temptargetmin = NAN;
 static float temptargetmax = NAN;
@@ -221,6 +222,14 @@ static void reportall(time_t now)
             jo_litf(j, NULL, "%.3f", temptargetmax);
             jo_close(j);
          }
+      }
+      if (bletemp && !bletemp->missing)
+      {
+         jo_string(j, "source", bletemp->name);
+         if (bletemp->bat)
+            jo_int(j, "bat", bletemp->bat);
+         if (bletemp->volt)
+            jo_litf(j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
       }
       revk_state("data", &j);
       if (*heataircon && !isnan(lasttemp))
@@ -772,7 +781,7 @@ void i2c_task(void *p)
                      thisrh = (thisrh * rhdamp + r) / (rhdamp + 1);
                   lastrh = report("rh", lastrh, thisrh, rhplaces);
                }
-               if (!num_ds18b20)
+               if (!num_ds18b20 && (!bletemp || bletemp->missing))
                   lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);        /* Treat as temp not itemp as we trust the SCD41 to * be sane */
             }
          } else
@@ -828,7 +837,7 @@ void i2c_task(void *p)
                   else
                      thisrh = (thisrh * rhdamp + rh) / (rhdamp + 1);
                }
-               if (!num_ds18b20 && t >= -1000)
+               if (!num_ds18b20 && t >= -1000 && (!bletemp || bletemp->missing))
                   lasttemp = report("itemp", lasttemp, thistemp = t, tempplaces);
                /* Use temp here as no DS18B20 */
                lastco2 = report("co2", lastco2, thisco2, co2places);
@@ -850,6 +859,8 @@ void ds18b20_task(void *p)
    while (1)
    {
       usleep(250000);
+      if (bletemp && !bletemp->missing)
+         continue;
       ds18b20_requestTemperatures();
       float c[num_ds18b20];
       for (int i = 0; i < num_ds18b20; ++i)
@@ -1317,7 +1328,8 @@ void app_main()
       revk_web_config_start(webserver);
    }
 
-   if(*bluecoint)ela_run();
+   if (*bluecoint)
+      ela_run();
 
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
@@ -1327,6 +1339,15 @@ void app_main()
       localtime_r(&now, &t);
       uint16_t hhmm = t.tm_hour * 100 + t.tm_min;
       uint32_t up = uptime();
+      if (*bluecoint && !bletemp)
+         for (ela_t * e = ela; e; e = e->next)
+            if (!strcmp(e->name, bluecoint))
+            {
+               bletemp = e;
+               break;
+            }
+      if (bletemp && !bletemp->missing)
+         thistemp = bletemp->temp / 100.0;
       if (!airconlast || airconlast + 300 < uptime())
       {                         // Not seen aircon for a while (should update every 60 seconds, so 5 mins is plenty)
          airconmode = 0;
