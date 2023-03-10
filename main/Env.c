@@ -1623,7 +1623,7 @@ void app_main()
             gfx_colour('r');
             gfx_pos(gfx_width() / 2, gfx_height() / 2, GFX_M | GFX_C);
             sprintf(s, "%ld", t);
-            gfx_text(4, s);
+            gfx_text(6, s);
          }
          gfx_unlock();
          continue;
