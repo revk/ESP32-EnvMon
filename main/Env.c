@@ -163,6 +163,7 @@ static volatile uint8_t gfx_changed = 1;
 static volatile uint8_t gfx_dark = 0;
 static volatile uint32_t gfx_msg_time = 0;      /* message timer */
 static volatile uint32_t menu_time = 0; /* menu timer */
+static volatile uint32_t countdown = 0; // Countdown clock
 static char gfx_msg[100];       /* message text */
 
 static httpd_handle_t webserver = NULL;
@@ -426,16 +427,15 @@ const char *app_callback(int client, const char *prefix, const char *target, con
       return "";
    }
    if (!strcmp(suffix, "night"))
-   {                            /* Night mode, or can be sent with true / false to set night or day */
-      if (jo_here(j) == JO_FALSE)
-         gfx_dark = 0;
-      else
-         gfx_dark = 1;
-      return "";
-   }
+      gfx_dark = (jo_here(j) == JO_FALSE ? 0 : 1);      // Sending false means day
    if (!strcmp(suffix, "day"))
-   {
       gfx_dark = 0;
+   if (!strcmp(suffix, "night") || !strcmp(suffix, "day") || !strcmp(suffix, "countdown"))
+   {                            // Can set countdown timer with night/day/countdown
+      if (jo_here(j) == JO_NUMBER)
+         countdown = uptime() + jo_read_int(j);
+      else
+         countdown = 0;
       return "";
    }
    if (!strcmp(suffix, "contrast"))
@@ -917,8 +917,8 @@ void gfx_temp(float t)
    gfx_text(1, "o");
    gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
    gfx_text(2, f ? "F" : "C");
-   if (bletemp && !bletemp->missing)
-      gfx_text(2, "T");
+   if (bletemp)
+      gfx_text(1, bletemp->missing ? "~~" : "BT");
    else if (num_ds18b20 || scd41)
       gfx_text(2, " ");
    else
@@ -1609,6 +1609,24 @@ void app_main()
             gfx_message(gfx_msg);       /* does own locking */
             continue;
          }
+      }
+      if (countdown)
+      { // Countdown timer
+         gfx_set_contrast(gfxlight);
+         gfx_lock();
+         reset();
+         int32_t t = countdown - uptime();
+         if (t < 0)
+            countdown = 0;
+         else
+         {
+            gfx_colour('r');
+            gfx_pos(gfx_width() / 2, gfx_height() / 2, GFX_M | GFX_C);
+            sprintf(s, "%ld", t);
+            gfx_text(4, s);
+         }
+         gfx_unlock();
+         continue;
       }
       gfx_lock();
       if (menu)
