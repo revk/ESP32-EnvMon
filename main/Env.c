@@ -1611,7 +1611,7 @@ void app_main()
          }
       }
       if (countdown)
-      { // Countdown timer
+      {                         // Countdown timer
          gfx_set_contrast(gfxlight);
          gfx_lock();
          reset();
@@ -1620,6 +1620,7 @@ void app_main()
             countdown = 0;
          else
          {
+            revk_blink(0, 0, gfx_dark ? "K" : "R");
             gfx_colour('r');
             gfx_pos(gfx_width() / 2, gfx_height() / 2, GFX_M | GFX_C);
             sprintf(s, "%ld", t);
