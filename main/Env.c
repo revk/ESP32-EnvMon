@@ -983,9 +983,26 @@ uint8_t menufunc1(char key)
    return 1;
 }
 
+uint8_t menufunc2(char key)
+{                               /* Time */
+   if (key)
+      return 1;                 // Menu 1
+   menuinit();
+   gfx_colour('r');
+   gfx_pos(gfx_width() / 2, gfx_height() / 2, GFX_M | GFX_C);
+   char s[10];
+   time_t now = time(0);
+   struct tm tm;
+   gmtime_r(&now, &tm);
+   sprintf(s, "%02d:%02d", tm.tm_hour, tm.tm_min);
+   gfx_text(5, s);
+   return 2;
+}
+
 typedef uint8_t menufunc_t(char);
 menufunc_t *menufunc[] = {
    menufunc1,
+   menufunc2,
 };
 
 jo_t env_status(void)
@@ -1585,7 +1602,7 @@ void app_main()
       if (!menu && key)
       {
          menu_time = uptime() + 5;
-         menu = 1;              // Base menu
+         menu = (gfx_dark ? 2 : 1);     // Base menu, if dark then time first
          key = 0;               // Don't pass initial key, used just to wake up...
       }
       if (scd41_settled && scd41_settled < up)
