@@ -121,7 +121,7 @@ int main(int argc, const char *argv[])
          if (!value)
             continue;
          double w = strtod(value, NULL) * s;
-         sql_string_t s = { };
+         sql_s_t s = { 0 };
          sql_sprintf(&s, "INSERT IGNORE INTO `%#S` SET `device`=%#s,`ts`=%#T", sqltable, type, ts);
          if (prev)
             sql_sprintf(&s, ",`prev`=%#T,`wh`=%lf", prev, w * (ts - prev) / 3600);

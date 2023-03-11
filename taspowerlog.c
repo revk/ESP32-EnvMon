@@ -147,7 +147,7 @@ int main(int argc, const char *argv[])
                   devices = d;
                }
                double wh = strtod(j_val(period), NULL);
-               sql_string_t s = { };
+               sql_s_t s = { 0 };
                sql_sprintf(&s, "INSERT IGNORE INTO `%#S` SET `device`=%#s,`ts`=%#T,`wh`=%lf", sqltable, tag, ts, wh);
                if (d->last && ts > d->last)
                   sql_sprintf(&s, ",`prev`=%#T,`w`=%lf", d->last, wh * 3600.0 / (ts - d->last));

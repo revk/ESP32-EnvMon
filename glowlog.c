@@ -121,7 +121,7 @@ int main(int argc, const char *argv[])
                const char *importunitrate = j_get(j, "import.price.unitrate");
                const char *exportunitrate = j_get(j, "export.price.unitrate");
                const char *standingcharge = j_get(j, "import.price.standingcharge");
-               sql_string_t s = { };
+               sql_s_t s = { 0 };
                sql_sprintf(&s, "INSERT INTO `%s` SET `timestamp`=%#U,`meter`=%#s,`type`=%#s", sqltable, ts, meter, type);
                void fields(void) {
                   if (import)
