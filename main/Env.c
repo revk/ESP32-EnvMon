@@ -989,13 +989,17 @@ uint8_t menufunc2(char key)
       return 1;                 // Menu 1
    menuinit();
    gfx_colour('r');
-   gfx_pos(gfx_width() / 2, gfx_height() / 2, GFX_M | GFX_C);
    char s[10];
    time_t now = time(0);
    struct tm tm;
    gmtime_r(&now, &tm);
-   sprintf(s, "%02d:%02d", tm.tm_hour, tm.tm_min);
-   gfx_text(5, s);
+   sprintf(s, "%02d", tm.tm_hour);
+   gfx_pos(gfx_width() / 2, 0, GFX_C | GFX_T | GFX_V);
+   gfx_text(6, s);
+   sprintf(s, "%02d", tm.tm_min);
+   gfx_text(6, s);
+   sprintf(s, "%02d", tm.tm_sec);
+   gfx_text(3, s);
    return 2;
 }
 
@@ -1639,9 +1643,27 @@ void app_main()
          {
             revk_blink(0, 0, gfx_dark ? "K" : "R");
             gfx_colour('r');
-            gfx_pos(gfx_width() / 2, gfx_height() / 2, GFX_M | GFX_C);
-            sprintf(s, "%ld", t);
-            gfx_text(6, s);
+            if (t > gfx_height() / 2)
+            {
+               gfx_pos(gfx_width() / 2, gfx_height() / 2, GFX_M | GFX_C);
+               sprintf(s, "%ld", t);
+               gfx_text(6, s);
+            } else
+            {
+               gfx_pos(gfx_width() / 2 - t, gfx_height() / 2 - t, 0);
+               gfx_fill(t * 2, t * 2, 255);
+               if (t >= 5)
+               {
+                  int f = t * 2 / 13;   // font size to fit
+                  if (f > 6)
+                     f = 6;
+                  gfx_background('r');
+                  gfx_colour('K');
+                  gfx_pos(gfx_width() / 2 - (t < 20 ? f / 2 : 0), gfx_height() / 2, GFX_M | GFX_C);
+                  sprintf(s, "%ld", t);
+                  gfx_text(f, s);
+               }
+            }
          }
          gfx_unlock();
          continue;
