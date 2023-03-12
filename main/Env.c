@@ -1637,7 +1637,7 @@ void app_main()
          gfx_lock();
          reset();
          int32_t t = countdown - uptime();
-         if (t < 0)
+         if (t <= 0)
             countdown = 0;
          else
          {
@@ -1652,17 +1652,9 @@ void app_main()
             {
                gfx_pos(gfx_width() / 2 - t, gfx_height() / 2 - t, 0);
                gfx_fill(t * 2, t * 2, 255);
-               if (t >= 5)
-               {
-                  int f = t * 2 / 13;   // font size to fit
-                  if (f > 6)
-                     f = 6;
-                  gfx_background('r');
-                  gfx_colour('K');
-                  gfx_pos(gfx_width() / 2 - (t < 20 ? f / 2 : 0), gfx_height() / 2, GFX_M | GFX_C);
-                  sprintf(s, "%ld", t);
-                  gfx_text(f, s);
-               }
+               gfx_colour('K');
+               gfx_pos(gfx_width() / 2 - t + 1, gfx_height() / 2 - t + 1, 0);
+               gfx_fill(t * 2 - 2, t * 2 - 2, 255);
             }
          }
          gfx_unlock();
