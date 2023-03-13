@@ -997,9 +997,9 @@ uint8_t menufunc2(char key)
    gfx_pos(gfx_width() / 2, 0, GFX_C | GFX_T | GFX_V);
    gfx_text(6, s);
    sprintf(s, "%02d", tm.tm_min);
-   gfx_text(6, s);
+   gfx_text(5, s);
    sprintf(s, "%02d", tm.tm_sec);
-   gfx_text(3, s);
+   gfx_text(4, s);
    return 2;
 }
 
