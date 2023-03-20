@@ -338,6 +338,7 @@ static void sendconfig(void)
          jo_string(j, "unit_of_meas", unit);
          jo_stringf(j, "val_tpl", "{{value_json.%s}}", json);
          revk_mqtt_send(NULL, 1, topic, &j);
+	 free(topic);
       }
    }
    if (ds18b20 || i2cport >= 0)
