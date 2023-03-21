@@ -58,7 +58,6 @@ const char TAG[] = "Env";
 	u8(gfxdark,1)	\
 	u32(msgtime,30)	\
 	b(f)	\
-	b(ha)	\
 	s(fanon)	\
 	s(fanoff)	\
 	u32(fanco2on,0)	\
@@ -115,6 +114,7 @@ settings
 #undef s
 #undef io
 #undef ioa
+static uint8_t ha = 0;          // HA mode, 0=off, 1=on, 2=on and new so send config
 static uint8_t scd41 = 0;
 static uint32_t scd41_settled = 1;      /* uptime when started measurements */
 
@@ -179,8 +179,7 @@ struct value_s {
 };
 value_t *values = NULL;
 time_t reportlast = 0,
-    reportchange = 0,
-    reportconfig = 0;
+    reportchange = 0;
 
 static void reportall(time_t now)
 {                               /* Do reporting of values */
@@ -304,16 +303,13 @@ static float report(const char *tag, float last, float this, int places)
 static void sendall(void)
 {
    reportlast = 0;
-   reportconfig = 0;
    heattime = 0;
    fantime = 0;
 }
 
-static void sendconfig(void)
+static void send_ha_config(void)
 {
-   if (!ha)
-      return;
-   reportconfig = time(0);
+   ha = 1;                      // Sent
    char *topic;
    const char *us = hostname;
    if (!*us)
@@ -338,7 +334,7 @@ static void sendconfig(void)
          jo_string(j, "unit_of_meas", unit);
          jo_stringf(j, "val_tpl", "{{value_json.%s}}", json);
          revk_mqtt_send(NULL, 1, topic, &j);
-	 free(topic);
+         free(topic);
       }
    }
    if (ds18b20 || i2cport >= 0)
@@ -351,6 +347,13 @@ static void sendconfig(void)
 
 const char *app_callback(int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
+   if (prefix && target && !suffix && j && !strcmp(prefix, "homeassistant") && !strcmp(target, "status"))
+   {                            // Spot that HA is in use or not
+      if (!jo_strcmp(j, "online"))
+         ha = 2;                // Flag to send ha config
+      else
+         ha = 0;
+   }
    if (*heataircon && prefix && !strcmp(prefix, "Daikin") && target && !strcmp(target, heataircon) && airconlast)
    {
       airconlast = uptime();
@@ -380,7 +383,6 @@ const char *app_callback(int client, const char *prefix, const char *target, con
       }
       return "";
    }
-
    if (client || !prefix || target || strcmp(prefix, "command") || !suffix)
       return NULL;
    if (!strcmp(suffix, "override"))
@@ -418,6 +420,7 @@ const char *app_callback(int client, const char *prefix, const char *target, con
          snprintf(temp, sizeof(temp), "Daikin/%s", heataircon);
          lwmqtt_subscribe(revk_mqtt(0), temp);
       }
+      lwmqtt_subscribe(revk_mqtt(0), "homeassistant/status");   // get HA status
       return "";
    }
    if (!strcmp(suffix, "message"))
@@ -1425,8 +1428,8 @@ void app_main()
          revk_info("info", &j);
       }
 
-      if (!reportconfig && up > 10)
-         sendconfig();
+      if (ha > 1)
+         send_ha_config();
       if (!isnan(lastals))
       {                         // ALS based night mode
          if (lastals > alsdark)
