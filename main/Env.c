@@ -86,6 +86,7 @@ const char TAG[] = "Env";
 	s32a(tempminmC,10)	\
 	ioa(button,3,4 13 15)	\
 	s(bluecoint)		\
+	b(ha)			\
 
 #define u32(n,d)	uint32_t n;
 #define u16(n,d)	uint16_t n;
@@ -114,7 +115,7 @@ settings
 #undef s
 #undef io
 #undef ioa
-static uint8_t ha = 0;          // HA mode, 0=off, 1=on, 2=on and new so send config
+static uint8_t ha_send = 0;
 static uint8_t scd41 = 0;
 static uint32_t scd41_settled = 1;      /* uptime when started measurements */
 
@@ -309,7 +310,7 @@ static void sendall(void)
 
 static void send_ha_config(void)
 {
-   ha = 1;                      // Sent
+   ha_send = 0;
    char *topic;
    const char *us = hostname;
    if (!*us)
@@ -347,13 +348,6 @@ static void send_ha_config(void)
 
 const char *app_callback(int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
-   if (prefix && target && !suffix && j && !strcmp(prefix, "homeassistant") && !strcmp(target, "status"))
-   {                            // Spot that HA is in use or not
-      if (!jo_strcmp(j, "online"))
-         ha = 2;                // Flag to send ha config
-      else
-         ha = 0;
-   }
    if (*heataircon && prefix && !strcmp(prefix, "Daikin") && target && !strcmp(target, heataircon) && airconlast)
    {
       airconlast = uptime();
@@ -420,7 +414,8 @@ const char *app_callback(int client, const char *prefix, const char *target, con
          snprintf(temp, sizeof(temp), "Daikin/%s", heataircon);
          lwmqtt_subscribe(revk_mqtt(0), temp);
       }
-      lwmqtt_subscribe(revk_mqtt(0), "homeassistant/status");   // get HA status
+      if (ha)
+         ha_send = 1;
       return "";
    }
    if (!strcmp(suffix, "message"))
@@ -1428,7 +1423,7 @@ void app_main()
          revk_info("info", &j);
       }
 
-      if (ha > 1)
+      if (ha_send)
          send_ha_config();
       if (!isnan(lastals))
       {                         // ALS based night mode
