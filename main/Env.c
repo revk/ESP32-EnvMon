@@ -991,7 +991,7 @@ uint8_t menufunc2(char key)
    char s[10];
    time_t now = time(0);
    struct tm tm;
-   gmtime_r(&now, &tm);
+   localtime_r(&now, &tm);
    sprintf(s, "%02d", tm.tm_hour);
    gfx_pos(gfx_width() / 2, 0, GFX_C | GFX_T | GFX_V);
    gfx_text(6, s);
