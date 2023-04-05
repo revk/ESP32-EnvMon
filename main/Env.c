@@ -58,7 +58,6 @@ const char TAG[] = "Env";
 	u8(gfxdark,1)	\
 	u32(msgtime,30)	\
 	b(f)	\
-	b(ha)	\
 	s(fanon)	\
 	s(fanoff)	\
 	u32(fanco2on,0)	\
@@ -87,6 +86,7 @@ const char TAG[] = "Env";
 	s32a(tempminmC,10)	\
 	ioa(button,3,4 13 15)	\
 	s(bluecoint)		\
+	b(ha)			\
 
 #define u32(n,d)	uint32_t n;
 #define u16(n,d)	uint16_t n;
@@ -115,6 +115,7 @@ settings
 #undef s
 #undef io
 #undef ioa
+static uint8_t ha_send = 0;
 static uint8_t scd41 = 0;
 static uint32_t scd41_settled = 1;      /* uptime when started measurements */
 
@@ -179,8 +180,7 @@ struct value_s {
 };
 value_t *values = NULL;
 time_t reportlast = 0,
-    reportchange = 0,
-    reportconfig = 0;
+    reportchange = 0;
 
 static void reportall(time_t now)
 {                               /* Do reporting of values */
@@ -304,16 +304,13 @@ static float report(const char *tag, float last, float this, int places)
 static void sendall(void)
 {
    reportlast = 0;
-   reportconfig = 0;
    heattime = 0;
    fantime = 0;
 }
 
-static void sendconfig(void)
+static void send_ha_config(void)
 {
-   if (!ha)
-      return;
-   reportconfig = time(0);
+   ha_send = 0;
    char *topic;
    const char *us = hostname;
    if (!*us)
@@ -338,6 +335,7 @@ static void sendconfig(void)
          jo_string(j, "unit_of_meas", unit);
          jo_stringf(j, "val_tpl", "{{value_json.%s}}", json);
          revk_mqtt_send(NULL, 1, topic, &j);
+         free(topic);
       }
    }
    if (ds18b20 || i2cport >= 0)
@@ -379,7 +377,6 @@ const char *app_callback(int client, const char *prefix, const char *target, con
       }
       return "";
    }
-
    if (client || !prefix || target || strcmp(prefix, "command") || !suffix)
       return NULL;
    if (!strcmp(suffix, "override"))
@@ -417,6 +414,8 @@ const char *app_callback(int client, const char *prefix, const char *target, con
          snprintf(temp, sizeof(temp), "Daikin/%s", heataircon);
          lwmqtt_subscribe(revk_mqtt(0), temp);
       }
+      if (ha)
+         ha_send = 1;
       return "";
    }
    if (!strcmp(suffix, "message"))
@@ -983,9 +982,30 @@ uint8_t menufunc1(char key)
    return 1;
 }
 
+uint8_t menufunc2(char key)
+{                               /* Time */
+   if (key)
+      return 1;                 // Menu 1
+   menuinit();
+   gfx_colour('r');
+   char s[10];
+   time_t now = time(0);
+   struct tm tm;
+   localtime_r(&now, &tm);
+   sprintf(s, "%02d", tm.tm_hour);
+   gfx_pos(gfx_width() / 2, 0, GFX_C | GFX_T | GFX_V);
+   gfx_text(6, s);
+   sprintf(s, "%02d", tm.tm_min);
+   gfx_text(5, s);
+   sprintf(s, "%02d", tm.tm_sec);
+   gfx_text(4, s);
+   return 2;
+}
+
 typedef uint8_t menufunc_t(char);
 menufunc_t *menufunc[] = {
    menufunc1,
+   menufunc2,
 };
 
 jo_t env_status(void)
@@ -1403,8 +1423,8 @@ void app_main()
          revk_info("info", &j);
       }
 
-      if (!reportconfig && up > 10)
-         sendconfig();
+      if (ha_send)
+         send_ha_config();
       if (!isnan(lastals))
       {                         // ALS based night mode
          if (lastals > alsdark)
@@ -1585,7 +1605,7 @@ void app_main()
       if (!menu && key)
       {
          menu_time = uptime() + 5;
-         menu = 1;              // Base menu
+         menu = (gfx_dark ? 2 : 1);     // Base menu, if dark then time first
          key = 0;               // Don't pass initial key, used just to wake up...
       }
       if (scd41_settled && scd41_settled < up)
@@ -1611,19 +1631,30 @@ void app_main()
          }
       }
       if (countdown)
-      { // Countdown timer
+      {                         // Countdown timer
          gfx_set_contrast(gfxlight);
          gfx_lock();
          reset();
          int32_t t = countdown - uptime();
-         if (t < 0)
+         if (t <= 0)
             countdown = 0;
          else
          {
+            revk_blink(0, 0, gfx_dark ? "K" : "R");
             gfx_colour('r');
-            gfx_pos(gfx_width() / 2, gfx_height() / 2, GFX_M | GFX_C);
-            sprintf(s, "%ld", t);
-            gfx_text(6, s);
+            if (t > gfx_height() / 2)
+            {
+               gfx_pos(gfx_width() / 2, gfx_height() / 2, GFX_M | GFX_C);
+               sprintf(s, "%ld", t);
+               gfx_text(6, s);
+            } else
+            {
+               gfx_pos(gfx_width() / 2 - t, gfx_height() / 2 - t, 0);
+               gfx_fill(t * 2, t * 2, 255);
+               gfx_colour('K');
+               gfx_pos(gfx_width() / 2 - t + 1, gfx_height() / 2 - t + 1, 0);
+               gfx_fill(t * 2 - 2, t * 2 - 2, 255);
+            }
          }
          gfx_unlock();
          continue;

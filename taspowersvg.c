@@ -48,7 +48,7 @@ static inline unsigned int FNV32(const unsigned char *data, int count, int bits)
 void colour(xml_t g, const char *tag, const char *name)
 {
    unsigned int q = FNV32((unsigned char *) name, strlen(name), 24);
-   if ((q>>16)+((q>>8)&0xFF)+(q&0xFF)>382)
+   if ((q >> 16) + ((q >> 8) & 0xFF) + (q & 0xFF) > 382)
       q ^= 0x808080;
    xml_addf(g, tag, "#%06X", q);
 }
@@ -257,7 +257,7 @@ int main(int argc, const char *argv[])
        D = 0;
    if (sscanf(date, "%d-%d-%d", &Y, &M, &D) < 1 || Y < 2000 || (M && (M < 1 || M > 12)) || (D && (D < 1 || D > 31)))
       errx(1, "Date is YYYY[-MM[-DD]]");
-   if (control && D && devices && (!devices->next || (background&&devices->next&&!devices->next->next)))
+   if (control && D && devices && (!devices->next || (background && devices->next && !devices->next->next)))
       trace = 1;
    if (control && D)
       ysize *= 5;
@@ -280,15 +280,15 @@ int main(int argc, const char *argv[])
       t.tm_isdst = -1;
       timelocal(&t);
       periods = t.tm_mday;
-      q = sql_printf("SELECT *,substring(`ts`,9,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%%' GROUP BY `device`,`P` ORDER BY `device`,`P`",  sqltable, Y, M);
+      q = sql_printf("SELECT *,substring(`ts`,9,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%%' GROUP BY `device`,`P` ORDER BY `device`,`P`", sqltable, Y, M);
    } else if (!trace)
    {                            // Day
       periods = 24;             // DST causes gap or double on change...
-      q = sql_printf("SELECT *,substring(`ts`,12,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`",  sqltable, Y, M, D);
+      q = sql_printf("SELECT *,substring(`ts`,12,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`", sqltable, Y, M, D);
    } else
    {
       periods = 24;             // DST causes gap or double on change...
-      q = sql_printf("SELECT *,substring(`ts`,12,8) AS `P`,sum(if(`w` is null,`power`,`w`)) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`",  sqltable, Y, M, D);
+      q = sql_printf("SELECT *,substring(`ts`,12,8) AS `P`,sum(if(`w` is null,`power`,`w`)) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`", sqltable, Y, M, D);
    }
    SQL_RES *res = sql_safe_query_store_free(&sql, q);
    // Plot
@@ -366,7 +366,7 @@ int main(int argc, const char *argv[])
             if (href)
             {
                path = xml_element_add(path, "a");
-         colour(path, "@color", d->device);
+               colour(path, "@color", d->device);
                if (!D)
                   xml_addf(path, "@href", "%s/%s-%s/%s", href, date, sql_colz(res, "P"), d->device);
                else
@@ -515,7 +515,7 @@ int main(int argc, const char *argv[])
          if (href)
          {
             t = xml_element_add(t, "a");
-         colour(t, "@color", d->device);
+            colour(t, "@color", d->device);
             xml_addf(t, "@href", "%s/%s/%s", href, date, d->device);
          }
          t = xml_element_add(t, "text");

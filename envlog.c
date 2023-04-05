@@ -233,7 +233,7 @@ int main(int argc, const char *argv[])
             if (l->when != now || force)
             {                   // Log to SQL
                l->when = now;
-               sql_string_t s = { };
+               sql_s_t s = { 0 };
                sql_sprintf(&s, "INSERT IGNORE INTO `%#S` SET `tag`=%#s,`utc`=%#U", sqltable, l->tag, now);
                if (l->temp.set)
                   sql_sprintf(&s, ",`temp`=%lf,`temph`=%lf,`templ`=%lf", l->temp.latest, l->temp.high, l->temp.low);
