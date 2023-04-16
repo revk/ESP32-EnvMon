@@ -28,6 +28,10 @@ icons/%.h:	icons/%.gray
 	od -Anone -tx1 -v -w64 $< | sed 's/ \(.\). \(.\)./0x\1\2,/g' >> $@
 	echo "};" >> $@
 
+issue:  set
+	# Assuming you are serving OTA from local apache
+	cp --remove-destination Env*.bin /var/www/ota/
+
 set:    wroom wroom-mono wroom-blind pico-blind pico
 
 pico:
