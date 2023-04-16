@@ -1,9 +1,9 @@
 *~
 *.o
 .DS_Store
-Env*.bin
 *.old
 *.BAK
+Env*.bin
 */*.old
 */*/*.old
 secure_boot_signing_key.pem
