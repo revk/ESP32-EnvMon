@@ -1,7 +1,7 @@
 *~
 *.o
 .DS_Store
-*/*.bin
+Env*.bin
 *.old
 *.BAK
 */*.old
@@ -18,4 +18,3 @@ glowlog
 icons/*.png
 icons/*.gray
 icons/*.h
-*.bin

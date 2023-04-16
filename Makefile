@@ -9,7 +9,7 @@ SUFFIX := $(shell components/ESP32-RevK/buildsuffix)
 all:	
 	@echo Make: $(PROJECT_NAME)$(SUFFIX).bin
 	@idf.py build
-	@cp build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
+	@cp --remove-destination build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
 	@echo Done: $(PROJECT_NAME)$(SUFFIX).bin
 
 tools: envlog envgraph taspowerlog taspowersvg taspowerse glowlog
@@ -29,8 +29,7 @@ icons/%.h:	icons/%.gray
 	echo "};" >> $@
 
 issue:  set
-	# Assuming you are serving OTA from local apache
-	cp --remove-destination Env*.bin /var/www/ota/
+	cp --remove-destination Env*.bin release
 
 set:    wroom wroom-mono wroom-blind pico-blind pico
 
