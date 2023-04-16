@@ -3,7 +3,7 @@
 .DS_Store
 *.old
 *.BAK
-Env*.bin
+*.bin
 */*.old
 */*/*.old
 secure_boot_signing_key.pem
