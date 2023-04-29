@@ -38,6 +38,7 @@ const char TAG[] = "Env";
 	io(scl,21)	\
 	s8(co2address,0x62)	\
 	s8(alsaddress,0x10)	\
+	s8(shtaddress,0x44)	\
 	u16(alsdark,200)	\
 	s8(alsplaces,-2)	\
 	s8(co2places,-1)	\
@@ -146,12 +147,14 @@ static uint16_t scd_tempoffset = 0;
 static uint16_t scd_altitude = 0;
 static uint16_t scd_selfcal = 0;
 static unsigned long long scd_serial = 0;
+static uint32_t sht_serial=0;
 static int8_t i2cport = -1;
 static volatile uint32_t do_co2 = 0;
 static int8_t num_ds18b20 = 0;
 static DeviceAddress adr_ds18b20[2];
 static char co2_found = 0;
 static char als_found = 0;
+static char sht_found = 0;
 static char sendinfo = 0;
 
 static uint32_t fantime = 0;
@@ -578,6 +581,40 @@ static void als_write(uint8_t cmd, uint16_t val)
    i2c_cmd_link_delete(t);
 }
 
+static uint32_t sht_read(uint8_t cmd)
+{
+   uint8_t Th = 0,
+       Tl = 0,Tc=0,Hh=0,Hl=0,Hc=0;
+   i2c_cmd_handle_t t = i2c_cmd_link_create();
+   i2c_master_start(t);
+   i2c_master_write_byte(t, (shtaddress << 1) | I2C_MASTER_WRITE, true);
+   i2c_master_write_byte(t, cmd, true);
+   esp_err_t err= i2c_master_cmd_begin(i2cport, t, 10 / portTICK_PERIOD_MS);
+   i2c_cmd_link_delete(t);
+   if(err)
+   {ESP_LOGE(TAG,"SHT cmd %02X: %s",cmd,esp_err_to_name(err));
+	   return 0;
+   }
+   if(cmd==0x94)return 0; // soft restart does not have data
+   usleep(100000);
+   t = i2c_cmd_link_create();
+   i2c_master_start(t);
+   i2c_master_write_byte(t, (shtaddress << 1) | I2C_MASTER_READ, true);
+   i2c_master_read_byte(t, &Th, I2C_MASTER_ACK);
+   i2c_master_read_byte(t, &Tl, I2C_MASTER_ACK);
+   i2c_master_read_byte(t, &Tc, I2C_MASTER_ACK);
+   i2c_master_read_byte(t, &Hh, I2C_MASTER_ACK);
+   i2c_master_read_byte(t, &Hl, I2C_MASTER_ACK);
+   i2c_master_read_byte(t, &Hc, I2C_MASTER_LAST_NACK);
+   i2c_master_stop(t);
+   err= i2c_master_cmd_begin(i2cport, t, 10 / portTICK_PERIOD_MS);
+   i2c_cmd_link_delete(t);
+   if(err)ESP_LOGE(TAG,"SHT read %02X: %s",cmd,esp_err_to_name(err));
+   if(co2_crc(Th,Tl)!=Tc)Th=Tl=0;
+   if(co2_crc(Hh,Hl)!=Hc)Hh=Hl=0;
+   return (Th<<24)+(Tl<<16)+(Hh<<8)+Hl;
+}
+
 void i2c_task(void *p)
 {
    p = p;
@@ -606,12 +643,13 @@ void i2c_task(void *p)
       }
       if (err)
       {                         /* failed */
-         ESP_LOGE(TAG, "No CO2");
+         ESP_LOGE(TAG, "No CO2 %02X",co2address);
          jo_t j = jo_object_alloc();
          jo_string(j, "error", "No CO2 sensor");
          jo_string(j, "device", scd41 ? "SCD41" : "SCD30");
          jo_int(j, "sda", sda & IO_MASK);
          jo_int(j, "scl", scl & IO_MASK);
+         jo_int(j, "adr", co2address);
          jo_int(j, "code", err);
          jo_string(j, "description", esp_err_to_name(err));
          revk_error("CO2", &j);
@@ -628,13 +666,13 @@ void i2c_task(void *p)
       if ((id & 0xFF) != 0x35)
       {
          gfx_dark = 0;
-         ESP_LOGE(TAG, "No ALS");
+         ESP_LOGE(TAG, "No ALS %02X",alsaddress);
          jo_t j = jo_object_alloc();
          jo_string(j, "error", "No ALS");
          jo_int(j, "sda", sda & IO_MASK);
          jo_int(j, "scl", scl & IO_MASK);
+         jo_int(j, "adr", alsaddress);
          jo_int(j, "id", id);
-         jo_string(j, "description", esp_err_to_name(err));
          revk_error("ALS", &j);
       } else
       {
@@ -642,7 +680,23 @@ void i2c_task(void *p)
          als_write(0x00, 0x0040);
       }
    }
-   if (!co2_found && !als_found)
+   if(shtaddress)
+   {
+	   sht_serial=sht_read(0x89);
+	   if(!sht_serial)
+	   {
+         ESP_LOGE(TAG, "No SHT %02X",shtaddress);
+         jo_t j = jo_object_alloc();
+         jo_string(j, "error", "No SHT");
+         jo_int(j, "sda", sda & IO_MASK);
+         jo_int(j, "scl", scl & IO_MASK);
+         jo_int(j, "sht", alsaddress);
+         revk_error("SHT", &j);
+	   }
+	   else
+		   sht_found=1;
+   }
+   if (!co2_found && !als_found&&!sht_found)
    {                            // No I2C to do
       vTaskDelete(NULL);
       return;
@@ -846,6 +900,11 @@ void i2c_task(void *p)
       }
       if (als_found)
          lastals = report("als", lastals, als_read(0x05), alsplaces);
+      if(sht_found)
+      {
+	      uint32_t v=sht_read(0xFD);
+	      ESP_LOGI(TAG,"SHT T/H read %08lX",v);
+      }
    }
 }
 
@@ -1281,7 +1340,7 @@ void app_main()
          jo_string(j, "error", "No DS18B20 devices");
          jo_int(j, "port", ds18b20 & IO_MASK);
          revk_error("temp", &j);
-         ESP_LOGE(TAG, "No DS18B20");
+         ESP_LOGE(TAG, "No DS18B20 port %d",ds18b20&IO_MASK);
       } else
       {
          revk_task("DS18B20", ds18b20_task, NULL);
