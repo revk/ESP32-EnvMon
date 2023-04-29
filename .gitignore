@@ -1,9 +1,9 @@
 *~
 *.o
 .DS_Store
-*/*.bin
 *.old
 *.BAK
+*.bin
 */*.old
 */*/*.old
 secure_boot_signing_key.pem
@@ -18,4 +18,3 @@ glowlog
 icons/*.png
 icons/*.gray
 icons/*.h
-*.bin

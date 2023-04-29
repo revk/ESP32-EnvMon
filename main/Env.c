@@ -348,7 +348,7 @@ static void send_ha_config(void)
 
 const char *app_callback(int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
-   if (*heataircon && prefix && !strcmp(prefix, "Daikin") && target && !strcmp(target, heataircon) && airconlast)
+   if (*heataircon && prefix && !strcmp(prefix, "Faikin") && target && !strcmp(target, heataircon) && airconlast)
    {
       airconlast = uptime();
       return "";
@@ -411,7 +411,7 @@ const char *app_callback(int client, const char *prefix, const char *target, con
          char temp[100];
          snprintf(temp, sizeof(temp), "state/%s/status", heataircon);
          lwmqtt_subscribe(revk_mqtt(0), temp);
-         snprintf(temp, sizeof(temp), "Daikin/%s", heataircon);
+         snprintf(temp, sizeof(temp), "Faikin/%s", heataircon);
          lwmqtt_subscribe(revk_mqtt(0), temp);
       }
       if (ha)

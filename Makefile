@@ -9,7 +9,7 @@ SUFFIX := $(shell components/ESP32-RevK/buildsuffix)
 all:	
 	@echo Make: $(PROJECT_NAME)$(SUFFIX).bin
 	@idf.py build
-	@cp build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
+	@cp --remove-destination build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
 	@echo Done: $(PROJECT_NAME)$(SUFFIX).bin
 
 tools: envlog envgraph taspowerlog taspowersvg taspowerse glowlog
@@ -27,6 +27,9 @@ icons/%.h:	icons/%.gray
 	echo "const uint8_t icon_$(patsubst icons/%.h,%,$@)[]={" > $@
 	od -Anone -tx1 -v -w64 $< | sed 's/ \(.\). \(.\)./0x\1\2,/g' >> $@
 	echo "};" >> $@
+
+issue:  set
+	cp --remove-destination Env*.bin release
 
 set:    wroom wroom-mono wroom-blind pico-blind pico
 
