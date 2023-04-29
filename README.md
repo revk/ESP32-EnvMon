@@ -1,7 +1,9 @@
+#EnvMon
+
 Environmental monitoring with OLED display working over MQTT
 
 * Uses 128x128 1.5" RGB OLED display (readily available from Amazon)
-* Uses SCD41 sensor, and can use this for temp or external DS18B20
+* Uses SCD41 sensor, and can use this for temp or external DS18B20 or on board SHT40
 * Older board design included for SCD30 and external DS18B20
 
 The design makes for a small unit powered by a USB cable, or 12V DC, with
@@ -20,4 +22,4 @@ Additional tools are also included to log and graph power data from tasmota.
 
 ![267317](https://user-images.githubusercontent.com/996983/160762485-386e75ea-6af6-4420-8a94-bd05ad091422.jpg)
 
-(c) 2019-22 Andrews & Arnold Ltd, Adrian Kennard. See LICENSE file (GPL).
+(c) 2019-23 Andrews & Arnold Ltd, Adrian Kennard. See LICENSE file (GPL).
