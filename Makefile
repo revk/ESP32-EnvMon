@@ -136,7 +136,7 @@ stl:	PCB/EnvHT/EnvHT.stl PCB/EnvMon2/EnvMon2.stl PCB/EnvMon2/EnvMon2-noco2.stl P
 	echo "Made $@"
 
 PCB/EnvHT/EnvHT.scad: PCB/EnvHT/EnvHT.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1
+	PCBCase/case -o $@ $< --top=6 --base=1 --ignore=D3,M1.1 --edge1
 
 PCB/EnvMon2/EnvMon2.scad: PCB/EnvMon2/EnvMon2.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1
