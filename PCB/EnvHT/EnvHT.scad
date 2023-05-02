@@ -1,6 +1,6 @@
 // Generated case design for PCB/EnvHT/EnvHT.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2023-05-02 13:20:36
+// Generated 2023-05-02 13:31:10
 // title:	EnvMon
 // date:	${DATE}
 // rev:	4
@@ -75,15 +75,19 @@ b(0,0,0,2,1.2,1); // Chip
 
 module m10(pushed=false,hulled=false,n=0)
 { // RevK:PTSM-HH-2-RA PTSM-HH-2-RA
+// Socket
 hull()
-{ // Socket
+{
 	b(0,-7.5/2+0.3,0,1.7+n*2.5,7.5,4);
 	b(0,-7.5/2+0.3,0,1.7+n*2.5-2,7.5,5);
 }
-// Plug
-if(!hulled)b(0,-10.5/2-7.5+0.3,0,1.1+n*2.5,10.5,5);
-// Pins
-if(!hulled)for(p=[0:n-1])translate([-2.5*(n-1)/2+p*2.5,0,-2.1])cylinder(r=0.3,h=2.1);
+if(!hulled)
+{
+	// Plug
+	b(0,-10.5/2-7.5+0.3,0,1.1+n*2.5,10.5,5);
+	// Pins
+	for(p=[0:n-1])translate([-2.5*(n-1)/2+p*2.5,0,-2.1])cylinder(r=0.3,h=2.1);
+}
 }
 
 module m13(pushed=false,hulled=false)
