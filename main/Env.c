@@ -147,7 +147,7 @@ static uint16_t scd_tempoffset = 0;
 static uint16_t scd_altitude = 0;
 static uint16_t scd_selfcal = 0;
 static unsigned long long scd_serial = 0;
-static uint32_t sht_serial=0;
+static uint32_t sht_serial = 0;
 static int8_t i2cport = -1;
 static volatile uint32_t do_co2 = 0;
 static int8_t num_ds18b20 = 0;
@@ -172,10 +172,11 @@ static char gfx_msg[100];       /* message text */
 
 static httpd_handle_t webserver = NULL;
 
-static const char *co2_setting(uint16_t cmd, uint16_t val);
+static const char *co2_setting (uint16_t cmd, uint16_t val);
 
 typedef struct value_s value_t;
-struct value_s {
+struct value_s
+{
    value_t *next;
    const char *tag;
    int8_t places;
@@ -183,84 +184,87 @@ struct value_s {
 };
 value_t *values = NULL;
 time_t reportlast = 0,
-    reportchange = 0;
+   reportchange = 0;
 
-static void reportall(time_t now)
+static void
+reportall (time_t now)
 {                               /* Do reporting of values */
    if ((!reportchange || now < reportchange + lag) && (!reporting || now / reporting == reportlast / reporting))
       return;                   /* Slight delay on changes */
    if (values)
    {
       value_t *v;
-      jo_t j = jo_object_alloc();
-      void add(const char *tag, float value, int8_t places) {
+      jo_t j = jo_object_alloc ();
+      void add (const char *tag, float value, int8_t places)
+      {
          if (places <= 0)
-            jo_litf(j, tag, "%d", (int) value);
+            jo_litf (j, tag, "%d", (int) value);
          else
-            jo_litf(j, tag, "%.*f", places, value);
+            jo_litf (j, tag, "%.*f", places, value);
       }
       if (now < 1000000000)
-         jo_litf(j, "ts", "%ld", now);
+         jo_litf (j, "ts", "%ld", now);
       else
       {
          struct tm tm;
-         gmtime_r(&now, &tm);
-         jo_stringf(j, "ts", "%04d-%02d-%02dT%02d:%02d:%02dZ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+         gmtime_r (&now, &tm);
+         jo_stringf (j, "ts", "%04d-%02d-%02dT%02d:%02d:%02dZ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min,
+                     tm.tm_sec);
       }
       for (v = values; v; v = v->next)
-         if (!isnan(v->value))
-            add(v->tag, v->value, v->places);
+         if (!isnan (v->value))
+            add (v->tag, v->value, v->places);
       if (heatlast >= 0)
-         jo_bool(j, "heat", heatlast);
+         jo_bool (j, "heat", heatlast);
       if (fanlast >= 0)
-         jo_bool(j, "fan", fanlast);
-      jo_bool(j, "dark", gfx_dark);
-      if (!isnan(temptargetmin) && !isnan(temptargetmax))
+         jo_bool (j, "fan", fanlast);
+      jo_bool (j, "dark", gfx_dark);
+      if (!isnan (temptargetmin) && !isnan (temptargetmax))
       {
          if (temptargetmin == temptargetmax)
-            jo_litf(j, "temp-target", "%.3f", temptargetmin);
+            jo_litf (j, "temp-target", "%.3f", temptargetmin);
          else
          {
-            jo_array(j, "temp-target");
-            jo_litf(j, NULL, "%.3f", temptargetmin);
-            jo_litf(j, NULL, "%.3f", temptargetmax);
-            jo_close(j);
+            jo_array (j, "temp-target");
+            jo_litf (j, NULL, "%.3f", temptargetmin);
+            jo_litf (j, NULL, "%.3f", temptargetmax);
+            jo_close (j);
          }
       }
       if (bletemp && !bletemp->missing)
       {
-         jo_string(j, "source", bletemp->name);
+         jo_string (j, "source", bletemp->name);
          if (bletemp->bat)
-            jo_int(j, "bat", bletemp->bat);
+            jo_int (j, "bat", bletemp->bat);
          if (bletemp->volt)
-            jo_litf(j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
+            jo_litf (j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
       }
-      revk_state("data", &j);
-      if (*heataircon && !isnan(lasttemp))
+      revk_state ("data", &j);
+      if (*heataircon && !isnan (lasttemp))
       {                         /* Aircon control */
          static float last = NAN;
-         if (isnan(last) || last != lasttemp || !reporting || now / reporting != reportlast / reporting)
+         if (isnan (last) || last != lasttemp || !reporting || now / reporting != reportlast / reporting)
          {
             char topic[100];
-            snprintf(topic, sizeof(topic), "command/%s/control", heataircon);
-            jo_t j = jo_object_alloc();
+            snprintf (topic, sizeof (topic), "command/%s/control", heataircon);
+            jo_t j = jo_object_alloc ();
             if (tempplaces <= 0)
-               jo_litf(j, "env", "%d", (int) lasttemp);
+               jo_litf (j, "env", "%d", (int) lasttemp);
             else
-               jo_litf(j, "env", "%.*f", tempplaces, lasttemp);
+               jo_litf (j, "env", "%.*f", tempplaces, lasttemp);
             if (!heatmonitor)
             {
-               if (!isnan(temptargetmin) && temptargetmin == temptargetmax)
-                  jo_litf(j, "target", "%.3f", temptargetmin);
+               if (!isnan (temptargetmin) && temptargetmin == temptargetmax)
+                  jo_litf (j, "target", "%.3f", temptargetmin);
                else
                {
-                  jo_array(j, "target");
-                  jo_litf(j, NULL, "%.3f", temptargetmin);
-                  jo_litf(j, NULL, "%.3f", temptargetmax);
-                  jo_close(j);
+                  jo_array (j, "target");
+                  jo_litf (j, NULL, "%.3f", temptargetmin);
+                  jo_litf (j, NULL, "%.3f", temptargetmax);
+                  jo_close (j);
                }
             }
-            revk_mqtt_send_clients(NULL, 0, topic, &j, 1);
+            revk_mqtt_send_clients (NULL, 0, topic, &j, 1);
             last = lasttemp;
          }
       }
@@ -269,20 +273,21 @@ static void reportall(time_t now)
    }
 }
 
-static float report(const char *tag, float last, float this, int places)
+static float
+report (const char *tag, float last, float this, int places)
 {
    value_t *v;
    for (v = values; v && v->tag != tag; v = v->next);
    if (!v)
    {
-      v = malloc(sizeof(*v));
+      v = malloc (sizeof (*v));
       v->tag = tag;
       v->places = places;
       v->next = values;
       values = v;
    }
-   float mag = powf(10.0, -places);
-   if (!isnan(last))
+   float mag = powf (10.0, -places);
+   if (!isnan (last))
    {                            /* Hysteresis */
       if (this < last)
       {
@@ -296,182 +301,188 @@ static float report(const char *tag, float last, float this, int places)
             return last;
       }
    }
-   if (!isnan(this))
-      this = roundf(this / mag) * mag;  /* Rounding */
-   if (!isnan(last) && this != last && !reportchange)
-      reportchange = time(0);
+   if (!isnan (this))
+      this = roundf (this / mag) * mag; /* Rounding */
+   if (!isnan (last) && this != last && !reportchange)
+      reportchange = time (0);
    v->value = this;
    return this;
 }
 
-static void sendall(void)
+static void
+sendall (void)
 {
    reportlast = 0;
    heattime = 0;
    fantime = 0;
 }
 
-static void send_ha_config(void)
+static void
+send_ha_config (void)
 {
    ha_send = 0;
    char *topic;
    const char *us = hostname;
    if (!*us)
       us = revk_id;
-   void add(const char *tag, const char *type, const char *unit, const char *json) {
-      if (asprintf(&topic, "homeassistant/sensor/%s-%c/config", us, *tag) >= 0)
+   void add (const char *tag, const char *type, const char *unit, const char *json)
+   {
+      if (asprintf (&topic, "homeassistant/sensor/%s-%c/config", us, *tag) >= 0)
       {
-         jo_t j = jo_object_alloc();
-         jo_stringf(j, "unique_id", "%s-%c", us, *tag);
-         jo_object(j, "dev");
-         jo_array(j, "ids");
-         jo_string(j, NULL, revk_id);
-         jo_close(j);
-         jo_string(j, "name", us);
-         jo_string(j, "mdl", appname);
-         jo_string(j, "sw", revk_version);
-         jo_string(j, "mf", "www.me.uk");
-         jo_close(j);
-         jo_string(j, "dev_cla", type);
-         jo_stringf(j, "name", "%s %s", us, tag);
-         jo_stringf(j, "stat_t", "state/%s/%s/data", appname, us);
-         jo_string(j, "unit_of_meas", unit);
-         jo_stringf(j, "val_tpl", "{{value_json.%s}}", json);
-         revk_mqtt_send(NULL, 1, topic, &j);
-         free(topic);
+         jo_t j = jo_object_alloc ();
+         jo_stringf (j, "unique_id", "%s-%c", us, *tag);
+         jo_object (j, "dev");
+         jo_array (j, "ids");
+         jo_string (j, NULL, revk_id);
+         jo_close (j);
+         jo_string (j, "name", us);
+         jo_string (j, "mdl", appname);
+         jo_string (j, "sw", revk_version);
+         jo_string (j, "mf", "www.me.uk");
+         jo_close (j);
+         jo_string (j, "dev_cla", type);
+         jo_stringf (j, "name", "%s %s", us, tag);
+         jo_stringf (j, "stat_t", "state/%s/%s/data", appname, us);
+         jo_string (j, "unit_of_meas", unit);
+         jo_stringf (j, "val_tpl", "{{value_json.%s}}", json);
+         revk_mqtt_send (NULL, 1, topic, &j);
+         free (topic);
       }
    }
    if (ds18b20 || i2cport >= 0)
-      add("Temp", "temperature", "°C", "temp");
+      add ("Temp", "temperature", "°C", "temp");
    if (i2cport >= 0)
-      add("R/H", "humidity", "%", "rh");
+      add ("R/H", "humidity", "%", "rh");
    if (i2cport >= 0)
-      add("CO₂", "co2", "ppm", "co2");
+      add ("CO₂", "co2", "ppm", "co2");
 }
 
-const char *app_callback(int client, const char *prefix, const char *target, const char *suffix, jo_t j)
+const char *
+app_callback (int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
-   if (*heataircon && prefix && !strcmp(prefix, "Faikin") && target && !strcmp(target, heataircon) && airconlast)
+   if (*heataircon && prefix && !strcmp (prefix, "Faikin") && target && !strcmp (target, heataircon) && airconlast)
    {
-      airconlast = uptime();
+      airconlast = uptime ();
       return "";
    }
-   if (*heataircon && prefix && !strcmp(prefix, "state") && target && !strcmp(target, heataircon) && jo_here(j) == JO_OBJECT)
+   if (*heataircon && prefix && !strcmp (prefix, "state") && target && !strcmp (target, heataircon) && jo_here (j) == JO_OBJECT)
    {                            // Aircon state
-      airconlast = uptime();
-      jo_type_t t = jo_next(j); // Start object
+      airconlast = uptime ();
+      jo_type_t t = jo_next (j);        // Start object
       while (t == JO_TAG)
       {
          char tag[10] = "",
-             val[10];
-         jo_strncpy(j, tag, sizeof(tag));
-         t = jo_next(j);
-         if (!strcmp(tag, "mode"))
+            val[10];
+         jo_strncpy (j, tag, sizeof (tag));
+         t = jo_next (j);
+         if (!strcmp (tag, "mode"))
          {
-            jo_strncpy(j, val, sizeof(val));
+            jo_strncpy (j, val, sizeof (val));
             airconmode = *val;
-         } else if (!strcmp(tag, "power"))
+         } else if (!strcmp (tag, "power"))
             airconpower = (t == JO_TRUE);
-         else if (!strcmp(tag, "slave"))
+         else if (!strcmp (tag, "slave"))
             airconslave = (t == JO_TRUE);
-         else if (!strcmp(tag, "antifreeze"))
+         else if (!strcmp (tag, "antifreeze"))
             airconantifreeze = (t == JO_TRUE);
-         t = jo_skip(j);
+         t = jo_skip (j);
       }
       return "";
    }
-   if (client || !prefix || target || strcmp(prefix, "command") || !suffix)
+   if (client || !prefix || target || strcmp (prefix, "command") || !suffix)
       return NULL;
-   if (!strcmp(suffix, "override"))
+   if (!strcmp (suffix, "override"))
    {                            // Expects array of min/max
-      if (jo_here(j) == JO_ARRAY)
+      if (jo_here (j) == JO_ARRAY)
       {
-         if (jo_next(j) == JO_NUMBER)
-            tempoverridemin = jo_read_float(j);
+         if (jo_next (j) == JO_NUMBER)
+            tempoverridemin = jo_read_float (j);
          else
             tempoverridemin = NAN;
-         if (jo_next(j) == JO_NUMBER)
-            tempoverridemax = jo_read_float(j);
+         if (jo_next (j) == JO_NUMBER)
+            tempoverridemax = jo_read_float (j);
          else
             tempoverridemax = tempoverridemin;
       } else
          tempoverridemin = tempoverridemax = NAN;       // Cancelled
       return "";
    }
-   if (!strcmp(suffix, "send"))
+   if (!strcmp (suffix, "send"))
    {
-      sendall();
+      sendall ();
       return "";
    }
-   if (!strcmp(suffix, "connect"))
+   if (!strcmp (suffix, "connect"))
    {
       sendinfo = 1;
       fanlast = -1;
       heatlast = -1;
-      sendall();
+      sendall ();
       if (*heataircon)
       {
          char temp[100];
-         snprintf(temp, sizeof(temp), "state/%s/status", heataircon);
-         lwmqtt_subscribe(revk_mqtt(0), temp);
-         snprintf(temp, sizeof(temp), "Faikin/%s", heataircon);
-         lwmqtt_subscribe(revk_mqtt(0), temp);
+         snprintf (temp, sizeof (temp), "state/%s/status", heataircon);
+         lwmqtt_subscribe (revk_mqtt (0), temp);
+         snprintf (temp, sizeof (temp), "Faikin/%s", heataircon);
+         lwmqtt_subscribe (revk_mqtt (0), temp);
       }
       if (ha)
          ha_send = 1;
       return "";
    }
-   if (!strcmp(suffix, "message"))
+   if (!strcmp (suffix, "message"))
    {
-      jo_strncpy(j, gfx_msg, sizeof(gfx_msg));
+      jo_strncpy (j, gfx_msg, sizeof (gfx_msg));
       if (msgtime)
-         gfx_msg_time = uptime() + msgtime;
+         gfx_msg_time = uptime () + msgtime;
       return "";
    }
-   if (!strcmp(suffix, "night"))
-      gfx_dark = (jo_here(j) == JO_FALSE ? 0 : 1);      // Sending false means day
-   if (!strcmp(suffix, "day"))
+   if (!strcmp (suffix, "night"))
+      gfx_dark = (jo_here (j) == JO_FALSE ? 0 : 1);     // Sending false means day
+   if (!strcmp (suffix, "day"))
       gfx_dark = 0;
-   if (!strcmp(suffix, "night") || !strcmp(suffix, "day") || !strcmp(suffix, "countdown"))
+   if (!strcmp (suffix, "night") || !strcmp (suffix, "day") || !strcmp (suffix, "countdown"))
    {                            // Can set countdown timer with night/day/countdown
-      if (jo_here(j) == JO_NUMBER)
-         countdown = uptime() + jo_read_int(j);
+      if (jo_here (j) == JO_NUMBER)
+         countdown = uptime () + jo_read_int (j);
       else
          countdown = 0;
       return "";
    }
-   if (!strcmp(suffix, "contrast"))
+   if (!strcmp (suffix, "contrast"))
    {
-      gfx_set_contrast(jo_read_int(j));
+      gfx_set_contrast (jo_read_int (j));
       return "";                /* OK */
    }
-   if (!strcmp(suffix, "co2factory") && scd41)
-      return co2_setting(0x3632, -1);
-   if (!strcmp(suffix, "co2reload") && scd41)
-      return co2_setting(0x3646, -1);
-   if (!strcmp(suffix, "co2autocal"))
-      return co2_setting(scd41 ? 0x2416 : 0x5306, 1);
-   if (!strcmp(suffix, "co2nocal"))
-      return co2_setting(scd41 ? 0x2416 : 0x5306, 0);
-   if (!strcmp(suffix, "co2cal"))
-      return co2_setting(scd41 ? 0x362f : 0x5204, jo_read_int(j));      /* ppm */
-   if (!strcmp(suffix, "co2tempoffset"))
-      return co2_setting(scd41 ? 0x241d : 0x5403, jo_read_int(j));      /* Use T * 65536 / 175 */
-   if (!strcmp(suffix, "co2tempcal"))
+   if (!strcmp (suffix, "co2factory") && scd41)
+      return co2_setting (0x3632, -1);
+   if (!strcmp (suffix, "co2reload") && scd41)
+      return co2_setting (0x3646, -1);
+   if (!strcmp (suffix, "co2autocal"))
+      return co2_setting (scd41 ? 0x2416 : 0x5306, 1);
+   if (!strcmp (suffix, "co2nocal"))
+      return co2_setting (scd41 ? 0x2416 : 0x5306, 0);
+   if (!strcmp (suffix, "co2cal"))
+      return co2_setting (scd41 ? 0x362f : 0x5204, jo_read_int (j));    /* ppm */
+   if (!strcmp (suffix, "co2tempoffset"))
+      return co2_setting (scd41 ? 0x241d : 0x5403, jo_read_int (j));    /* Use T * 65536 / 175 */
+   if (!strcmp (suffix, "co2tempcal"))
    {                            // Set the current temp in C
-      if (isnan(lasttemp))
+      if (isnan (lasttemp))
          return "No temp now";
-      return co2_setting(scd41 ? 0x241d : 0x5403, scd_tempoffset - (jo_read_float(j) - lasttemp) * 65536.0 / 175.0);    // Oddly the offset seems to be negative
+      return co2_setting (scd41 ? 0x241d : 0x5403, scd_tempoffset - (jo_read_float (j) - lasttemp) * 65536.0 / 175.0);  // Oddly the offset seems to be negative
    }
-   if (!strcmp(suffix, "co2alt"))
-      return co2_setting(scd41 ? 0x2427 : 0x5102, jo_read_int(j));      /* m */
+   if (!strcmp (suffix, "co2alt"))
+      return co2_setting (scd41 ? 0x2427 : 0x5102, jo_read_int (j));    /* m */
    return NULL;
 }
 
-static uint8_t co2_crc(uint8_t b1, uint8_t b2)
+static uint8_t
+co2_crc (uint8_t b1, uint8_t b2)
 {
    uint8_t crc = 0xFF;
-   void b(uint8_t v) {
+   void b (uint8_t v)
+   {
       crc ^= v;
       uint8_t n = 8;
       while (n--)
@@ -482,229 +493,258 @@ static uint8_t co2_crc(uint8_t b1, uint8_t b2)
             crc <<= 1;
       }
    }
-   b(b1);
-   b(b2);
+   b (b1);
+   b (b2);
    return crc;
 }
 
-static i2c_cmd_handle_t co2_setup(uint16_t c)
+static i2c_cmd_handle_t
+co2_setup (uint16_t c)
 {                               /* Set up command */
    /* ESP_LOGE(TAG, "CO2 cmd %04X", c); */
-   i2c_cmd_handle_t i = i2c_cmd_link_create();
-   i2c_master_start(i);
-   i2c_master_write_byte(i, (co2address << 1), ACK_CHECK_EN);
-   i2c_master_write_byte(i, c >> 8, ACK_CHECK_EN);
-   i2c_master_write_byte(i, c, ACK_CHECK_EN);
+   i2c_cmd_handle_t i = i2c_cmd_link_create ();
+   i2c_master_start (i);
+   i2c_master_write_byte (i, (co2address << 1), ACK_CHECK_EN);
+   i2c_master_write_byte (i, c >> 8, ACK_CHECK_EN);
+   i2c_master_write_byte (i, c, ACK_CHECK_EN);
    return i;
 }
 
-static void co2_add(i2c_cmd_handle_t i, uint16_t v)
+static void
+co2_add (i2c_cmd_handle_t i, uint16_t v)
 {                               /* Add word to command */
    /* ESP_LOGE(TAG, "CO2 val %04X", v); */
-   i2c_master_write_byte(i, v >> 8, ACK_CHECK_EN);
-   i2c_master_write_byte(i, v, ACK_CHECK_EN);
-   i2c_master_write_byte(i, co2_crc(v >> 8, v), ACK_CHECK_EN);
+   i2c_master_write_byte (i, v >> 8, ACK_CHECK_EN);
+   i2c_master_write_byte (i, v, ACK_CHECK_EN);
+   i2c_master_write_byte (i, co2_crc (v >> 8, v), ACK_CHECK_EN);
 }
 
-static esp_err_t co2_done(i2c_cmd_handle_t * i)
+static esp_err_t
+co2_done (i2c_cmd_handle_t * i)
 {                               /* Finish command */
-   i2c_master_stop(*i);
-   esp_err_t err = i2c_master_cmd_begin(i2cport, *i, 1000 / portTICK_PERIOD_MS);
-   i2c_cmd_link_delete(*i);
+   i2c_master_stop (*i);
+   esp_err_t err = i2c_master_cmd_begin (i2cport, *i, 1000 / portTICK_PERIOD_MS);
+   i2c_cmd_link_delete (*i);
    *i = NULL;
    return err;
 }
 
-static esp_err_t co2_command(uint16_t c)
+static esp_err_t
+co2_command (uint16_t c)
 {
-   i2c_cmd_handle_t i = co2_setup(c);
-   return co2_done(&i);
+   i2c_cmd_handle_t i = co2_setup (c);
+   return co2_done (&i);
 }
 
-static esp_err_t co2_read(int len, uint8_t * buf)
+static esp_err_t
+co2_read (int len, uint8_t * buf)
 {
-   i2c_cmd_handle_t i = i2c_cmd_link_create();
-   i2c_master_start(i);
-   i2c_master_write_byte(i, (co2address << 1) + 1, ACK_CHECK_EN);
-   i2c_master_read(i, buf, len - 1, ACK_VAL);
-   i2c_master_read_byte(i, buf + len - 1, NACK_VAL);
-   return co2_done(&i);
+   i2c_cmd_handle_t i = i2c_cmd_link_create ();
+   i2c_master_start (i);
+   i2c_master_write_byte (i, (co2address << 1) + 1, ACK_CHECK_EN);
+   i2c_master_read (i, buf, len - 1, ACK_VAL);
+   i2c_master_read_byte (i, buf + len - 1, NACK_VAL);
+   return co2_done (&i);
 }
 
-static esp_err_t co2_scd41_stop_measure(void)
+static esp_err_t
+co2_scd41_stop_measure (void)
 {
-   esp_err_t err = co2_command(0x3f86); /* Stop measurement(SCD41) */
-   sleep(1);
+   esp_err_t err = co2_command (0x3f86);        /* Stop measurement(SCD41) */
+   sleep (1);
    return err;
 }
 
-static esp_err_t co2_scd41_start_measure(void)
+static esp_err_t
+co2_scd41_start_measure (void)
 {
-   scd41_settled = uptime() + startup;  /* Time for temp to settle */
-   return co2_command(0x21b1);  /* Start measurement(SCD41) */
+   scd41_settled = uptime () + startup; /* Time for temp to settle */
+   return co2_command (0x21b1); /* Start measurement(SCD41) */
 }
 
-static const char *co2_setting(uint16_t cmd, uint16_t val)
+static const char *
+co2_setting (uint16_t cmd, uint16_t val)
 {
    do_co2 = (cmd << 16) + val;
    return "";
 }
 
-static uint16_t als_read(uint8_t cmd)
+static uint16_t
+als_read (uint8_t cmd)
 {
    uint8_t h = 0,
-       l = 0;
-   i2c_cmd_handle_t t = i2c_cmd_link_create();
-   i2c_master_start(t);
-   i2c_master_write_byte(t, (alsaddress << 1) | I2C_MASTER_WRITE, true);
-   i2c_master_write_byte(t, cmd, true);
-   i2c_master_start(t);
-   i2c_master_write_byte(t, (alsaddress << 1) | I2C_MASTER_READ, true);
-   i2c_master_read_byte(t, &l, I2C_MASTER_ACK);
-   i2c_master_read_byte(t, &h, I2C_MASTER_LAST_NACK);
-   i2c_master_stop(t);
-   i2c_master_cmd_begin(i2cport, t, 10 / portTICK_PERIOD_MS);
-   i2c_cmd_link_delete(t);
+      l = 0;
+   i2c_cmd_handle_t t = i2c_cmd_link_create ();
+   i2c_master_start (t);
+   i2c_master_write_byte (t, (alsaddress << 1) | I2C_MASTER_WRITE, true);
+   i2c_master_write_byte (t, cmd, true);
+   i2c_master_start (t);
+   i2c_master_write_byte (t, (alsaddress << 1) | I2C_MASTER_READ, true);
+   i2c_master_read_byte (t, &l, I2C_MASTER_ACK);
+   i2c_master_read_byte (t, &h, I2C_MASTER_LAST_NACK);
+   i2c_master_stop (t);
+   i2c_master_cmd_begin (i2cport, t, 10 / portTICK_PERIOD_MS);
+   i2c_cmd_link_delete (t);
    return (h << 8) + l;
 }
 
-static void als_write(uint8_t cmd, uint16_t val)
+static void
+als_write (uint8_t cmd, uint16_t val)
 {
-   i2c_cmd_handle_t t = i2c_cmd_link_create();
-   i2c_master_start(t);
-   i2c_master_write_byte(t, (alsaddress << 1) | I2C_MASTER_WRITE, true);
-   i2c_master_write_byte(t, cmd, true);
-   i2c_master_write_byte(t, val & 0xFF, true);
-   i2c_master_write_byte(t, val >> 8, true);
-   i2c_master_stop(t);
-   i2c_master_cmd_begin(i2cport, t, 10 / portTICK_PERIOD_MS);
-   i2c_cmd_link_delete(t);
+   i2c_cmd_handle_t t = i2c_cmd_link_create ();
+   i2c_master_start (t);
+   i2c_master_write_byte (t, (alsaddress << 1) | I2C_MASTER_WRITE, true);
+   i2c_master_write_byte (t, cmd, true);
+   i2c_master_write_byte (t, val & 0xFF, true);
+   i2c_master_write_byte (t, val >> 8, true);
+   i2c_master_stop (t);
+   i2c_master_cmd_begin (i2cport, t, 10 / portTICK_PERIOD_MS);
+   i2c_cmd_link_delete (t);
 }
 
-static uint32_t sht_read(uint8_t cmd)
+static uint32_t
+sht_read (uint8_t cmd)
 {
    uint8_t Th = 0,
-       Tl = 0,Tc=0,Hh=0,Hl=0,Hc=0;
-   i2c_cmd_handle_t t = i2c_cmd_link_create();
-   i2c_master_start(t);
-   i2c_master_write_byte(t, (shtaddress << 1) | I2C_MASTER_WRITE, true);
-   i2c_master_write_byte(t, cmd, true);
-   esp_err_t err= i2c_master_cmd_begin(i2cport, t, 10 / portTICK_PERIOD_MS);
-   i2c_cmd_link_delete(t);
-   if(err)
-   {ESP_LOGE(TAG,"SHT cmd %02X: %s",cmd,esp_err_to_name(err));
-	   return 0;
+      Tl = 0,
+      Tc = 0,
+      Hh = 0,
+      Hl = 0,
+      Hc = 0;
+   i2c_cmd_handle_t t = i2c_cmd_link_create ();
+   i2c_master_start (t);
+   i2c_master_write_byte (t, (shtaddress << 1) | I2C_MASTER_WRITE, true);
+   i2c_master_write_byte (t, cmd, true);
+   i2c_master_stop (t);
+   esp_err_t err = i2c_master_cmd_begin (i2cport, t, 10 / portTICK_PERIOD_MS);
+   i2c_cmd_link_delete (t);
+   if (err)
+   {
+      ESP_LOGE (TAG, "SHT cmd %02X: %s", cmd, esp_err_to_name (err));
+      return 0;
    }
-   if(cmd==0x94)return 0; // soft restart does not have data
-   usleep(100000);
-   t = i2c_cmd_link_create();
-   i2c_master_start(t);
-   i2c_master_write_byte(t, (shtaddress << 1) | I2C_MASTER_READ, true);
-   i2c_master_read_byte(t, &Th, I2C_MASTER_ACK);
-   i2c_master_read_byte(t, &Tl, I2C_MASTER_ACK);
-   i2c_master_read_byte(t, &Tc, I2C_MASTER_ACK);
-   i2c_master_read_byte(t, &Hh, I2C_MASTER_ACK);
-   i2c_master_read_byte(t, &Hl, I2C_MASTER_ACK);
-   i2c_master_read_byte(t, &Hc, I2C_MASTER_LAST_NACK);
-   i2c_master_stop(t);
-   err= i2c_master_cmd_begin(i2cport, t, 10 / portTICK_PERIOD_MS);
-   i2c_cmd_link_delete(t);
-   if(err)ESP_LOGE(TAG,"SHT read %02X: %s",cmd,esp_err_to_name(err));
-   if(co2_crc(Th,Tl)!=Tc)Th=Tl=0;
-   if(co2_crc(Hh,Hl)!=Hc)Hh=Hl=0;
-   return (Th<<24)+(Tl<<16)+(Hh<<8)+Hl;
+   if (cmd == 0x94)
+      return 0;                 // soft restart does not have data
+   usleep (100000);
+   t = i2c_cmd_link_create ();
+   i2c_master_start (t);
+   i2c_master_write_byte (t, (shtaddress << 1) | I2C_MASTER_READ, true);
+   i2c_master_read_byte (t, &Th, I2C_MASTER_ACK);
+   i2c_master_read_byte (t, &Tl, I2C_MASTER_ACK);
+   i2c_master_read_byte (t, &Tc, I2C_MASTER_ACK);
+   i2c_master_read_byte (t, &Hh, I2C_MASTER_ACK);
+   i2c_master_read_byte (t, &Hl, I2C_MASTER_ACK);
+   i2c_master_read_byte (t, &Hc, I2C_MASTER_LAST_NACK);
+   i2c_master_stop (t);
+   err = i2c_master_cmd_begin (i2cport, t, 10 / portTICK_PERIOD_MS);
+   i2c_cmd_link_delete (t);
+   if (err)
+   {
+      ESP_LOGE (TAG, "SHT read %02X: %s", cmd, esp_err_to_name (err));
+      return 0;
+   }
+   if (co2_crc (Th, Tl) != Tc)
+      Th = Tl = 0;
+   if (co2_crc (Hh, Hl) != Hc)
+      Hh = Hl = 0;
+   return (Th << 24) + (Tl << 16) + (Hh << 8) + Hl;
 }
 
-void i2c_task(void *p)
+void
+i2c_task (void *p)
 {
    p = p;
-   ESP_LOGI(TAG, "I2C start");
+   ESP_LOGI (TAG, "I2C start");
    int try = 10;
    esp_err_t err = 0;
    if (co2address)
    {                            // CO2
       while (try--)
       {
-         sleep(1);
+         sleep (1);
          if (scd41)
          {
-            err = co2_scd41_stop_measure();
+            err = co2_scd41_stop_measure ();
             if (!err)
-               err = co2_command(0x3646);       /* Reinit */
+               err = co2_command (0x3646);      /* Reinit */
             if (!err)
                break;
          } else
          {                      /* Just try starting measurement */
-            err = co2_command(0x0010);  /* Start measurement */
+            err = co2_command (0x0010); /* Start measurement */
             if (!err)
                break;
          }
-         ESP_LOGI(TAG, "CO2 retry");
+         ESP_LOGI (TAG, "CO2 retry");
       }
       if (err)
       {                         /* failed */
-         ESP_LOGE(TAG, "No CO2 %02X",co2address);
-         jo_t j = jo_object_alloc();
-         jo_string(j, "error", "No CO2 sensor");
-         jo_string(j, "device", scd41 ? "SCD41" : "SCD30");
-         jo_int(j, "sda", sda & IO_MASK);
-         jo_int(j, "scl", scl & IO_MASK);
-         jo_int(j, "adr", co2address);
-         jo_int(j, "code", err);
-         jo_string(j, "description", esp_err_to_name(err));
-         revk_error("CO2", &j);
+         ESP_LOGE (TAG, "No CO2 %02X", co2address);
+         jo_t j = jo_object_alloc ();
+         jo_string (j, "error", "No CO2 sensor");
+         jo_string (j, "device", scd41 ? "SCD41" : "SCD30");
+         jo_int (j, "sda", sda & IO_MASK);
+         jo_int (j, "scl", scl & IO_MASK);
+         jo_int (j, "adr", co2address);
+         jo_int (j, "code", err);
+         jo_string (j, "description", esp_err_to_name (err));
+         revk_error ("CO2", &j);
       } else
       {
          co2_found = 1;
          if (scd41)
-            co2_setting(0x3682, 0);     // Get serial, etc
+            co2_setting (0x3682, 0);    // Get serial, etc
       }
    }
    if (alsaddress)
    {
-      uint16_t id = als_read(0x09);
+      uint16_t id = als_read (0x09);
       if ((id & 0xFF) != 0x35)
       {
          gfx_dark = 0;
-         ESP_LOGE(TAG, "No ALS %02X",alsaddress);
-         jo_t j = jo_object_alloc();
-         jo_string(j, "error", "No ALS");
-         jo_int(j, "sda", sda & IO_MASK);
-         jo_int(j, "scl", scl & IO_MASK);
-         jo_int(j, "adr", alsaddress);
-         jo_int(j, "id", id);
-         revk_error("ALS", &j);
+         ESP_LOGE (TAG, "No ALS %02X", alsaddress);
+         jo_t j = jo_object_alloc ();
+         jo_string (j, "error", "No ALS");
+         jo_int (j, "sda", sda & IO_MASK);
+         jo_int (j, "scl", scl & IO_MASK);
+         jo_int (j, "adr", alsaddress);
+         jo_int (j, "id", id);
+         revk_error ("ALS", &j);
       } else
       {
          als_found = 1;
-         als_write(0x00, 0x0040);
+         als_write (0x00, 0x0040);
       }
    }
-   if(shtaddress)
+   if (shtaddress)
    {
-	   sht_serial=sht_read(0x89);
-	   if(!sht_serial)
-	   {
-         ESP_LOGE(TAG, "No SHT %02X",shtaddress);
-         jo_t j = jo_object_alloc();
-         jo_string(j, "error", "No SHT");
-         jo_int(j, "sda", sda & IO_MASK);
-         jo_int(j, "scl", scl & IO_MASK);
-         jo_int(j, "sht", alsaddress);
-         revk_error("SHT", &j);
-	   }
-	   else
-		   sht_found=1;
+      sht_serial = sht_read (0x89);
+      if (!sht_serial)
+      {
+         sleep (1);
+         sht_serial = sht_read (0x89);
+      }
+      if (!sht_serial)
+      {
+         ESP_LOGE (TAG, "No SHT %02X", shtaddress);
+         jo_t j = jo_object_alloc ();
+         jo_string (j, "error", "No SHT");
+         jo_int (j, "sda", sda & IO_MASK);
+         jo_int (j, "scl", scl & IO_MASK);
+         jo_int (j, "sht", shtaddress);
+         revk_error ("SHT", &j);
+      } else
+         sht_found = 1;
    }
-   if (!co2_found && !als_found&&!sht_found)
+   if (!co2_found && !als_found && !sht_found)
    {                            // No I2C to do
-      vTaskDelete(NULL);
+      vTaskDelete (NULL);
       return;
    }
    /* Get measurements */
    while (1)
    {
-      sleep(1);
+      sleep (1);
       if (co2_found)
       {
          if (do_co2)
@@ -713,79 +753,83 @@ void i2c_task(void *p)
             uint16_t val = do_co2;
             do_co2 = 0;
             if (scd41)
-               co2_scd41_stop_measure();
-            i2c_cmd_handle_t i = co2_setup(cmd);
+               co2_scd41_stop_measure ();
+            i2c_cmd_handle_t i = co2_setup (cmd);
             if (cmd != 0x3632 && cmd != 0x3615 && cmd != 0x3646 && cmd != 0x3682)
-               co2_add(i, val);
-            err = co2_done(&i);
+               co2_add (i, val);
+            err = co2_done (&i);
             if (err)
-               ESP_LOGI(TAG, "CMD failed %s", esp_err_to_name(err));
+               ESP_LOGI (TAG, "CMD failed %s", esp_err_to_name (err));
             if (cmd == 0x362f || cmd == 0x3615 || cmd == 0x3632)
-               sleep(1);
+               sleep (1);
             else if (cmd == 0x3639)
-               sleep(10);
+               sleep (10);
             if ((cmd == 0x241d || cmd == 0x2416 || cmd == 0x2427) && !err)
             {
-               err = co2_command(0x3615);       /* Persist */
-               sleep(2);
+               err = co2_command (0x3615);      /* Persist */
+               sleep (2);
                if (!err)
-                  err = co2_command(0x3615);    /* Re init */
-               sleep(5);
+                  err = co2_command (0x3615);   /* Re init */
+               sleep (5);
                if (!err)
-                  err = co2_command(cmd = 0x3682);      /* Serial */
+                  err = co2_command (cmd = 0x3682);     /* Serial */
             }
             if (cmd == 0x3682 && !err)
             {                   /* Get serial/etc */
                uint8_t buf[9];
-               err = co2_read(9, buf);
-               if (!err && co2_crc(buf[0], buf[1]) == buf[2] && co2_crc(buf[3], buf[4]) == buf[5] && co2_crc(buf[6], buf[7]) == buf[8])
-                  scd_serial = ((unsigned long long) buf[0] << 40) + ((unsigned long long) buf[1] << 32) + ((unsigned long long) buf[3] << 24) + ((unsigned long long) buf[4] << 16) + ((unsigned long long) buf[6] << 8) + ((unsigned long long) buf[7]);
+               err = co2_read (9, buf);
+               if (!err && co2_crc (buf[0], buf[1]) == buf[2] && co2_crc (buf[3], buf[4]) == buf[5]
+                   && co2_crc (buf[6], buf[7]) == buf[8])
+                  scd_serial =
+                     ((unsigned long long) buf[0] << 40) + ((unsigned long long) buf[1] << 32) +
+                     ((unsigned long long) buf[3] << 24) + ((unsigned long long) buf[4] << 16) +
+                     ((unsigned long long) buf[6] << 8) + ((unsigned long long) buf[7]);
                if (!err)
-                  err = co2_command(0x2318);
+                  err = co2_command (0x2318);
                if (!err)
-                  err = co2_read(3, buf);
-               if (!err && co2_crc(buf[0], buf[1]) == buf[2])
+                  err = co2_read (3, buf);
+               if (!err && co2_crc (buf[0], buf[1]) == buf[2])
                   scd_tempoffset = (buf[0] << 8) + buf[1];
                if (!err)
-                  err = co2_command(0x2322);
+                  err = co2_command (0x2322);
                if (!err)
-                  err = co2_read(3, buf);
-               if (!err && co2_crc(buf[0], buf[1]) == buf[2])
+                  err = co2_read (3, buf);
+               if (!err && co2_crc (buf[0], buf[1]) == buf[2])
                   scd_altitude = (buf[0] << 8) + buf[1];
                if (!err)
-                  err = co2_command(0x2313);
+                  err = co2_command (0x2313);
                if (!err)
-                  err = co2_read(3, buf);
-               if (!err && co2_crc(buf[0], buf[1]) == buf[2])
+                  err = co2_read (3, buf);
+               if (!err && co2_crc (buf[0], buf[1]) == buf[2])
                   scd_selfcal = (buf[0] << 8) + buf[1];
                sendinfo = 1;
             }
             if (scd41)
-               co2_scd41_start_measure();
+               co2_scd41_start_measure ();
             continue;
          }
          {                      /* Ready status */
-            err = co2_command(scd41 ? 0xe4b8 : 0x0202);
+            err = co2_command (scd41 ? 0xe4b8 : 0x0202);
             if (err)
             {
-               ESP_LOGI(TAG, "Tx GetReady %s", esp_err_to_name(err));
+               ESP_LOGI (TAG, "Tx GetReady %s", esp_err_to_name (err));
                continue;
             }
             {                   /* Read status */
                uint8_t buf[3];
-               err = co2_read(sizeof(buf), buf);
+               err = co2_read (sizeof (buf), buf);
                if (err)
                {
-                  ESP_LOGI(TAG, "Rx GetReady %s", esp_err_to_name(err));
+                  ESP_LOGI (TAG, "Rx GetReady %s", esp_err_to_name (err));
                   continue;
                }
-               if (co2_crc(buf[0], buf[1]) != buf[2])
+               if (co2_crc (buf[0], buf[1]) != buf[2])
                {
-                  ESP_LOGI(TAG, "Rx GetReady CRC error %02X %02X", co2_crc(buf[0], buf[1]), buf[2]);
+                  ESP_LOGI (TAG, "Rx GetReady CRC error %02X %02X", co2_crc (buf[0], buf[1]), buf[2]);
                   continue;
                }
                if (scd41 && !(buf[0] & 0x80))
-                  co2_scd41_start_measure();    /* Undocumented but top bit 8 if not running */
+                  co2_scd41_start_measure ();   /* Undocumented but top bit 8 if not running */
                if (!scd41 && (buf[0] << 8) + buf[1] != 1)
                   continue;     /* Not ready(1 means ready) */
                if (scd41 && !(buf[0] & 7) && !buf[1])
@@ -795,22 +839,22 @@ void i2c_task(void *p)
          /* Data */
          if (scd41)
          {
-            err = co2_command(0xec05);  /* read data */
+            err = co2_command (0xec05); /* read data */
             if (err)
             {
-               ESP_LOGI(TAG, "Tx GetData %s", esp_err_to_name(err));
+               ESP_LOGI (TAG, "Tx GetData %s", esp_err_to_name (err));
                continue;
             }
             uint8_t buf[9];
-            err = co2_read(sizeof(buf), buf);
+            err = co2_read (sizeof (buf), buf);
             if (err)
             {
-               ESP_LOGI(TAG, "Rx Data %s", esp_err_to_name(err));
+               ESP_LOGI (TAG, "Rx Data %s", esp_err_to_name (err));
                continue;
             }
-            if (co2_crc(buf[0], buf[1]) != buf[2] || co2_crc(buf[3], buf[4]) != buf[5] || co2_crc(buf[6], buf[7]) != buf[8])
+            if (co2_crc (buf[0], buf[1]) != buf[2] || co2_crc (buf[3], buf[4]) != buf[5] || co2_crc (buf[6], buf[7]) != buf[8])
             {
-               ESP_LOGI(TAG, "Rx bad CRC");
+               ESP_LOGI (TAG, "Rx bad CRC");
                continue;
             }
             float c = (float) ((buf[0] << 8) + buf[1]);
@@ -818,39 +862,39 @@ void i2c_task(void *p)
             float r = 100.0 * (float) ((buf[6] << 8) + buf[7]) / 65536.0;
             if (c > 0)
             {
-               if (isnan(thisco2))
+               if (isnan (thisco2))
                   thisco2 = c;  /* First */
                else
                   thisco2 = (thisco2 * co2damp + c) / (co2damp + 1);
-               lastco2 = report("co2", lastco2, thisco2, co2places);
+               lastco2 = report ("co2", lastco2, thisco2, co2places);
             }
             if (!scd41_settled)
             {                   // Settled, so get temp
                if (r > 0)
                {
-                  if (isnan(thisrh))
+                  if (isnan (thisrh))
                      thisrh = r;        /* First */
                   else
                      thisrh = (thisrh * rhdamp + r) / (rhdamp + 1);
-                  lastrh = report("rh", lastrh, thisrh, rhplaces);
+                  lastrh = report ("rh", lastrh, thisrh, rhplaces);
                }
                if (!num_ds18b20 && (!bletemp || bletemp->missing))
-                  lasttemp = report("temp", lasttemp, thistemp = t, tempplaces);        /* Treat as temp not itemp as we trust the SCD41 to * be sane */
+                  lasttemp = report ("temp", lasttemp, thistemp = t, tempplaces);       /* Treat as temp not itemp as we trust the SCD41 to * be sane */
             }
          } else
          {                      /* Wait for data to be ready */
-            err = co2_command(0x0300);
+            err = co2_command (0x0300);
             if (err)
             {
-               ESP_LOGI(TAG, "Tx GetData %s", esp_err_to_name(err));
+               ESP_LOGI (TAG, "Tx GetData %s", esp_err_to_name (err));
                continue;
             }
             {
                uint8_t buf[18];
-               err = co2_read(sizeof(buf), buf);
+               err = co2_read (sizeof (buf), buf);
                if (err)
                {
-                  ESP_LOGI(TAG, "Rx Data %s", esp_err_to_name(err));
+                  ESP_LOGI (TAG, "Rx Data %s", esp_err_to_name (err));
                   continue;
                }
                /* ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, 18, ESP_LOG_INFO); */
@@ -860,70 +904,77 @@ void i2c_task(void *p)
                d[1] = buf[3];
                d[0] = buf[4];
                float co2 = *(float *) d;
-               if (co2_crc(buf[0], buf[1]) != buf[2] || co2_crc(buf[3], buf[4]) != buf[5])
+               if (co2_crc (buf[0], buf[1]) != buf[2] || co2_crc (buf[3], buf[4]) != buf[5])
                   co2 = -1;
                d[3] = buf[6];
                d[2] = buf[7];
                d[1] = buf[9];
                d[0] = buf[10];
                float t = *(float *) d;
-               if (co2_crc(buf[6], buf[7]) != buf[8] || co2_crc(buf[9], buf[10]) != buf[11])
+               if (co2_crc (buf[6], buf[7]) != buf[8] || co2_crc (buf[9], buf[10]) != buf[11])
                   t = -1000;
                d[3] = buf[12];
                d[2] = buf[13];
                d[1] = buf[15];
                d[0] = buf[16];
                float rh = *(float *) d;
-               if (co2_crc(buf[12], buf[13]) != buf[14] || co2_crc(buf[15], buf[16]) != buf[17])
+               if (co2_crc (buf[12], buf[13]) != buf[14] || co2_crc (buf[15], buf[16]) != buf[17])
                   rh = -1000;
                if (co2 > 100)
                {                /* Have a reading */
-                  if (isnan(thisco2))
+                  if (isnan (thisco2))
                      thisco2 = co2;     /* First */
                   else
                      thisco2 = (thisco2 * co2damp + co2) / (co2damp + 1);
                }
                if (rh > 0)
                {                /* Have a reading */
-                  if (isnan(thisrh))
+                  if (isnan (thisrh))
                      thisrh = rh;       /* First */
                   else
                      thisrh = (thisrh * rhdamp + rh) / (rhdamp + 1);
                }
                if (!num_ds18b20 && t >= -1000 && (!bletemp || bletemp->missing))
-                  lasttemp = report("itemp", lasttemp, thistemp = t, tempplaces);
+                  lasttemp = report ("itemp", lasttemp, thistemp = t, tempplaces);
                /* Use temp here as no DS18B20 */
-               lastco2 = report("co2", lastco2, thisco2, co2places);
-               lastrh = report("rh", lastrh, thisrh, rhplaces);
+               lastco2 = report ("co2", lastco2, thisco2, co2places);
+               lastrh = report ("rh", lastrh, thisrh, rhplaces);
             }
+         }
+      } else if (sht_found)
+      {
+         uint32_t v = sht_read (0xFD);
+         if (v)
+         {
+            float t = -45.0 + 175 * (float) (v >> 16) / 65535.0;
+            float h = -6.0 + 125 * (float) (v & 65535) / 65535.0;
+            lasttemp = report ("temp", lasttemp, thistemp = t, tempplaces);
+            lastrh = report ("rh", lastrh, thisrh = h, rhplaces);
+            //ESP_LOGI (TAG, "SHT T/H read %08lX T=%.2f H=%.2f", v, t, h);
          }
       }
       if (als_found)
-         lastals = report("als", lastals, als_read(0x05), alsplaces);
-      if(sht_found)
-      {
-	      uint32_t v=sht_read(0xFD);
-	      ESP_LOGI(TAG,"SHT T/H read %08lX",v);
-      }
+         lastals = report ("als", lastals, als_read (0x05), alsplaces);
    }
 }
 
-void ds18b20_task(void *p)
+void
+ds18b20_task (void *p)
 {
    p = p;
-   ESP_LOGI(TAG, "DS18B20 start (%d sensor%s)", num_ds18b20, num_ds18b20 == 1 ? "" : "s");
-   if (!ds18b20_setResolution(adr_ds18b20, num_ds18b20, 12))
-      ESP_LOGE(TAG, "DS18B20 set failed");
+   ESP_LOGI (TAG, "DS18B20 start (%d sensor%s)", num_ds18b20, num_ds18b20 == 1 ? "" : "s");
+   if (!ds18b20_setResolution (adr_ds18b20, num_ds18b20, 12))
+      ESP_LOGE (TAG, "DS18B20 set failed");
    while (1)
    {
-      usleep(250000);
+      usleep (250000);
       if (bletemp && !bletemp->missing)
          continue;
-      ds18b20_requestTemperatures();
+      ds18b20_requestTemperatures ();
       float c[num_ds18b20];
       for (int i = 0; i < num_ds18b20; ++i)
-         c[i] = ds18b20_getTempC(&adr_ds18b20[i]);
-      if (!isnan(c[0]))
+         c[i] = ds18b20_getTempC (&adr_ds18b20[i]);
+      if (!isnan (c[0]))
       {
 #define N 10
          static float last[N] = { 0 }, tot = 0;
@@ -936,292 +987,305 @@ void ds18b20_task(void *p)
          last[p] = c[0];
          tot += last[p];
          thistemp = tot / N;
-         lasttemp = report("temp", lasttemp, thistemp, tempplaces);
+         lasttemp = report ("temp", lasttemp, thistemp, tempplaces);
 #undef N
       }
-      if (num_ds18b20 > 1 && !isnan(c[1]))
-         lastotemp = report("otemp", lastotemp, c[1], tempplaces);
+      if (num_ds18b20 > 1 && !isnan (c[1]))
+         lastotemp = report ("otemp", lastotemp, c[1], tempplaces);
    }
 }
 
-void menuinit(void)
+void
+menuinit (void)
 {                               /* Common menu stuff */
-   gfx_set_contrast(gfxlight);
-   gfx_clear(0);
+   gfx_set_contrast (gfxlight);
+   gfx_clear (0);
 }
 
-void gfx_temp(float t)
+void
+gfx_temp (float t)
 {
    char s[30];                  /* Temp string */
    if (f)
    {                            /* Fahrenheit */
       int fh = (t + 40.0) * 1.8 - 40.0;
       if (fh <= -100)
-         strcpy(s, "___");
+         strcpy (s, "___");
       else if (fh >= 1000)
-         strcpy(s, "^^^");
+         strcpy (s, "^^^");
       else
-         sprintf(s, "%3d", fh);
+         sprintf (s, "%3d", fh);
    } else
    {                            /* Celsius */
       if (t <= -10)
-         strcpy(s, "__._");
+         strcpy (s, "__._");
       else if (t >= 100)
-         strcpy(s, "^^.^");
+         strcpy (s, "^^.^");
       else
-         sprintf(s, "%4.1f", t);
+         sprintf (s, "%4.1f", t);
    }
-   gfx_text(5, s);
-   gfx_text(1, "o");
-   gfx_pos(gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_V);
-   gfx_text(2, f ? "F" : "C");
+   gfx_text (5, s);
+   gfx_text (1, "o");
+   gfx_pos (gfx_x (), gfx_y (), GFX_T | GFX_L | GFX_V);
+   gfx_text (2, f ? "F" : "C");
    if (bletemp)
-      gfx_text(1, bletemp->missing ? "~~" : "BT");
+      gfx_text (1, bletemp->missing ? "~~" : "BT");
    else if (num_ds18b20 || scd41)
-      gfx_text(2, " ");
+      gfx_text (2, " ");
    else
-      gfx_text(2, "~");
+      gfx_text (2, "~");
 }
 
-uint8_t menufunc1(char key)
+uint8_t
+menufunc1 (char key)
 {                               /* Initial menu: Temp control - eventually menu structure somehow... */
    if (key == '2')
       return 0;
-   int space = (gfx_height() - 35 * 3) / 2,
-       y = 0;
-   menuinit();
+   int space = (gfx_height () - 35 * 3) / 2,
+      y = 0;
+   menuinit ();
    float d = 0;
    if (key == '1')
       d = 0.1;
    if (key == '3')
       d = -0.1;
-   gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
-   gfx_colour('R');
-   if (!isnan(temptargetmax))
-      gfx_temp(temptargetmax + d);
+   gfx_pos (10, y, GFX_T | GFX_L | GFX_H);
+   gfx_colour ('R');
+   if (!isnan (temptargetmax))
+      gfx_temp (temptargetmax + d);
    y += 35 + space;
-   gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
-   if (isnan(thistemp))
+   gfx_pos (10, y, GFX_T | GFX_L | GFX_H);
+   if (isnan (thistemp))
    {
-      gfx_colour('O');
-      gfx_text(5, "WAIT");
+      gfx_colour ('O');
+      gfx_text (5, "WAIT");
    } else
    {
-      gfx_colour(thistemp < temptargetmin + d ? 'B' : thistemp > temptargetmax + d ? 'R' : 'G');
-      gfx_temp(thistemp);
+      gfx_colour (thistemp < temptargetmin + d ? 'B' : thistemp > temptargetmax + d ? 'R' : 'G');
+      gfx_temp (thistemp);
    }
    y += 35 + space;
-   gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
-   gfx_colour('B');
-   if (!isnan(temptargetmin))
-      gfx_temp(temptargetmin + d);
+   gfx_pos (10, y, GFX_T | GFX_L | GFX_H);
+   gfx_colour ('B');
+   if (!isnan (temptargetmin))
+      gfx_temp (temptargetmin + d);
    if (temptimeprev < 0)
       return 0;
    if (key)
    {                            /* store settings */
-      jo_t j = jo_object_alloc();
+      jo_t j = jo_object_alloc ();
       char s[30];
-      if (!isnan(temptargetmin))
+      if (!isnan (temptargetmin))
       {
-         sprintf(s, "tempminmC%d", temptimeprev + 1);
-         jo_int(j, s, 1000 * d + tempminmC[temptimeprev]);
-         sprintf(s, "tempminmC%d", temptimenext + 1);
-         jo_int(j, s, 1000 * d + tempminmC[temptimenext]);
+         sprintf (s, "tempminmC%d", temptimeprev + 1);
+         jo_int (j, s, 1000 * d + tempminmC[temptimeprev]);
+         sprintf (s, "tempminmC%d", temptimenext + 1);
+         jo_int (j, s, 1000 * d + tempminmC[temptimenext]);
       }
-      if (!isnan(temptargetmax))
+      if (!isnan (temptargetmax))
       {
-         sprintf(s, "tempmaxmC%d", temptimeprev + 1);
-         jo_int(j, s, 1000 * d + tempmaxmC[temptimeprev]);
-         sprintf(s, "tempmaxmC%d", temptimenext + 1);
-         jo_int(j, s, 1000 * d + tempmaxmC[temptimenext]);
+         sprintf (s, "tempmaxmC%d", temptimeprev + 1);
+         jo_int (j, s, 1000 * d + tempmaxmC[temptimeprev]);
+         sprintf (s, "tempmaxmC%d", temptimenext + 1);
+         jo_int (j, s, 1000 * d + tempmaxmC[temptimenext]);
       }
-      revk_setting(j);
-      jo_free(&j);
+      revk_setting (j);
+      jo_free (&j);
    }
    return 1;
 }
 
-uint8_t menufunc2(char key)
+uint8_t
+menufunc2 (char key)
 {                               /* Time */
    if (key)
       return 1;                 // Menu 1
-   menuinit();
-   gfx_colour('r');
+   menuinit ();
+   gfx_colour ('r');
    char s[10];
-   time_t now = time(0);
+   time_t now = time (0);
    struct tm tm;
-   localtime_r(&now, &tm);
-   sprintf(s, "%02d", tm.tm_hour);
-   gfx_pos(gfx_width() / 2, 0, GFX_C | GFX_T | GFX_V);
-   gfx_text(6, s);
-   sprintf(s, "%02d", tm.tm_min);
-   gfx_text(5, s);
-   sprintf(s, "%02d", tm.tm_sec);
-   gfx_text(4, s);
+   localtime_r (&now, &tm);
+   sprintf (s, "%02d", tm.tm_hour);
+   gfx_pos (gfx_width () / 2, 0, GFX_C | GFX_T | GFX_V);
+   gfx_text (6, s);
+   sprintf (s, "%02d", tm.tm_min);
+   gfx_text (5, s);
+   sprintf (s, "%02d", tm.tm_sec);
+   gfx_text (4, s);
    return 2;
 }
 
-typedef uint8_t menufunc_t(char);
+typedef uint8_t menufunc_t (char);
 menufunc_t *menufunc[] = {
    menufunc1,
    menufunc2,
 };
 
-jo_t env_status(void)
+jo_t
+env_status (void)
 {
-   jo_t j = jo_object_alloc();
-   if (!isnan(thisco2))
-      jo_int(j, "CO2", thisco2);
-   if (!isnan(thisrh))
-      jo_int(j, "RH", thisrh);
-   if (!isnan(thistemp))
-      jo_litf(j, "TEMP", "%.1f", thistemp);
+   jo_t j = jo_object_alloc ();
+   if (!isnan (thisco2))
+      jo_int (j, "CO2", thisco2);
+   if (!isnan (thisrh))
+      jo_int (j, "RH", thisrh);
+   if (!isnan (thistemp))
+      jo_litf (j, "TEMP", "%.1f", thistemp);
    return j;
 }
 
-static void web_head(httpd_req_t * req, const char *title)
+static void
+web_head (httpd_req_t * req, const char *title)
 {
-   httpd_resp_set_type(req, "text/html; charset=utf-8");
-   httpd_resp_sendstr_chunk(req, "<meta name='viewport' content='width=device-width, initial-scale=1'>");
-   httpd_resp_sendstr_chunk(req, "<html><head><title>");
+   httpd_resp_set_type (req, "text/html; charset=utf-8");
+   httpd_resp_sendstr_chunk (req, "<meta name='viewport' content='width=device-width, initial-scale=1'>");
+   httpd_resp_sendstr_chunk (req, "<html><head><title>");
    if (title)
-      httpd_resp_sendstr_chunk(req, title);
-   httpd_resp_sendstr_chunk(req, "</title></head><style>"       //
-                            "body{font-family:sans-serif;background:#8cf;}"     //
-                            ".on{opacity:1;transition:1s;}"     //
-                            ".off{opacity:0;transition:1s;}"    //
-                            ".switch,.box{position:relative;display:inline-block;width:64px;height:34px;margin:3px;}"   //
-                            ".switch input,.box input{opacity:0;width:0;height:0;}"     //
-                            ".slider,.button{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#ccc;-webkit-transition:.4s;transition:.4s;}"      //
-                            ".slider:before{position:absolute;content:\"\";height:26px;width:26px;left:4px;bottom:3px;background-color:white;-webkit-transition:.4s;transition:.4s;}"   //
-                            "input:checked+.slider,input:checked+.button{background-color:#12bd20;}"    //
-                            "input:checked+.slider:before{-webkit-transform:translateX(30px);-ms-transform:translateX(30px);transform:translateX(30px);}"       //
-                            "span.slider:before{border-radius:50%;}"    //
-                            "span.slider,span.button{border-radius:34px;padding-top:8px;padding-left:10px;border:1px solid gray;box-shadow:3px 3px 3px #0008;}" //
-                            "</style><body><h1>");
+      httpd_resp_sendstr_chunk (req, title);
+   httpd_resp_sendstr_chunk (req, "</title></head><style>"      //
+                             "body{font-family:sans-serif;background:#8cf;}"    //
+                             ".on{opacity:1;transition:1s;}"    //
+                             ".off{opacity:0;transition:1s;}"   //
+                             ".switch,.box{position:relative;display:inline-block;width:64px;height:34px;margin:3px;}"  //
+                             ".switch input,.box input{opacity:0;width:0;height:0;}"    //
+                             ".slider,.button{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#ccc;-webkit-transition:.4s;transition:.4s;}"     //
+                             ".slider:before{position:absolute;content:\"\";height:26px;width:26px;left:4px;bottom:3px;background-color:white;-webkit-transition:.4s;transition:.4s;}"  //
+                             "input:checked+.slider,input:checked+.button{background-color:#12bd20;}"   //
+                             "input:checked+.slider:before{-webkit-transform:translateX(30px);-ms-transform:translateX(30px);transform:translateX(30px);}"      //
+                             "span.slider:before{border-radius:50%;}"   //
+                             "span.slider,span.button{border-radius:34px;padding-top:8px;padding-left:10px;border:1px solid gray;box-shadow:3px 3px 3px #0008;}"        //
+                             "</style><body><h1>");
    if (title)
-      httpd_resp_sendstr_chunk(req, title);
-   httpd_resp_sendstr_chunk(req, "</h1>");
+      httpd_resp_sendstr_chunk (req, title);
+   httpd_resp_sendstr_chunk (req, "</h1>");
 }
 
-static esp_err_t web_foot(httpd_req_t * req)
+static esp_err_t
+web_foot (httpd_req_t * req)
 {
-   httpd_resp_sendstr_chunk(req, "<hr><address>");
+   httpd_resp_sendstr_chunk (req, "<hr><address>");
    char temp[20];
-   snprintf(temp, sizeof(temp), "%012llX", revk_binid);
-   httpd_resp_sendstr_chunk(req, temp);
-   httpd_resp_sendstr_chunk(req, "</address></body></html>");
-   httpd_resp_sendstr_chunk(req, NULL);
+   snprintf (temp, sizeof (temp), "%012llX", revk_binid);
+   httpd_resp_sendstr_chunk (req, temp);
+   httpd_resp_sendstr_chunk (req, "</address></body></html>");
+   httpd_resp_sendstr_chunk (req, NULL);
    return ESP_OK;
 }
 
-static esp_err_t web_icon(httpd_req_t * req)
+static esp_err_t
+web_icon (httpd_req_t * req)
 {                               // serve image -  maybe make more generic file serve
-   extern const char start[] asm("_binary_apple_touch_icon_png_start");
-   extern const char end[] asm("_binary_apple_touch_icon_png_end");
-   httpd_resp_set_type(req, "image/png");
-   httpd_resp_send(req, start, end - start);
+   extern const char start[] asm ("_binary_apple_touch_icon_png_start");
+   extern const char end[] asm ("_binary_apple_touch_icon_png_end");
+   httpd_resp_set_type (req, "image/png");
+   httpd_resp_send (req, start, end - start);
    return ESP_OK;
 }
 
-static esp_err_t web_root(httpd_req_t * req)
+static esp_err_t
+web_root (httpd_req_t * req)
 {
    // TODO cookies
    // webcontrol=0 means no web
    // webcontrol=1 means user settings, not wifi settings
    // webcontrol=2 means all
-   if (revk_link_down() && webcontrol >= 2)
-      return revk_web_config(req);      // Direct to web set up
-   web_head(req, *hostname ? hostname : appname);
-   httpd_resp_sendstr_chunk(req, "<table id=top>");
-   httpd_resp_sendstr_chunk(req, "<tr><td>CO₂</td><td id=CO2 align=right></td><td>ppm</td></tr>");
-   httpd_resp_sendstr_chunk(req, "<tr><td>RH</td><td id=RH align=right></td><td>%</td></tr>");
-   httpd_resp_sendstr_chunk(req, "<tr><td>Temp</td><td id=TEMP align=right></td><td>℃</td></tr>");
-   httpd_resp_sendstr_chunk(req, "</table>");
+   if (revk_link_down () && webcontrol >= 2)
+      return revk_web_config (req);     // Direct to web set up
+   web_head (req, *hostname ? hostname : appname);
+   httpd_resp_sendstr_chunk (req, "<table id=top>");
+   httpd_resp_sendstr_chunk (req, "<tr><td>CO₂</td><td id=CO2 align=right></td><td>ppm</td></tr>");
+   httpd_resp_sendstr_chunk (req, "<tr><td>RH</td><td id=RH align=right></td><td>%</td></tr>");
+   httpd_resp_sendstr_chunk (req, "<tr><td>Temp</td><td id=TEMP align=right></td><td>℃</td></tr>");
+   httpd_resp_sendstr_chunk (req, "</table>");
    if (webcontrol >= 2)
-      httpd_resp_sendstr_chunk(req, "<p><a href='wifi'>WiFi Setup</a></p>");
-   httpd_resp_sendstr_chunk(req, "<script>"     //
-                            "var ws=0;" //
-                            "var temp=0;"       //
-                            "function g(n){return document.getElementById(n);};"        //
-                            "function s(n,v){var d=g(n);if(d)d.textContent=v;}" //
-                            "function c(){"     //
-                            "ws=new WebSocket('ws://'+window.location.host+'/status');" //
-                            "ws.onopen=function(v){g('top').className='on';};"  //
-                            "ws.onclose=function(v){g('top').className='off';setTimeout(function() {c();},1000);};"     //
-                            "ws.onerror=function(v){g('top').className='off';setTimeout(function() {c();},10000);};"    //
-                            "ws.onmessage=function(v){" //
-                            "o=JSON.parse(v.data);"     //
-                            "s('CO2',o.CO2);"   //
-                            "s('RH',o.RH);"     //
-                            "s('TEMP',o.TEMP);" //
-                            "};};c();"  //
-                            "setInterval(function() {ws.send('');},1000);"      //
-                            "</script>");
-   return web_foot(req);
+      httpd_resp_sendstr_chunk (req, "<p><a href='wifi'>WiFi Setup</a></p>");
+   httpd_resp_sendstr_chunk (req, "<script>"    //
+                             "var ws=0;"        //
+                             "var temp=0;"      //
+                             "function g(n){return document.getElementById(n);};"       //
+                             "function s(n,v){var d=g(n);if(d)d.textContent=v;}"        //
+                             "function c(){"    //
+                             "ws=new WebSocket('ws://'+window.location.host+'/status');"        //
+                             "ws.onopen=function(v){g('top').className='on';};" //
+                             "ws.onclose=function(v){g('top').className='off';setTimeout(function() {c();},1000);};"    //
+                             "ws.onerror=function(v){g('top').className='off';setTimeout(function() {c();},10000);};"   //
+                             "ws.onmessage=function(v){"        //
+                             "o=JSON.parse(v.data);"    //
+                             "s('CO2',o.CO2);"  //
+                             "s('RH',o.RH);"    //
+                             "s('TEMP',o.TEMP);"        //
+                             "};};c();" //
+                             "setInterval(function() {ws.send('');},1000);"     //
+                             "</script>");
+   return web_foot (req);
 }
 
 
-static esp_err_t web_status(httpd_req_t * req)
+static esp_err_t
+web_status (httpd_req_t * req)
 {                               // Web socket status report
    // TODO cookies
-   int fd = httpd_req_to_sockfd(req);
-   void wsend(jo_t * jp) {
-      char *js = jo_finisha(jp);
+   int fd = httpd_req_to_sockfd (req);
+   void wsend (jo_t * jp)
+   {
+      char *js = jo_finisha (jp);
       if (js)
       {
          httpd_ws_frame_t ws_pkt;
-         memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+         memset (&ws_pkt, 0, sizeof (httpd_ws_frame_t));
          ws_pkt.payload = (uint8_t *) js;
-         ws_pkt.len = strlen(js);
+         ws_pkt.len = strlen (js);
          ws_pkt.type = HTTPD_WS_TYPE_TEXT;
-         httpd_ws_send_frame_async(req->handle, fd, &ws_pkt);
-         free(js);
+         httpd_ws_send_frame_async (req->handle, fd, &ws_pkt);
+         free (js);
       }
    }
-   esp_err_t status(void) {
-      jo_t j = env_status();
-      wsend(&j);
+   esp_err_t status (void)
+   {
+      jo_t j = env_status ();
+      wsend (&j);
       return ESP_OK;
    }
    if (req->method == HTTP_GET)
-      return status();          // Send status on initial connect
+      return status ();         // Send status on initial connect
    // received packet
    httpd_ws_frame_t ws_pkt;
    uint8_t *buf = NULL;
-   memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+   memset (&ws_pkt, 0, sizeof (httpd_ws_frame_t));
    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
-   esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, 0);
+   esp_err_t ret = httpd_ws_recv_frame (req, &ws_pkt, 0);
    if (ret)
       return ret;
    if (!ws_pkt.len)
-      return status();          // Empty string
-   buf = calloc(1, ws_pkt.len + 1);
+      return status ();         // Empty string
+   buf = calloc (1, ws_pkt.len + 1);
    if (!buf)
       return ESP_ERR_NO_MEM;
    ws_pkt.payload = buf;
-   ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+   ret = httpd_ws_recv_frame (req, &ws_pkt, ws_pkt.len);
    if (!ret)
    {
-      jo_t j = jo_parse_mem(buf, ws_pkt.len);
+      jo_t j = jo_parse_mem (buf, ws_pkt.len);
       if (j)
       {
          // TODO
-         jo_free(&j);
+         jo_free (&j);
       }
    }
-   free(buf);
-   return status();
+   free (buf);
+   return status ();
 }
 
-void app_main()
+void
+app_main ()
 {
-   revk_boot(&app_callback);
-   revk_register("heat", 0, 0, &heaton, NULL, SETTING_SECRET);
-   revk_register("fan", 0, 0, &fanon, NULL, SETTING_SECRET);
-   revk_register("gfx", 0, sizeof(gfxmosi), &gfxmosi, NULL, SETTING_SECRET);
-   revk_register("co2", 0, sizeof(co2places), &co2places, "-1", SETTING_SIGNED | SETTING_SECRET);
-   revk_register("hhmm", 0, sizeof(hhmmday), &hhmmday, NULL, SETTING_SECRET);
+   revk_boot (&app_callback);
+   revk_register ("heat", 0, 0, &heaton, NULL, SETTING_SECRET);
+   revk_register ("fan", 0, 0, &fanon, NULL, SETTING_SECRET);
+   revk_register ("gfx", 0, sizeof (gfxmosi), &gfxmosi, NULL, SETTING_SECRET);
+   revk_register ("co2", 0, sizeof (co2places), &co2places, "-1", SETTING_SIGNED | SETTING_SECRET);
+   revk_register ("hhmm", 0, sizeof (hhmmday), &hhmmday, NULL, SETTING_SECRET);
 #define str(x) #x
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
@@ -1248,29 +1312,29 @@ void app_main()
 #undef s
 #undef io
 #undef ioa
-       revk_register("logo", 0, sizeof(logo), &logo, NULL, SETTING_BINDATA);    /* fixed logo */
-   revk_start();
+      revk_register ("logo", 0, sizeof (logo), &logo, NULL, SETTING_BINDATA);   /* fixed logo */
+   revk_start ();
    if (fanco2gpio)
-      gpio_set_direction(fanco2gpio & IO_MASK, GPIO_MODE_OUTPUT);
+      gpio_set_direction (fanco2gpio & IO_MASK, GPIO_MODE_OUTPUT);
    if (heatgpio)
-      gpio_set_direction(heatgpio & IO_MASK, GPIO_MODE_OUTPUT);
+      gpio_set_direction (heatgpio & IO_MASK, GPIO_MODE_OUTPUT);
    {
       int p;
-      for (p = 0; p < sizeof(logo) && !logo[p]; p++);
-      if (p == sizeof(logo))
-         memcpy(logo, icon_logo, sizeof(icon_logo));    /* default */
+      for (p = 0; p < sizeof (logo) && !logo[p]; p++);
+      if (p == sizeof (logo))
+         memcpy (logo, icon_logo, sizeof (icon_logo));  /* default */
    }
    if (sda && scl)
    {
       scd41 = (co2address == 0x62 ? 1 : 0);
       i2cport = 0;
-      if (i2c_driver_install(i2cport, I2C_MODE_MASTER, 0, 0, 0))
+      if (i2c_driver_install (i2cport, I2C_MODE_MASTER, 0, 0, 0))
       {
-         jo_t j = jo_object_alloc();
-         jo_string(j, "error", "Install fail");
-         jo_int(j, "sda", sda & IO_MASK);
-         jo_int(j, "scl", scl & IO_MASK);
-         revk_error("I2C", &j);
+         jo_t j = jo_object_alloc ();
+         jo_string (j, "error", "Install fail");
+         jo_int (j, "sda", sda & IO_MASK);
+         jo_int (j, "scl", scl & IO_MASK);
+         revk_error ("I2C", &j);
          i2cport = -1;
       } else
       {
@@ -1282,82 +1346,83 @@ void app_main()
             .scl_pullup_en = true,
             .master.clk_speed = 100000,
          };
-         if (i2c_param_config(i2cport, &config))
+         if (i2c_param_config (i2cport, &config))
          {
-            i2c_driver_delete(i2cport);
-            jo_t j = jo_object_alloc();
-            jo_string(j, "error", "Config fail");
-            jo_int(j, "sda", sda & IO_MASK);
-            jo_int(j, "scl", scl & IO_MASK);
-            revk_error("I2C", &j);
+            i2c_driver_delete (i2cport);
+            jo_t j = jo_object_alloc ();
+            jo_string (j, "error", "Config fail");
+            jo_int (j, "sda", sda & IO_MASK);
+            jo_int (j, "scl", scl & IO_MASK);
+            revk_error ("I2C", &j);
             i2cport = -1;
          } else
-            i2c_set_timeout(i2cport, 80000 * 5);        /* 5 ms ? allow for clock stretching */
+            i2c_set_timeout (i2cport, 80000 * 5);       /* 5 ms ? allow for clock stretching */
       }
    }
 #ifndef	CONFIG_GFX_NONE
    if (gfxmosi)
    {
-    const char *e = gfx_init(cs: gfxcs & IO_MASK, sck: gfxsck & IO_MASK, mosi: gfxmosi & IO_MASK, dc: gfxdc & IO_MASK, rst: gfxrst & IO_MASK, flip:gfxflip);
+    const char *e = gfx_init (cs: gfxcs & IO_MASK, sck: gfxsck & IO_MASK, mosi: gfxmosi & IO_MASK, dc: gfxdc & IO_MASK, rst: gfxrst & IO_MASK, flip:gfxflip);
       if (e)
       {
-         jo_t j = jo_object_alloc();
-         jo_string(j, "error", "Failed to start");
-         jo_string(j, "description", e);
-         revk_error("GFX", &j);
+         jo_t j = jo_object_alloc ();
+         jo_string (j, "error", "Failed to start");
+         jo_string (j, "description", e);
+         revk_error ("GFX", &j);
       }
    }
 #endif
-   for (int i = 0; i < sizeof(button) / sizeof(*button); i++)
+   for (int i = 0; i < sizeof (button) / sizeof (*button); i++)
       if (button[i])
       {                         /* Control buttons */
-         gpio_reset_pin(button[i] & IO_MASK);
-         gpio_set_direction(button[i] & IO_MASK, GPIO_MODE_INPUT);
-         gpio_set_pull_mode(button[i] & IO_MASK, GPIO_PULLUP_ONLY);
+         gpio_reset_pin (button[i] & IO_MASK);
+         gpio_set_direction (button[i] & IO_MASK, GPIO_MODE_INPUT);
+         gpio_set_pull_mode (button[i] & IO_MASK, GPIO_PULLUP_ONLY);
       }
-   gfx_lock();
-   gfx_colour('B');
-   gfx_box(gfx_width(), gfx_height(), 255);
-   gfx_unlock();
+   gfx_lock ();
+   gfx_colour ('B');
+   gfx_box (gfx_width (), gfx_height (), 255);
+   gfx_unlock ();
    if (i2cport >= 0)
-      revk_task("I2C", i2c_task, NULL);
+      revk_task ("I2C", i2c_task, NULL);
    if (ds18b20)
    {                            /* DS18B20 init */
-      ds18b20_init(ds18b20 & IO_MASK);
+      ds18b20_init (ds18b20 & IO_MASK);
       int try = 0;
       while (try++ < 5)
       {
-         ds18b20_reset_search();
-         while (num_ds18b20 < sizeof(adr_ds18b20) / sizeof(*adr_ds18b20) && ds18b20_search(adr_ds18b20[num_ds18b20], true))
+         ds18b20_reset_search ();
+         while (num_ds18b20 < sizeof (adr_ds18b20) / sizeof (*adr_ds18b20) && ds18b20_search (adr_ds18b20[num_ds18b20], true))
             num_ds18b20++;
          if (num_ds18b20)
             break;
-         usleep(100000);
+         usleep (100000);
       }
       if (!num_ds18b20)
       {
-         jo_t j = jo_object_alloc();
-         jo_string(j, "error", "No DS18B20 devices");
-         jo_int(j, "port", ds18b20 & IO_MASK);
-         revk_error("temp", &j);
-         ESP_LOGE(TAG, "No DS18B20 port %d",ds18b20&IO_MASK);
+         jo_t j = jo_object_alloc ();
+         jo_string (j, "error", "No DS18B20 devices");
+         jo_int (j, "port", ds18b20 & IO_MASK);
+         revk_error ("temp", &j);
+         ESP_LOGE (TAG, "No DS18B20 port %d", ds18b20 & IO_MASK);
       } else
       {
-         revk_task("DS18B20", ds18b20_task, NULL);
+         revk_task ("DS18B20", ds18b20_task, NULL);
          sendinfo = 1;
       }
    }
-   gfx_lock();
-   gfx_clear(0);
-   gfx_unlock();
+   gfx_lock ();
+   gfx_clear (0);
+   gfx_unlock ();
    /* Main task... */
    time_t showtime = 0;
    char showlogo = 1;
    float showco2 = NAN;
    float showtemp = NAN;
    float showrh = NAN;
-   void reset(void) {           /* re display all */
-      gfx_clear(0);
+   void reset (void)
+   {                            /* re display all */
+      gfx_clear (0);
       showlogo = 1;
       showtime = 0;
       showco2 = NAN;
@@ -1368,8 +1433,8 @@ void app_main()
    if (alsdark && sda && scl && alsaddress)
       gfx_dark = 1;             // Start dark
 
-   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-   if (!httpd_start(&webserver, &config))
+   httpd_config_t config = HTTPD_DEFAULT_CONFIG ();
+   if (!httpd_start (&webserver, &config))
    {
       if (webcontrol)
       {
@@ -1379,7 +1444,7 @@ void app_main()
                .method = HTTP_GET,
                .handler = web_root,
             };
-            REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+            REVK_ERR_CHECK (httpd_register_uri_handler (webserver, &uri));
          }
          {
             httpd_uri_t uri = {
@@ -1387,7 +1452,7 @@ void app_main()
                .method = HTTP_GET,
                .handler = web_icon,
             };
-            REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+            REVK_ERR_CHECK (httpd_register_uri_handler (webserver, &uri));
          }
          if (webcontrol >= 2)
          {
@@ -1396,7 +1461,7 @@ void app_main()
                .method = HTTP_GET,
                .handler = revk_web_config,
             };
-            REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+            REVK_ERR_CHECK (httpd_register_uri_handler (webserver, &uri));
          }
          {
             httpd_uri_t uri = {
@@ -1405,43 +1470,43 @@ void app_main()
                .handler = web_status,
                .is_websocket = true,
             };
-            REVK_ERR_CHECK(httpd_register_uri_handler(webserver, &uri));
+            REVK_ERR_CHECK (httpd_register_uri_handler (webserver, &uri));
          }
       }
-      revk_web_config_start(webserver);
+      revk_web_config_start (webserver);
    }
 
    if (*bluecoint)
-      ela_run();
+      ela_run ();
 
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
-      usleep(10000LL - (esp_timer_get_time() % 10000LL));       /* wait a bit */
-      time_t now = time(0);
+      usleep (10000LL - (esp_timer_get_time () % 10000LL));     /* wait a bit */
+      time_t now = time (0);
       struct tm t;
-      localtime_r(&now, &t);
+      localtime_r (&now, &t);
       uint16_t hhmm = t.tm_hour * 100 + t.tm_min;
-      uint32_t up = uptime();
+      uint32_t up = uptime ();
       uint32_t lastup = 0;
       if (up != lastup)
       {                         // every second
          lastup = up;
          if (*bluecoint)
          {                      // BLE working
-            ela_expire(60);
+            ela_expire (60);
             if (!bletemp)
                for (ela_t * e = ela; e; e = e->next)
-                  if (!strcmp(e->name, bluecoint))
+                  if (!strcmp (e->name, bluecoint))
                   {
-                     ESP_LOGI(TAG, "Found BLE %s", bluecoint);
+                     ESP_LOGI (TAG, "Found BLE %s", bluecoint);
                      bletemp = e;
                      break;
                   }
             if (bletemp && !bletemp->missing)
-               lasttemp = report("temp", lasttemp, thistemp = bletemp->temp / 100.0, tempplaces);       // use BLE temp
+               lasttemp = report ("temp", lasttemp, thistemp = bletemp->temp / 100.0, tempplaces);      // use BLE temp
          }
       }
-      if (!airconlast || airconlast + 300 < uptime())
+      if (!airconlast || airconlast + 300 < uptime ())
       {                         // Not seen aircon for a while (should update every 60 seconds, so 5 mins is plenty)
          airconmode = 0;
          airconpower = 0;
@@ -1451,40 +1516,42 @@ void app_main()
       if (airconpower)
       {
          if ((airconslave || airconantifreeze) && (airconmode == 'H' || airconmode == 'C'))
-            icon = tolower(airconmode); // Display icon in slave mode
+            icon = tolower (airconmode);        // Display icon in slave mode
          else
             icon = airconmode;  // Display icon
       }
-      if (sendinfo && (co2_found || num_ds18b20) && !do_co2)
+      if (sendinfo && (co2_found || num_ds18b20 || sht_found) && !do_co2)
       {                         /* Send device info */
          sendinfo = 0;
-         jo_t j = jo_object_alloc();
+         jo_t j = jo_object_alloc ();
          if (co2_found)
          {
-            jo_object(j, scd41 ? "SCD41" : "SCD30");
+            jo_object (j, scd41 ? "SCD41" : "SCD30");
             if (scd_serial)
-               jo_stringf(j, "serial", "%012llX", scd_serial);
+               jo_stringf (j, "serial", "%012llX", scd_serial);
             if (scd_tempoffset)
-               jo_int(j, "temperature-offset", scd_tempoffset);
+               jo_int (j, "temperature-offset", scd_tempoffset);
             if (scd_altitude)
-               jo_int(j, "sensor-altitude", scd_altitude);
+               jo_int (j, "sensor-altitude", scd_altitude);
             if (scd41)
-               jo_bool(j, "automatic-self-calibration", scd_selfcal);
-            jo_close(j);
+               jo_bool (j, "automatic-self-calibration", scd_selfcal);
+            jo_close (j);
          }
          if (num_ds18b20)
          {
-            jo_array(j, "DS18B20");
+            jo_array (j, "DS18B20");
             for (int i = 0; i < num_ds18b20; i++)
-               jo_stringf(j, NULL, "%016llX", *(unsigned long long *) &adr_ds18b20[i]);
-            jo_close(j);
+               jo_stringf (j, NULL, "%016llX", *(unsigned long long *) &adr_ds18b20[i]);
+            jo_close (j);
          }
-         revk_info("info", &j);
+         if (sht_found)
+            jo_stringf (j, "SHT40", "%08lX", sht_serial);
+         revk_info ("info", &j);
       }
 
       if (ha_send)
-         send_ha_config();
-      if (!isnan(lastals))
+         send_ha_config ();
+      if (!isnan (lastals))
       {                         // ALS based night mode
          if (lastals > alsdark)
             gfx_dark = 0;
@@ -1538,28 +1605,30 @@ void app_main()
          if (snow < sprev)
             snow += 86400;
          float min = NAN,
-             max = NAN;
+            max = NAN;
          int a,
-          b;
-         if ((a = (tempminmC[temptimeprev] ? : tempmaxmC[temptimeprev])) && (b = (tempminmC[temptimenext] ? : tempmaxmC[temptimenext])))
+           b;
+         if ((a = (tempminmC[temptimeprev] ? : tempmaxmC[temptimeprev]))
+             && (b = (tempminmC[temptimenext] ? : tempmaxmC[temptimenext])))
          {                      /* Heat valid */
             heat_target = a + (b - a) * (snow - sprev) / (snext - sprev);
             min = ((float) heat_target) / 1000.0;
          }
-         if ((a = (tempmaxmC[temptimeprev] ? : tempminmC[temptimeprev])) && (b = (tempmaxmC[temptimenext] ? : tempminmC[temptimenext])))
+         if ((a = (tempmaxmC[temptimeprev] ? : tempminmC[temptimeprev]))
+             && (b = (tempmaxmC[temptimenext] ? : tempminmC[temptimenext])))
             max = (float) (a + (b - a) * (snow - sprev) / (snext - sprev)) / 1000.0;    /* Cool valid */
          else
             max = min;          /* same as heat */
          temptargetmin = min;
          temptargetmax = max;
       }
-      if (!isnan(tempoverridemin))
+      if (!isnan (tempoverridemin))
       {
          temptargetmin = tempoverridemin;
          heat_target = temptargetmin * 1000;
          temptimeprev = temptimenext = -1;
       }
-      if (!isnan(tempoverridemax))
+      if (!isnan (tempoverridemax))
       {
          temptargetmax = tempoverridemax;
          temptimeprev = temptimenext = -1;
@@ -1569,7 +1638,7 @@ void app_main()
          if (now / 60 != lastmin)
          {
             lastmin = now / 60;
-            if (!isnan(thisco2) && !isnan(thisrh) && (fanco2on || fanco2off || fanrhon || fanrhoff))
+            if (!isnan (thisco2) && !isnan (thisrh) && (fanco2on || fanco2off || fanrhon || fanrhoff))
             {                   /* Fan control */
                const char *fan = NULL;
                if (((fanco2on && thisco2 > fanco2on) || (fanrhon && thisrh > fanrhon)))
@@ -1577,14 +1646,14 @@ void app_main()
                   if (fanlast != 1)
                   {             /* Change */
                      if (fanco2gpio)
-                        gpio_set_level(fanco2gpio & IO_MASK, (fanco2gpio & IO_INV) ? 0 : 1);
+                        gpio_set_level (fanco2gpio & IO_MASK, (fanco2gpio & IO_INV) ? 0 : 1);
                      fan = fanon;
                      fanlast = 1;
                   }
                } else if (fanlast != 0)
                {                /* Fan off, change */
                   if (fanco2gpio)
-                     gpio_set_level(fanco2gpio & IO_MASK, (fanco2gpio & IO_INV) ? 1 : 0);
+                     gpio_set_level (fanco2gpio & IO_MASK, (fanco2gpio & IO_INV) ? 1 : 0);
                   fan = fanoff;
                   fanlast = 0;
                }
@@ -1593,15 +1662,15 @@ void app_main()
                if (fan && *fan)
                {
                   fantime = up + fanresend;
-                  revk_mqtt_send_str(fan);
+                  revk_mqtt_send_str (fan);
                }
             }
             if (fanon && *fanon && fanlast == 1)
                icon = 'E';      // Extractor fan icon
-            if (!isnan(thistemp) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
+            if (!isnan (thistemp) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
             {                   /* Heat control */
                static int32_t last1 = 0,
-                   last2 = 0;
+                  last2 = 0;
                int32_t thismC = thistemp * 1000;
                if (heat_target || heatlast == 1)
                {                /* We have a reference temp to work with or we left on */
@@ -1611,28 +1680,29 @@ void app_main()
                   int32_t predict = thismC;
                   if (heatahead && ((last2 <= last1 && last1 <= thismC) ||      // going up - turn off early if predict above target
                                     ((last2 >= last1 && last1 >= thismC) &&     // going down - turn on early in 10 min stages if predict is below target
-                                     (!heatfademC || !heatfadem || (lastmin % heatfadem) < (heat_target + heatfademC - thismC) * heatfadem / heatfademC))))
+                                     (!heatfademC || !heatfadem
+                                      || (lastmin % heatfadem) < (heat_target + heatfademC - thismC) * heatfadem / heatfademC))))
                      predict += heatahead * (thismC - last2) / 2;       // Use predicted value, i.e. turn on/off early
                   if (!heat_target || predict > heat_target || (airconpower && airconmode != 'H'))
                   {             /* Heat off */
                      if (heatlast != 0)
                      {          /* Change */
                         if (heatgpio)
-                           gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 1 : 0);
+                           gpio_set_level (heatgpio & IO_MASK, (heatgpio & IO_INV) ? 1 : 0);
                         heat = heatoff;
                         heatlast = 0;
                      }
                   } else if (heatlast != 1)
                   {             /* Heat on, change */
                      if (heatgpio)
-                        gpio_set_level(heatgpio & IO_MASK, (heatgpio & IO_INV) ? 0 : 1);
+                        gpio_set_level (heatgpio & IO_MASK, (heatgpio & IO_INV) ? 0 : 1);
                      heat = heaton;
                      heatlast = 1;
                   }
                   if (heat && *heat)
                   {
                      heattime = up + heatresend;
-                     revk_mqtt_send_str(heat);
+                     revk_mqtt_send_str (heat);
                   }
                }
                last2 = last1;
@@ -1649,12 +1719,12 @@ void app_main()
          uint8_t last0 = 0;
          static uint8_t last1 = 0;
          static uint8_t last2 = 0;
-         for (int i = 0; i < sizeof(button) / sizeof(*button); i++)
-            if (button[i] && !gpio_get_level(button[i] & IO_MASK))
+         for (int i = 0; i < sizeof (button) / sizeof (*button); i++)
+            if (button[i] && !gpio_get_level (button[i] & IO_MASK))
                last0 |= (1 << i);
          if (last0 == last1)
          {                      // stable
-            for (int i = 0; i < sizeof(button) / sizeof(*button); i++)
+            for (int i = 0; i < sizeof (button) / sizeof (*button); i++)
                if (!(last2 & (1 << i)) && (last1 & (1 << i)))
                   key = '1' + i;
             last2 = last1;
@@ -1663,113 +1733,113 @@ void app_main()
       }
       if (!menu && key)
       {
-         menu_time = uptime() + 5;
+         menu_time = uptime () + 5;
          menu = (gfx_dark ? 2 : 1);     // Base menu, if dark then time first
          key = 0;               // Don't pass initial key, used just to wake up...
       }
       if (scd41_settled && scd41_settled < up)
          scd41_settled = 0;     // Settled
       /* Report */
-      if (up > 60 || sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
-         reportall(now);        /* Don 't report right away if clock may be duff */
+      if (up > 60 || sntp_get_sync_status () == SNTP_SYNC_STATUS_COMPLETED)
+         reportall (now);       /* Don 't report right away if clock may be duff */
       /* Display */
       char s[30];               /* Temp string */
       if (gfx_msg_time)
       {                         /* Fixed message */
-         gfx_set_contrast(gfxlight);
-         if (menu || gfx_msg_time < uptime())
+         gfx_set_contrast (gfxlight);
+         if (menu || gfx_msg_time < uptime ())
          {                      /* Time up, clear and drop through */
             gfx_msg_time = 0;
-            gfx_lock();
-            reset();
-            gfx_unlock();
+            gfx_lock ();
+            reset ();
+            gfx_unlock ();
          } else
          {
-            gfx_message(gfx_msg);       /* does own locking */
+            gfx_message (gfx_msg);      /* does own locking */
             continue;
          }
       }
       if (countdown)
       {                         // Countdown timer
-         gfx_set_contrast(gfxlight);
-         gfx_lock();
-         reset();
-         int32_t t = countdown - uptime();
+         gfx_set_contrast (gfxlight);
+         gfx_lock ();
+         reset ();
+         int32_t t = countdown - uptime ();
          if (t <= 0)
             countdown = 0;
          else
          {
-            revk_blink(0, 0, gfx_dark ? "K" : "R");
-            gfx_colour('r');
-            if (t > gfx_height() / 2)
+            revk_blink (0, 0, gfx_dark ? "K" : "R");
+            gfx_colour ('r');
+            if (t > gfx_height () / 2)
             {
-               gfx_pos(gfx_width() / 2, gfx_height() / 2, GFX_M | GFX_C);
-               sprintf(s, "%ld", t);
-               gfx_text(6, s);
+               gfx_pos (gfx_width () / 2, gfx_height () / 2, GFX_M | GFX_C);
+               sprintf (s, "%ld", t);
+               gfx_text (6, s);
             } else
             {
-               gfx_pos(gfx_width() / 2 - t, gfx_height() / 2 - t, 0);
-               gfx_fill(t * 2, t * 2, 255);
-               gfx_colour('K');
-               gfx_pos(gfx_width() / 2 - t + 1, gfx_height() / 2 - t + 1, 0);
-               gfx_fill(t * 2 - 2, t * 2 - 2, 255);
+               gfx_pos (gfx_width () / 2 - t, gfx_height () / 2 - t, 0);
+               gfx_fill (t * 2, t * 2, 255);
+               gfx_colour ('K');
+               gfx_pos (gfx_width () / 2 - t + 1, gfx_height () / 2 - t + 1, 0);
+               gfx_fill (t * 2 - 2, t * 2 - 2, 255);
             }
          }
-         gfx_unlock();
+         gfx_unlock ();
          continue;
       }
-      gfx_lock();
+      gfx_lock ();
       if (menu)
       {                         /* Display menu selection */
          if (key)
-            menu_time = uptime() + 10;
-         if (menu_time < uptime())
+            menu_time = uptime () + 10;
+         if (menu_time < uptime ())
             menu = 0;
-         else if (menu > sizeof(menufunc) / sizeof(*menufunc))
+         else if (menu > sizeof (menufunc) / sizeof (*menufunc))
             menu = 0;
          else if (menu)
             menu = menufunc[menu - 1] (key);
          if (!menu)
-            reset();            // Exit menu
+            reset ();           // Exit menu
          else
          {
-            gfx_unlock();
+            gfx_unlock ();
             continue;
          }
       }
       if (gfx_dark)
       {                         /* Night mode */
-         gfx_set_contrast(gfxdark);     /* Dark / dim */
-         revk_blink(0, 0, "K");
-         gfx_colour('b');
-         reset();
+         gfx_set_contrast (gfxdark);    /* Dark / dim */
+         revk_blink (0, 0, "K");
+         gfx_colour ('b');
+         reset ();
          if (!notime)
          {
-            strftime(s, sizeof(s), "%H:%M", &t);
+            strftime (s, sizeof (s), "%H:%M", &t);
             int d = t.tm_sec;
             if (t.tm_min & 1)
                d = 60 - d;
-            int y = gfx_height() / 2 + (d - 30);
+            int y = gfx_height () / 2 + (d - 30);
             d = t.tm_min;
             if (t.tm_hour & 1)
                d = 60 - d;
-            int x = gfx_width() / 2 + (d - 30) * 2 / 6; /* Adjusted to fit display */
-            gfx_pos(x, y, GFX_M | GFX_C);
-            gfx_text(4, s);
+            int x = gfx_width () / 2 + (d - 30) * 2 / 6;        /* Adjusted to fit display */
+            gfx_pos (x, y, GFX_M | GFX_C);
+            gfx_text (4, s);
          }
-         gfx_unlock();
+         gfx_unlock ();
          continue;
       }
       /* Normal - idle temp status */
-      gfx_set_contrast(gfxlight);
+      gfx_set_contrast (gfxlight);
       if (showlogo)
       {
          showlogo = 0;
-         gfx_clear(0);
+         gfx_clear (0);
          if (!nologo)
          {
-            gfx_pos(gfx_width() - LOGOW, gfx_width() - 12, GFX_B | GFX_L);
-            gfx_icon16(LOGOW, LOGOH, logo);
+            gfx_pos (gfx_width () - LOGOW, gfx_width () - 12, GFX_B | GFX_L);
+            gfx_icon16 (LOGOW, LOGOH, logo);
          }
       }
       if (now != showtime && !notime)
@@ -1777,17 +1847,17 @@ void app_main()
          showtime = now;
          if (t.tm_year > 100)
          {
-            gfx_colour('w');
-            strftime(s, sizeof(s), "%F\004%T %Z", &t);
-            gfx_pos(0, gfx_height() - 1, GFX_B | GFX_L);
-            gfx_text(1, s);
+            gfx_colour ('w');
+            strftime (s, sizeof (s), "%F\004%T %Z", &t);
+            gfx_pos (0, gfx_height () - 1, GFX_B | GFX_L);
+            gfx_text (1, s);
          }
       }
       int y = 0,
-          space = (gfx_height() - 28 - 35 - 21 - 9) / 3;
-      char co2col = (isnan(thisco2) ? 'K' : thisco2 > (fanco2on ? : 1000) ? 'R' : thisco2 > (fanco2off ? : 750) ? 'Y' : 'G');
-      char tempcol = (isnan(thistemp) ? 'K' : thistemp > temptargetmax + 0.25 ? 'R' : thistemp < temptargetmin - 0.25 ? 'B' : 'G');
-      char rhcol = (isnan(thisrh) ? 'K' : 'C');
+         space = (gfx_height () - 28 - 35 - 21 - 9) / 3;
+      char co2col = (isnan (thisco2) ? 'K' : thisco2 > (fanco2on ? : 1000) ? 'R' : thisco2 > (fanco2off ? : 750) ? 'Y' : 'G');
+      char tempcol = (isnan (thistemp) ? 'K' : thistemp > temptargetmax + 0.25 ? 'R' : thistemp < temptargetmin - 0.25 ? 'B' : 'G');
+      char rhcol = (isnan (thisrh) ? 'K' : 'C');
       {                         /* Colours for LED */
          static char cols[4];
          char *c = cols;
@@ -1798,76 +1868,79 @@ void app_main()
          if (rhcol != 'K')
             *c++ = rhcol;
          *c = 0;
-         revk_blink(0, 0, *cols ? cols : NULL);
+         revk_blink (0, 0, *cols ? cols : NULL);
       }
-      if (thisco2 != showco2 && !isnan(thisco2))
+      if (thisco2 != showco2 && !isnan (thisco2))
       {
          showco2 = thisco2;
-         gfx_colour(co2col);
+         gfx_colour (co2col);
          if (showco2 < 200)
-            strcpy(s, "?LOW");
+            strcpy (s, "?LOW");
          else if (showco2 >= 10000.0)
-            strcpy(s, "HIGH");
+            strcpy (s, "HIGH");
          else
-            sprintf(s, "%4d", (int) showco2);
-         gfx_pos(4, y, GFX_T | GFX_L | GFX_H);
-         gfx_text(4, s);
+            sprintf (s, "%4d", (int) showco2);
+         gfx_pos (4, y, GFX_T | GFX_L | GFX_H);
+         gfx_text (4, s);
          int x;
-         gfx_pos(x = gfx_x(), gfx_y(), GFX_T | GFX_L | GFX_H);
-         gfx_text(1, "CO");
-         gfx_pos(gfx_x(), gfx_y() + 3, GFX_T | GFX_L | GFX_V);
-         gfx_text(0, "2");
-         gfx_pos(x, gfx_y(), GFX_T | GFX_L | GFX_V);
-         gfx_text(-1, "ppm");
+         gfx_pos (x = gfx_x (), gfx_y (), GFX_T | GFX_L | GFX_H);
+         gfx_text (1, "CO");
+         gfx_pos (gfx_x (), gfx_y () + 3, GFX_T | GFX_L | GFX_V);
+         gfx_text (0, "2");
+         gfx_pos (x, gfx_y (), GFX_T | GFX_L | GFX_V);
+         gfx_text (-1, "ppm");
       }
       y += 28 + space;
-      gfx_pos(10, y, GFX_T | GFX_L | GFX_H);
+      gfx_pos (10, y, GFX_T | GFX_L | GFX_H);
       if (!num_ds18b20 && scd41 && scd41_settled)
       {                         // Waiting
-         sprintf(s, "%ld:%02ld ", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
-         gfx_colour('O');
-         gfx_text(5, scd41_settled <= up ? "-:--" : s);
+         sprintf (s, "%ld:%02ld ", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
+         gfx_colour ('O');
+         gfx_text (5, scd41_settled <= up ? "-:--" : s);
          showtemp = NAN;
       } else
       {
-         if (!isnan(thistemp) && thistemp != showtemp)
+         if (!isnan (thistemp) && thistemp != showtemp)
          {
             showtemp = thistemp;
-            gfx_colour(tempcol);
-            gfx_temp(showtemp);
+            gfx_colour (tempcol);
+            gfx_temp (showtemp);
          }
       }
       y += 35 + space;
-      if (thisrh != showrh && !isnan(thisrh))
+      if (thisrh != showrh && !isnan (thisrh))
       {
          showrh = thisrh;
-         gfx_colour(rhcol);
-         gfx_pos(3, y, GFX_T | GFX_L | GFX_H);
+         gfx_colour (rhcol);
+         gfx_pos (3, y, GFX_T | GFX_L | GFX_H);
          if (showrh <= 0)
-            strcpy(s, "__");
+            strcpy (s, "__");
          else if (showrh >= 100)
-            strcpy(s, "^^");
+            strcpy (s, "^^");
          else
-            sprintf(s, "%2d", (int) showrh);
-         gfx_text(3, s);
-         gfx_text(2, "%%");
-         gfx_text(1, "R");
-         gfx_text(1, "H");
+            sprintf (s, "%2d", (int) showrh);
+         gfx_text (3, s);
+         gfx_text (2, "%%");
+         gfx_text (1, "R");
+         gfx_text (1, "H");
       }
       y += 21 + space;
       if (!icon && airconlast)
          icon = 'P';            // power
-      if (!icon && revk_link_down())
+      if (!icon && revk_link_down ())
          icon = 'N';
       if (icon != lasticon)
       {                         // Status icon
          lasticon = icon;
-         gfx_pos(gfx_width() - LOGOW * 2 - 2, gfx_height() - 12, GFX_B | GFX_L);
-         gfx_colour(icon == 'R' ? 'r' : icon == 'F' ? 'C' : icon == 'E' ? 'g' : icon == 'C' ? 'B' : icon == 'c' ? 'Y' : icon == 'H' ? 'R' : icon == 'h' ? 'Y' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : icon == 'P' ? 'w' : icon == 'N' ? 'M' : 'W');
-         gfx_icon16(LOGOW, LOGOH,
-                    icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'E' ? icon_fan : icon == 'C' ? icon_modeC : icon == 'c' ? icon_modeCS : icon == 'H' ? icon_modeH : icon == 'h' ? icon_modeHS : icon == 'D' ? icon_modeD : icon == 'A' ? icon_modeA : icon == 'P' ? icon_power : icon ==
-                    'N' ? icon_nowifi : NULL);
+         gfx_pos (gfx_width () - LOGOW * 2 - 2, gfx_height () - 12, GFX_B | GFX_L);
+         gfx_colour (icon == 'R' ? 'r' : icon == 'F' ? 'C' : icon == 'E' ? 'g' : icon == 'C' ? 'B' : icon == 'c' ? 'Y' : icon ==
+                     'H' ? 'R' : icon == 'h' ? 'Y' : icon == 'D' ? 'Y' : icon == 'A' ? 'G' : icon == 'P' ? 'w' : icon ==
+                     'N' ? 'M' : 'W');
+         gfx_icon16 (LOGOW, LOGOH,
+                     icon == 'R' ? icon_rad : icon == 'F' ? icon_modeF : icon == 'E' ? icon_fan : icon == 'C' ? icon_modeC : icon ==
+                     'c' ? icon_modeCS : icon == 'H' ? icon_modeH : icon == 'h' ? icon_modeHS : icon == 'D' ? icon_modeD : icon ==
+                     'A' ? icon_modeA : icon == 'P' ? icon_power : icon == 'N' ? icon_nowifi : NULL);
       }
-      gfx_unlock();
+      gfx_unlock ();
    }
 }
