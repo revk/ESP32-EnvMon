@@ -1,6 +1,6 @@
 // Generated case design for PCB/EnvHT/EnvHT.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2023-05-03 11:11:47
+// Generated 2023-05-03 11:14:25
 // title:	EnvMon
 // date:	${DATE}
 // rev:	4
@@ -115,8 +115,8 @@ rotate([0,90,0],$fn=24)
 {
 	if(!pushed)
 	{
-		translate([0,0,-10])cylinder(d=7,h=10);
-		cylinder(d1=7,d2=3.5,h=3.5);
+		translate([0,0,-10])cylinder(d=6.5,h=10);
+		cylinder(d1=6.5,d2=3.5,h=2);
 	}
 	cylinder(d=3.5,h=100);
 }
