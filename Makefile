@@ -128,12 +128,15 @@ glowlog: glowlog.c SQLlib/sqllib.o AJL/ajl.o
 PCBCase/case: PCBCase/case.c
 	make -C PCBCase
 
-stl:	PCB/EnvMon2/EnvMon2.stl PCB/EnvMon2/EnvMon2-noco2.stl PCB/EnvMon2/EnvMon2-nooled.stl PCB/EnvMon2/EnvMon2-flush.stl PCB/EnvMon2/EnvMon2-flush-nooled.stl
+stl:	PCB/EnvHT/EnvHT.stl PCB/EnvMon2/EnvMon2.stl PCB/EnvMon2/EnvMon2-noco2.stl PCB/EnvMon2/EnvMon2-nooled.stl PCB/EnvMon2/EnvMon2-flush.stl PCB/EnvMon2/EnvMon2-flush-nooled.stl
 
 %.stl: %.scad
 	echo "Making $@"
 	/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD $< -o $@
 	echo "Made $@"
+
+PCB/EnvHT/EnvHT.scad: PCB/EnvHT/EnvHT.kicad_pcb PCBCase/case Makefile
+	PCBCase/case -o $@ $< --top=6 --base=1 --ignore=D3,M1.1 --edge1
 
 PCB/EnvMon2/EnvMon2.scad: PCB/EnvMon2/EnvMon2.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1
