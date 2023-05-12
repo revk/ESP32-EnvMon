@@ -39,6 +39,7 @@ const char TAG[] = "Env";
 	s8(co2address,0x62)	\
 	s8(alsaddress,0x10)	\
 	s8(shtaddress,0x44)	\
+	s8(shtofft10,0)		\
 	u16(alsdark,200)	\
 	s8(alsplaces,-2)	\
 	s8(co2places,-1)	\
@@ -218,7 +219,8 @@ reportall (time_t now)
          jo_bool (j, "heat", heatlast);
       if (fanlast >= 0)
          jo_bool (j, "fan", fanlast);
-      jo_bool (j, "dark", gfx_dark);
+      if (gfxmosi || alsaddress)
+         jo_bool (j, "dark", gfx_dark);
       if (!isnan (temptargetmin) && !isnan (temptargetmax))
       {
          if (temptargetmin == temptargetmax)
@@ -946,7 +948,7 @@ i2c_task (void *p)
          uint32_t v = sht_read (0xFD);
          if (v)
          {
-            float t = -45.0 + 175 * (float) (v >> 16) / 65535.0;
+            float t = -45.0 + 175 * (float) (v >> 16) / 65535.0 + 0.1 * shtofft10;
             float h = -6.0 + 125 * (float) (v & 65535) / 65535.0;
             lasttemp = report ("temp", lasttemp, thistemp = t, tempplaces);
             lastrh = report ("rh", lastrh, thisrh = h, rhplaces);
@@ -1575,8 +1577,11 @@ app_main ()
       int32_t heat_target = (gfx_dark ? heatnightmC : heatdaymC);
       if (!tempminmC[0] && !tempmaxmC[0])
       {                         /* Temp is set based on night / day, use that as heating basis(min) and no cooling set - legacy */
-         temptargetmin = ((float) heat_target) / 1000.0;
-         temptargetmax = 32.0;
+         if (heat_target)
+         {
+            temptargetmin = ((float) heat_target) / 1000.0;
+            temptargetmax = 32.0;
+         }
          temptimeprev = temptimenext = -1;
       } else
       {
