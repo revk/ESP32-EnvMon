@@ -38,7 +38,7 @@ const char TAG[] = "Env";
 	io(scl,21)	\
 	s8(co2address,0x62)	\
 	s8(alsaddress,0x10)	\
-	s8(shtaddress,0x45)	\
+	s8(shtaddress,0x44)	\
 	u16(alsdark,200)	\
 	s8(alsplaces,-2)	\
 	s8(co2places,-1)	\
