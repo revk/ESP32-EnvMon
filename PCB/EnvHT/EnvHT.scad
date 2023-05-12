@@ -1,6 +1,6 @@
 // Generated case design for PCB/EnvHT/EnvHT.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2023-05-12 15:37:22
+// Generated 2023-05-12 15:42:50
 // title:	EnvMon
 // date:	${DATE}
 // rev:	4
@@ -40,14 +40,14 @@ translate([26.250000,7.150000,1.600000])m5(pushed,hulled); // RevK:R_0603 R_0603
 translate([28.000000,11.700000,1.600000])rotate([0,0,90.000000])rotate([-0.000000,-0.000000,-90.000000])m13(pushed,hulled); // RevK:SOT-23-Thin-6-Reg SOT-23-6 (back)
 translate([10.500000,15.000000,1.600000])m5(pushed,hulled); // RevK:R_0603 R_0603_1608Metric (back)
 translate([28.000000,15.600000,1.600000])rotate([0,0,90.000000])rotate([-0.000000,-0.000000,-90.000000])m16(pushed,hulled); // RevK:L_4x4_ TYA4020 (back)
-// Missing U7.1 LX5563LL-TR
-// Missing S1.1 M3.5CSK
+translate([36.300000,15.650000,1.600000])rotate([0,0,90.000000])m19(pushed,hulled); // RevK:Sensirion_DFN-4_1.5x1.5mm_P0.5mm_SHT4x LX5563LL-TR (back)
+translate([4.500000,13.100000,1.600000])translate([0.000000,0.000000,6.000000])rotate([-0.000000,90.000000,-0.000000])m21(pushed,hulled); // RevK:Screw M3.5CSK (back)
 translate([28.250000,9.600000,1.600000])m2(pushed,hulled); // RevK:C_0603 C_0603_1608Metric (back)
 translate([31.550000,17.100000,1.600000])m8(pushed,hulled); // RevK:C_0805_ C_0805_2012Metric (back)
 translate([10.500000,13.450000,1.600000])m5(pushed,hulled); // RevK:R_0603 R_0603_1608Metric (back)
 translate([31.170000,13.980000,1.600000])rotate([0,0,90.000000])m25(pushed,hulled); // RevK:D_1206_ D_1206_3216Metric (back)
 translate([11.000000,8.450000,1.600000])rotate([0,0,90.000000])m5(pushed,hulled); // RevK:R_0603 R_0603_1608Metric (back)
-// Missing S2.1 M3.5CSK
+translate([41.500000,13.100000,1.600000])translate([0.000000,0.000000,6.000000])rotate([-0.000000,90.000000,-0.000000])m21(pushed,hulled); // RevK:Screw M3.5CSK (back)
 translate([36.300000,17.300000,1.600000])rotate([0,0,180.000000])m2(pushed,hulled); // RevK:C_0603 C_0603_1608Metric (back)
 translate([30.557500,3.350000,1.600000])rotate([0,0,90.000000])m10(pushed,hulled,2); // RevK:PTSM-HH-2-RA PTSM-HH-2-RA (back)
 translate([18.250000,12.656750,1.600000])m26(pushed,hulled); // RevK:ESP32-PICO-MINI-02 ESP32-PICO-MINI-02 (back)
@@ -75,15 +75,19 @@ b(0,0,0,2,1.2,1); // Chip
 
 module m10(pushed=false,hulled=false,n=0)
 { // RevK:PTSM-HH-2-RA PTSM-HH-2-RA
+// Socket
 hull()
-{ // Socket
+{
 	b(0,-7.5/2+0.3,0,1.7+n*2.5,7.5,4);
 	b(0,-7.5/2+0.3,0,1.7+n*2.5-2,7.5,5);
 }
-// Plug
-b(0,-10.5/2-7.5+0.3,0,1.1+n*2.5,10.5,5);
-// Pins
-if(!hulled)for(p=[0:n-1])translate([-2.5*(n-1)/2+p*2.5,0,-2.1])cylinder(r=0.3,h=2.1);
+if(!hulled)
+{
+	// Plug
+	b(0,-10.5/2-7.5+0.3,0,1.1+n*2.5,10.5,5);
+	// Pins
+	for(p=[0:n-1])translate([-2.5*(n-1)/2+p*2.5,0,-2.1])cylinder(r=0.3,h=2.1);
+}
 }
 
 module m13(pushed=false,hulled=false)
@@ -95,6 +99,28 @@ b(0,0,0,1.45,3.05,1.1);
 module m16(pushed=false,hulled=false)
 { // RevK:L_4x4_ TYA4020
 b(0,0,0,4,4,2.1);
+}
+
+module m19(pushed=false,hulled=false)
+{ // RevK:Sensirion_DFN-4_1.5x1.5mm_P0.5mm_SHT4x LX5563LL-TR
+b(0,0,0,1.5,1.5,0.5);
+if(!pushed&&!hulled)cylinder(d=1.5,h=20);
+}
+
+module m21(pushed=false,hulled=false)
+{ // RevK:Screw M3.5CSK
+// Screw M3.5 countersunk
+if(!hulled)
+rotate([0,90,0],$fn=24)
+{
+	if(!pushed)
+	{
+		translate([0,0,-10])cylinder(d=7,h=10);
+		cylinder(d1=7,d2=3.5,h=2.5);
+	}
+	cylinder(d=3.5,h=100);
+}
+
 }
 
 module m25(pushed=false,hulled=false)
