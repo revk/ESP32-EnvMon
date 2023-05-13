@@ -219,7 +219,11 @@ reportall (time_t now)
          jo_bool (j, "heat", heatlast);
       if (fanlast >= 0)
          jo_bool (j, "fan", fanlast);
-      if (gfxmosi || alsaddress)
+      if (
+#ifndef  CONFIG_GFX_NONE
+            gfxmosi ||
+#endif
+            als_found)
          jo_bool (j, "dark", gfx_dark);
       if (!isnan (temptargetmin) && !isnan (temptargetmax))
       {
@@ -710,7 +714,8 @@ i2c_task (void *p)
          jo_int (j, "sda", sda & IO_MASK);
          jo_int (j, "scl", scl & IO_MASK);
          jo_int (j, "adr", alsaddress);
-         jo_int (j, "id", id);
+         if (id)
+            jo_int (j, "id", id);
          revk_error ("ALS", &j);
       } else
       {
