@@ -48,15 +48,15 @@ pico-blind:
 	@make
 
 wroom:
-	components/ESP32-RevK/setbuildsuffix -S1-SSD1351
+	components/ESP32-RevK/setbuildsuffix -S1-V0-SSD1351
 	@make
 
 wroom-blind:
-	components/ESP32-RevK/setbuildsuffix -S1
+	components/ESP32-RevK/setbuildsuffix -S1-V0
 	@make
 
 wroom-mono:
-	components/ESP32-RevK/setbuildsuffix -S1-SSD1680
+	components/ESP32-RevK/setbuildsuffix -S1-V0-SSD1680
 	@make
 
 solo:
