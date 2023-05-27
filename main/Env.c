@@ -1531,7 +1531,7 @@ app_main ()
       {                         /* Send device info */
          sendinfo = 0;
          jo_t j = jo_object_alloc ();
-         if (co2_found)
+         if (co2_found && scd_serial)
          {
             jo_object (j, scd41 ? "SCD41" : "SCD30");
             if (scd_serial)
