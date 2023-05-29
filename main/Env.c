@@ -360,7 +360,7 @@ send_ha_config (void)
    if (i2cport >= 0)
       add ("R/H", "humidity", "%", "rh");
    if (i2cport >= 0)
-      add ("CO₂", "co2", "ppm", "co2");
+      add ("CO₂", "carbon_dioxide", "ppm", "co2");
 }
 
 const char *
