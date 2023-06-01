@@ -219,7 +219,11 @@ reportall (time_t now)
          jo_bool (j, "heat", heatlast);
       if (fanlast >= 0)
          jo_bool (j, "fan", fanlast);
-      if (gfxmosi || alsaddress)
+      if (
+#ifndef  CONFIG_GFX_NONE
+            gfxmosi ||
+#endif
+            als_found)
          jo_bool (j, "dark", gfx_dark);
       if (!isnan (temptargetmin) && !isnan (temptargetmax))
       {
@@ -356,7 +360,7 @@ send_ha_config (void)
    if (i2cport >= 0)
       add ("R/H", "humidity", "%", "rh");
    if (i2cport >= 0)
-      add ("CO₂", "co2", "ppm", "co2");
+      add ("CO₂", "carbon_dioxide", "ppm", "co2");
 }
 
 const char *
@@ -710,7 +714,8 @@ i2c_task (void *p)
          jo_int (j, "sda", sda & IO_MASK);
          jo_int (j, "scl", scl & IO_MASK);
          jo_int (j, "adr", alsaddress);
-         jo_int (j, "id", id);
+         if (id)
+            jo_int (j, "id", id);
          revk_error ("ALS", &j);
       } else
       {
@@ -1526,7 +1531,7 @@ app_main ()
       {                         /* Send device info */
          sendinfo = 0;
          jo_t j = jo_object_alloc ();
-         if (co2_found)
+         if (co2_found && scd_serial)
          {
             jo_object (j, scd41 ? "SCD41" : "SCD30");
             if (scd_serial)

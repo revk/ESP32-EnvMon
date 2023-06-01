@@ -28,8 +28,14 @@ icons/%.h:	icons/%.gray
 	od -Anone -tx1 -v -w64 $< | sed 's/ \(.\). \(.\)./0x\1\2,/g' >> $@
 	echo "};" >> $@
 
-issue:  set
+issue:  
+	-git pull
+	-git submodule update --recursive
+	-git commit -a -m checkpoint
+	@make set
 	cp --remove-destination Env*.bin release
+	git commit -a -m release
+	git push
 
 set:    wroom wroom-mono wroom-blind pico-blind pico
 
@@ -42,15 +48,15 @@ pico-blind:
 	@make
 
 wroom:
-	components/ESP32-RevK/setbuildsuffix -S1-SSD1351
+	components/ESP32-RevK/setbuildsuffix -S1-V0-SSD1351
 	@make
 
 wroom-blind:
-	components/ESP32-RevK/setbuildsuffix -S1
+	components/ESP32-RevK/setbuildsuffix -S1-V0
 	@make
 
 wroom-mono:
-	components/ESP32-RevK/setbuildsuffix -S1-SSD1680
+	components/ESP32-RevK/setbuildsuffix -S1-V0-SSD1680
 	@make
 
 solo:
@@ -77,7 +83,8 @@ pull:
 
 update:
 	git submodule update --init --remote --merge --recursive
-	git commit -a -m "Library update"
+	-git commit -a -m "Library update"
+
 
 # Set GPIO low (whichever CBUS is set to mode 8/GPIO)
 bootmode: ftdizap/ftdizap
