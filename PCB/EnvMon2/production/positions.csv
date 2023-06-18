@@ -1,4 +1,4 @@
-Designator,Mid X,Mid Y,Rotation,Layer
+﻿Designator,Mid X,Mid Y,Rotation,Layer
 C1,45.45,14.7,0.0,top
 C2,48.75,15.95,0.0,top
 C3,48.75,22.2,0.0,top
@@ -34,5 +34,5 @@ U1,45.2,16.8,180.0,top
 U2,5.5,5.5,180.0,top
 U3,35.05,14.75,270.0,top
 U4,35.25,26.00675,0.0,top
-U6,20.6,36.2,0.0,top
 U7,53.1,28.9,0.0,top
+U8,20.6,35.9,90.0,top
