@@ -1310,8 +1310,8 @@ app_main ()
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define u8l(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_LIVE);
 #define s(n) revk_register(#n,0,0,&n,NULL,0);
-#define io(n,d)         revk_register(#n,0,sizeof(n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD|SETTING_FIXED);
-#define ioa(n,a,d)      revk_register(#n,a,sizeof(*n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD|SETTING_FIXED);
+#define io(n,d)         revk_register(#n,0,sizeof(n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD|SETTING_FIX);
+#define ioa(n,a,d)      revk_register(#n,a,sizeof(*n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD|SETTING_FIX);
    settings
 #undef u32
 #undef u16
