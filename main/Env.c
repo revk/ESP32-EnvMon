@@ -41,7 +41,7 @@ const char TAG[] = "Env";
 	s8(shtaddress,0x44)	\
 	s8(shtofft10,0)		\
 	u16(alsdark,200)	\
-	s8(alsplaces,-2)	\
+	s8(alsplaces,0)	\
 	s8(co2places,-1)	\
 	u32(co2damp,100)	\
 	u32(startup,240)	\
@@ -131,6 +131,9 @@ static uint8_t logo[LOGOW * LOGOH / 2];
 static char lasticon = 0;
 static float lastco2 = NAN;
 static float lastals = NAN;
+static float lastalsr = NAN;
+static float lastalsg = NAN;
+static float lastalsb = NAN;
 static float lastrh = NAN;
 static float lasttemp = NAN;
 static float lastotemp = NAN;
@@ -154,7 +157,7 @@ static volatile uint32_t do_co2 = 0;
 static int8_t num_ds18b20 = 0;
 static DeviceAddress adr_ds18b20[2];
 static char co2_found = 0;
-static char als_found = 0;      // 1 is simple ambient, 2 is VEML6040A3OG
+static char als_found = 0;      // 1 is VEML3235SL, 2 is VEML6040A3OG
 static char sht_found = 0;
 static char sendinfo = 0;
 
@@ -714,7 +717,7 @@ i2c_task (void *p)
       } else if (id >= 0)
       {                         // It read, assume VELM6040
          als_found = 2;
-         als_write (0x00, 0x0040);
+         als_write (0x00, 0x0040);      // IT=4 TRIG=0 AF=0 SD=0
       } else
       {
          gfx_dark = 0;
@@ -724,6 +727,8 @@ i2c_task (void *p)
          jo_int (j, "sda", sda & IO_MASK);
          jo_int (j, "scl", scl & IO_MASK);
          jo_int (j, "adr", alsaddress);
+         if (id >= 0)
+            jo_stringf (j, "09", "%04X", id);
          if (id)
             jo_int (j, "id", id);
          revk_error ("ALS", &j);
@@ -966,8 +971,16 @@ i2c_task (void *p)
             //ESP_LOGI (TAG, "SHT T/H read %08lX T=%.2f H=%.2f", v, t, h);
          }
       }
-      if (als_found)
-         lastals = report ("als", lastals, als_read (0x05), alsplaces);
+      if (als_found == 1)
+         //lastals = report ("als", lastals, (float) als_read (0x04) * 1117 / 65535, alsplaces);   // VEML3235 IT=4
+         lastals = report ("als", lastals, als_read (0x04), alsplaces); // What we seen to see is closer to just lux
+      else if (als_found == 2)
+      {                         // VEML6040 IT=4
+         lastals = report ("als", lastals, (float) als_read (0x0B) * 1031 / 65535, alsplaces);
+         lastalsb = report ("b", lastalsb, (float) als_read (0x0A) * 1031 / 65535, alsplaces);
+         lastalsg = report ("g", lastalsg, (float) als_read (0x09) * 1031 / 65535, alsplaces);
+         lastalsr = report ("r", lastalsr, (float) als_read (0x08) * 1031 / 65535, alsplaces);
+      }
    }
 }
 
@@ -1566,7 +1579,7 @@ app_main ()
          send_ha_config ();
       if (!isnan (lastals))
       {                         // ALS based night mode
-         if (lastals > alsdark)
+         if (lastals > alsdark) // LUX*100
             gfx_dark = 0;
          else
             gfx_dark = 1;
