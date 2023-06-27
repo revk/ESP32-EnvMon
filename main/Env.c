@@ -154,7 +154,7 @@ static volatile uint32_t do_co2 = 0;
 static int8_t num_ds18b20 = 0;
 static DeviceAddress adr_ds18b20[2];
 static char co2_found = 0;
-static char als_found = 0;
+static char als_found = 0;      // 1 is simple ambient, 2 is VEML6040A3OG
 static char sht_found = 0;
 static char sendinfo = 0;
 
@@ -575,7 +575,7 @@ co2_setting (uint16_t cmd, uint16_t val)
    return "";
 }
 
-static uint16_t
+static int
 als_read (uint8_t cmd)
 {
    uint8_t h = 0,
@@ -589,8 +589,10 @@ als_read (uint8_t cmd)
    i2c_master_read_byte (t, &l, I2C_MASTER_ACK);
    i2c_master_read_byte (t, &h, I2C_MASTER_LAST_NACK);
    i2c_master_stop (t);
-   i2c_master_cmd_begin (i2cport, t, 10 / portTICK_PERIOD_MS);
+   esp_err_t err = i2c_master_cmd_begin (i2cport, t, 10 / portTICK_PERIOD_MS);
    i2c_cmd_link_delete (t);
+   if (err)
+      return -1;
    return (h << 8) + l;
 }
 
@@ -704,11 +706,19 @@ i2c_task (void *p)
    }
    if (alsaddress)
    {
-      uint16_t id = als_read (0x09);
-      if ((id & 0xFF) != 0x35)
+      int id = als_read (0x09);
+      if ((id & 0xFF) == 0x35)
+      {
+         als_found = 1;
+         als_write (0x00, 0x0040);
+      } else if (id >= 0)
+      {                         // It read, assume VELM6040
+         als_found = 2;
+         als_write (0x00, 0x0040);
+      } else
       {
          gfx_dark = 0;
-         ESP_LOGE (TAG, "No ALS %02X", alsaddress);
+         ESP_LOGE (TAG, "No ALS %02X (%04X)", alsaddress, id);
          jo_t j = jo_object_alloc ();
          jo_string (j, "error", "No ALS");
          jo_int (j, "sda", sda & IO_MASK);
@@ -717,10 +727,6 @@ i2c_task (void *p)
          if (id)
             jo_int (j, "id", id);
          revk_error ("ALS", &j);
-      } else
-      {
-         als_found = 1;
-         als_write (0x00, 0x0040);
       }
    }
    if (shtaddress)
@@ -1304,8 +1310,8 @@ app_main ()
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define u8l(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_LIVE);
 #define s(n) revk_register(#n,0,0,&n,NULL,0);
-#define io(n,d)         revk_register(#n,0,sizeof(n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD);
-#define ioa(n,a,d)      revk_register(#n,a,sizeof(*n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD);
+#define io(n,d)         revk_register(#n,0,sizeof(n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD|SETTING_FIXED);
+#define ioa(n,a,d)      revk_register(#n,a,sizeof(*n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD|SETTING_FIXED);
    settings
 #undef u32
 #undef u16
