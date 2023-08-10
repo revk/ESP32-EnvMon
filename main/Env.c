@@ -139,7 +139,9 @@ static float lasttemp = NAN;
 static float lastotemp = NAN;
 static float thisco2 = NAN;
 static float thistemp = NAN;
+#ifdef	ELA
 static ela_t *bletemp = NULL;
+#endif
 static float thisrh = NAN;
 static float temptargetmin = NAN;
 static float temptargetmax = NAN;
@@ -240,6 +242,7 @@ reportall (time_t now)
             jo_close (j);
          }
       }
+#ifdef	ELA
       if (bletemp && !bletemp->missing)
       {
          jo_string (j, "source", bletemp->name);
@@ -248,6 +251,7 @@ reportall (time_t now)
          if (bletemp->volt)
             jo_litf (j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
       }
+#endif
       revk_state ("data", &j);
       if (*heataircon && !isnan (lasttemp))
       {                         /* Aircon control */
@@ -896,7 +900,11 @@ i2c_task (void *p)
                      thisrh = (thisrh * rhdamp + r) / (rhdamp + 1);
                   lastrh = report ("rh", lastrh, thisrh, rhplaces);
                }
-               if (!num_ds18b20 && (!bletemp || bletemp->missing))
+               if (!num_ds18b20
+#ifdef	ELA
+			       && (!bletemp || bletemp->missing)
+#endif
+			       )
                   lasttemp = report ("temp", lasttemp, thistemp = t, tempplaces);       /* Treat as temp not itemp as we trust the SCD41 to * be sane */
             }
          } else
@@ -952,7 +960,11 @@ i2c_task (void *p)
                   else
                      thisrh = (thisrh * rhdamp + rh) / (rhdamp + 1);
                }
-               if (!num_ds18b20 && t >= -1000 && (!bletemp || bletemp->missing))
+               if (!num_ds18b20 && t >= -1000 
+#ifdef	ELA
+			       && (!bletemp || bletemp->missing)
+#endif
+			       )
                   lasttemp = report ("itemp", lasttemp, thistemp = t, tempplaces);
                /* Use temp here as no DS18B20 */
                lastco2 = report ("co2", lastco2, thisco2, co2places);
@@ -994,8 +1006,10 @@ ds18b20_task (void *p)
    while (1)
    {
       usleep (250000);
+#ifdef	ELA
       if (bletemp && !bletemp->missing)
          continue;
+#endif
       ds18b20_requestTemperatures ();
       float c[num_ds18b20];
       for (int i = 0; i < num_ds18b20; ++i)
@@ -1054,9 +1068,12 @@ gfx_temp (float t)
    gfx_text (1, "o");
    gfx_pos (gfx_x (), gfx_y (), GFX_T | GFX_L | GFX_V);
    gfx_text (2, f ? "F" : "C");
+#ifdef	ELA
    if (bletemp)
       gfx_text (1, bletemp->missing ? "~~" : "BT");
-   else if (num_ds18b20 || scd41)
+   else
+#endif
+	   if (num_ds18b20 || scd41)
       gfx_text (2, " ");
    else
       gfx_text (2, "~");
@@ -1410,7 +1427,7 @@ app_main ()
    gfx_box (gfx_width (), gfx_height (), 255);
    gfx_unlock ();
    if (i2cport >= 0)
-      revk_task ("I2C", i2c_task, NULL);
+      revk_task ("I2C", i2c_task, NULL,4);
    if (ds18b20)
    {                            /* DS18B20 init */
       ds18b20_init (ds18b20 & IO_MASK);
@@ -1433,7 +1450,7 @@ app_main ()
          ESP_LOGE (TAG, "No DS18B20 port %d", ds18b20 & IO_MASK);
       } else
       {
-         revk_task ("DS18B20", ds18b20_task, NULL);
+         revk_task ("DS18B20", ds18b20_task, NULL,4);
          sendinfo = 1;
       }
    }
@@ -1502,8 +1519,10 @@ app_main ()
       revk_web_config_start (webserver);
    }
 
+#ifdef	ELA
    if (*bluecoint)
       ela_run ();
+#endif
 
    while (1)
    {                            /* Main loop - handles display and UI, etc. */
@@ -1517,6 +1536,7 @@ app_main ()
       if (up != lastup)
       {                         // every second
          lastup = up;
+#ifdef	ELA
          if (*bluecoint)
          {                      // BLE working
             ela_expire (60);
@@ -1531,6 +1551,7 @@ app_main ()
             if (bletemp && !bletemp->missing)
                lasttemp = report ("temp", lasttemp, thistemp = bletemp->temp / 100.0, tempplaces);      // use BLE temp
          }
+#endif
       }
       if (!airconlast || airconlast + 300 < uptime ())
       {                         // Not seen aircon for a while (should update every 60 seconds, so 5 mins is plenty)
