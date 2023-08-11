@@ -157,7 +157,9 @@ static uint32_t sht_serial = 0;
 static int8_t i2cport = -1;
 static volatile uint32_t do_co2 = 0;
 static int8_t num_ds18b20 = 0;
-static DeviceAddress adr_ds18b20[2];
+#if 0
+static ds18x20_addr_t adr_ds18b20[2];
+#endif
 static char co2_found = 0;
 static char als_found = 0;      // 1 is VEML3235SL, 2 is VEML6040A3OG
 static char sht_found = 0;
@@ -1001,8 +1003,10 @@ ds18b20_task (void *p)
 {
    p = p;
    ESP_LOGI (TAG, "DS18B20 start (%d sensor%s)", num_ds18b20, num_ds18b20 == 1 ? "" : "s");
+#if 0
    if (!ds18b20_setResolution (adr_ds18b20, num_ds18b20, 12))
       ESP_LOGE (TAG, "DS18B20 set failed");
+#endif
    while (1)
    {
       usleep (250000);
@@ -1010,10 +1014,12 @@ ds18b20_task (void *p)
       if (bletemp && !bletemp->missing)
          continue;
 #endif
-      ds18b20_requestTemperatures ();
       float c[num_ds18b20];
+#if 0
+      ds18b20_requestTemperatures ();
       for (int i = 0; i < num_ds18b20; ++i)
          c[i] = ds18b20_getTempC (&adr_ds18b20[i]);
+#endif
       if (!isnan (c[0]))
       {
 #define N 10
@@ -1430,17 +1436,8 @@ app_main ()
       revk_task ("I2C", i2c_task, NULL, 4);
    if (ds18b20)
    {                            /* DS18B20 init */
-      ds18b20_init (ds18b20 & IO_MASK);
-      int try = 0;
-      while (try++ < 5)
-      {
-         ds18b20_reset_search ();
-         while (num_ds18b20 < sizeof (adr_ds18b20) / sizeof (*adr_ds18b20) && ds18b20_search (adr_ds18b20[num_ds18b20], true))
-            num_ds18b20++;
-         if (num_ds18b20)
-            break;
-         usleep (100000);
-      }
+#if 0
+#endif
       if (!num_ds18b20)
       {
          jo_t j = jo_object_alloc ();
@@ -1579,8 +1576,10 @@ app_main ()
          if (num_ds18b20)
          {
             jo_array (j, "DS18B20");
+#if 0
             for (int i = 0; i < num_ds18b20; i++)
                jo_stringf (j, NULL, "%016llX", *(unsigned long long *) &adr_ds18b20[i]);
+#endif
             jo_close (j);
          }
          if (sht_found)
