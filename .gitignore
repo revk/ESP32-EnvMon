@@ -18,3 +18,5 @@ glowlog
 icons/*.png
 icons/*.gray
 icons/*.h
+managed_components
+dependencies.lock
