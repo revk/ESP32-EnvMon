@@ -2534,6 +2534,45 @@
     )
   )
 
+  (symbol (lib_id "Device:D") (at 44.45 123.825 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid 11fa4c67-a163-4d7e-ac65-e4c8c028f450)
+    (property "Reference" "D2" (at 44.45 129.3368 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "D" (at 44.45 127.0254 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "RevK:D_SOD-123" (at 44.45 123.825 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "~" (at 44.45 123.825 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "LCSC Part #" "C1884542" (at 44.45 123.825 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid ca0a3711-b5fa-45e8-8401-8a5790dcc8c3))
+    (pin "2" (uuid fe991294-2a0c-41b4-a6c3-65f8eb4ca01f))
+    (instances
+      (project "EnvMon"
+        (path "/12422a89-3d0c-485c-9386-f77121fd68fd"
+          (reference "D2") (unit 1)
+        )
+      )
+      (project "Access"
+        (path "/2a267270-6585-45e3-a633-b53049f10066"
+          (reference "D8") (unit 1)
+        )
+      )
+      (project "GenericS3"
+        (path "/2d210a96-f81f-42a9-8bf4-1b43c11086f3"
+          (reference "D1") (unit 1)
+        )
+      )
+    )
+  )
+
   (symbol (lib_id "power:+3.3V") (at 59.69 156.21 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 129f3b96-7fb3-4974-a9d3-a0445557145a)
@@ -2931,35 +2970,6 @@
     )
   )
 
-  (symbol (lib_id "Device:D") (at 44.45 123.825 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid 3d4a7dd0-fbca-4010-8c9c-eea6a8f33171)
-    (property "Reference" "D4" (at 44.45 129.3368 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Value" "D" (at 44.45 127.0254 0)
-      (effects (font (size 1.27 1.27)))
-    )
-    (property "Footprint" "RevK:D_1206" (at 44.45 123.825 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Datasheet" "~" (at 44.45 123.825 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "LCSC Part #" "C143805" (at 44.45 123.825 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid d53a18d7-ee01-4d1e-b3c4-b9b9bf57d241))
-    (pin "2" (uuid c4524e80-6edd-433d-a9c8-ace31d48646a))
-    (instances
-      (project "EnvMon"
-        (path "/12422a89-3d0c-485c-9386-f77121fd68fd"
-          (reference "D4") (unit 1)
-        )
-      )
-    )
-  )
-
   (symbol (lib_id "Device:R") (at 196.85 124.46 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 40905c56-15f1-4710-87cf-81fb9e340012)
@@ -3228,6 +3238,45 @@
       (project "EnvMon"
         (path "/12422a89-3d0c-485c-9386-f77121fd68fd"
           (reference "U5") (unit 1)
+        )
+      )
+    )
+  )
+
+  (symbol (lib_id "Device:D") (at 59.69 27.94 180) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid 575c97fa-552d-4e36-abd4-b31cb51eb510)
+    (property "Reference" "D3" (at 59.69 22.4282 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "D" (at 59.69 24.7396 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "RevK:D_SOD-123" (at 59.69 27.94 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "~" (at 59.69 27.94 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "LCSC Part #" "C1884542" (at 59.69 27.94 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid 28949e8b-29ad-44c5-9a53-fb118902854a))
+    (pin "2" (uuid 87020ac4-1a8b-4ade-abf6-3ea730529128))
+    (instances
+      (project "EnvMon"
+        (path "/12422a89-3d0c-485c-9386-f77121fd68fd"
+          (reference "D3") (unit 1)
+        )
+      )
+      (project "Access"
+        (path "/2a267270-6585-45e3-a633-b53049f10066"
+          (reference "D8") (unit 1)
+        )
+      )
+      (project "GenericS3"
+        (path "/2d210a96-f81f-42a9-8bf4-1b43c11086f3"
+          (reference "D1") (unit 1)
         )
       )
     )
@@ -4070,35 +4119,6 @@
       (project "Faikin"
         (path "/46c350bb-7de4-4e81-aafd-4af55e37aab0"
           (reference "#PWR012") (unit 1)
-        )
-      )
-    )
-  )
-
-  (symbol (lib_id "Device:D") (at 59.69 27.94 180) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no)
-    (uuid bbc62690-b8fb-438a-8ee0-c77d65956f89)
-    (property "Reference" "D2" (at 59.69 22.4282 0)
-      (effects (font (size 1.27 1.27)))
-    )
-    (property "Value" "D" (at 59.69 24.7396 0)
-      (effects (font (size 1.27 1.27)))
-    )
-    (property "Footprint" "RevK:D_1206" (at 59.69 27.94 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Datasheet" "~" (at 59.69 27.94 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "LCSC Part #" "C143805" (at 59.69 27.94 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid bb690633-a2d8-45d8-8d80-85ce2f66f3a7))
-    (pin "2" (uuid aa67310a-259a-4b0d-8870-2ee279e7e79a))
-    (instances
-      (project "EnvMon"
-        (path "/12422a89-3d0c-485c-9386-f77121fd68fd"
-          (reference "D2") (unit 1)
         )
       )
     )
