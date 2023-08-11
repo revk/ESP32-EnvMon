@@ -10,7 +10,8 @@ const char TAG[] = "Env";
 #include <math.h>
 #include <esp_sntp.h>
 #include "esp_http_server.h"
-#include "ds18b20.h"
+#include <onewire_bus.h>
+#include <ds18b20.h>
 #include "gfx.h"
 #include "icons.h"
 #include "ela.h"
@@ -100,10 +101,10 @@ const char TAG[] = "Env";
 #define u8l(n,d)	uint8_t n;
 #define b(n) uint8_t n;
 #define s(n) char * n;
-#define io(n,d)         uint8_t n;
-#define ioa(n,a,d)      uint8_t n[a];
-#define	IO_MASK	0x3F
-#define	IO_INV	0x40
+#define io(n,d)         uint16_t n;
+#define ioa(n,a,d)      uint16_t n[a];
+#define	IO_MASK	0x3FFF
+#define	IO_INV	0x4000
 settings
 #undef u32
 #undef u16
@@ -157,9 +158,7 @@ static uint32_t sht_serial = 0;
 static int8_t i2cport = -1;
 static volatile uint32_t do_co2 = 0;
 static int8_t num_ds18b20 = 0;
-#if 0
-static ds18x20_addr_t adr_ds18b20[2];
-#endif
+static ds18b20_device_handle_t adr_ds18b20[2];
 static char co2_found = 0;
 static char als_found = 0;      // 1 is VEML3235SL, 2 is VEML6040A3OG
 static char sht_found = 0;
@@ -1003,10 +1002,32 @@ ds18b20_task (void *p)
 {
    p = p;
    ESP_LOGI (TAG, "DS18B20 start (%d sensor%s)", num_ds18b20, num_ds18b20 == 1 ? "" : "s");
-#if 0
-   if (!ds18b20_setResolution (adr_ds18b20, num_ds18b20, 12))
-      ESP_LOGE (TAG, "DS18B20 set failed");
-#endif
+        onewire_bus_config_t bus_config={ds18b20&IO_MASK};
+        onewire_bus_rmt_config_t rmt_config={20};
+        onewire_bus_handle_t bus_handle={0};
+        REVK_ERR_CHECK(onewire_new_bus_rmt(&bus_config,&rmt_config,&bus_handle));
+        onewire_device_iter_handle_t iter={0};
+        REVK_ERR_CHECK(onewire_new_device_iter(bus_handle,&iter));
+	onewire_device_t dev={};
+        while(!onewire_device_iter_get_next(iter,&dev)&&num_ds18b20<sizeof(adr_ds18b20)/sizeof(*adr_ds18b20))
+	{
+                ESP_LOGE(TAG,"Found %llX",dev.address);
+		 ds18b20_config_t config={};
+                REVK_ERR_CHECK(ds18b20_new_device(&dev, &config,&adr_ds18b20[num_ds18b20]));
+                REVK_ERR_CHECK(ds18b20_set_resolution(adr_ds18b20[num_ds18b20],DS18B20_RESOLUTION_12B));
+                num_ds18b20++;
+        }
+        if(!num_ds18b20)
+	{
+         jo_t j = jo_object_alloc ();
+         jo_string (j, "error", "No DS18B20 devices");
+         jo_int (j, "port", ds18b20 & IO_MASK);
+         revk_error ("temp", &j);
+         ESP_LOGE (TAG, "No DS18B20 port %d", ds18b20 & IO_MASK);
+		vTaskDelete (NULL);
+		return ;
+	}
+         sendinfo = 1;
    while (1)
    {
       usleep (250000);
@@ -1015,11 +1036,11 @@ ds18b20_task (void *p)
          continue;
 #endif
       float c[num_ds18b20];
-#if 0
-      ds18b20_requestTemperatures ();
       for (int i = 0; i < num_ds18b20; ++i)
-         c[i] = ds18b20_getTempC (&adr_ds18b20[i]);
-#endif
+      {
+	       REVK_ERR_CHECK(ds18b20_trigger_temperature_conversion(adr_ds18b20[num_ds18b20]));
+                REVK_ERR_CHECK(ds18b20_get_temperature(adr_ds18b20[num_ds18b20],&c[i]));
+      }
       if (!isnan (c[0]))
       {
 #define N 10
@@ -1435,22 +1456,7 @@ app_main ()
    if (i2cport >= 0)
       revk_task ("I2C", i2c_task, NULL, 4);
    if (ds18b20)
-   {                            /* DS18B20 init */
-#if 0
-#endif
-      if (!num_ds18b20)
-      {
-         jo_t j = jo_object_alloc ();
-         jo_string (j, "error", "No DS18B20 devices");
-         jo_int (j, "port", ds18b20 & IO_MASK);
-         revk_error ("temp", &j);
-         ESP_LOGE (TAG, "No DS18B20 port %d", ds18b20 & IO_MASK);
-      } else
-      {
          revk_task ("DS18B20", ds18b20_task, NULL, 4);
-         sendinfo = 1;
-      }
-   }
    gfx_lock ();
    gfx_clear (0);
    gfx_unlock ();
@@ -1573,15 +1579,15 @@ app_main ()
                jo_bool (j, "automatic-self-calibration", scd_selfcal);
             jo_close (j);
          }
+#if 0
          if (num_ds18b20)
          {
             jo_array (j, "DS18B20");
-#if 0
             for (int i = 0; i < num_ds18b20; i++)
-               jo_stringf (j, NULL, "%016llX", *(unsigned long long *) &adr_ds18b20[i]);
-#endif
+               jo_stringf (j, NULL, "%016llX", *(unsigned long long *) &adr_ds18b20[i].address);
             jo_close (j);
          }
+#endif
          if (sht_found)
             jo_stringf (j, "SHT40", "%08lX", sht_serial);
          revk_info ("info", &j);
