@@ -9,7 +9,7 @@ SUFFIX := $(shell components/ESP32-RevK/buildsuffix)
 all:	
 	@echo Make: $(PROJECT_NAME)$(SUFFIX).bin
 	@idf.py build
-	@cp --remove-destination build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
+	@cp build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
 	@echo Done: $(PROJECT_NAME)$(SUFFIX).bin
 
 tools: envlog envgraph taspowerlog taspowersvg taspowerse glowlog
@@ -33,7 +33,7 @@ issue:
 	-git submodule update --recursive
 	-git commit -a -m checkpoint
 	@make set
-	cp --remove-destination Env*.bin release
+	cp Env*.bin release
 	git commit -a -m release
 	git push
 
