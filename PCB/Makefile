@@ -9,7 +9,7 @@ PCBCase/case: PCBCase/case.c
 	echo "Made $@"
 
 EnvHT/EnvHT.scad: EnvHT/EnvHT.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --top=6 --base=1 --ignore=D3,M1.1
+	PCBCase/case -o $@ $< --top=6 --base=1 --ignore=D3,M1.1 --pcb=2 --case=3
 
 EnvMon/EnvMon.scad: EnvMon/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --top=10.4 --base=2 --ignore=D3,M1.1
