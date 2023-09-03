@@ -129,7 +129,7 @@ main (int argc, const char *argv[])
          errx (1, "MQTT subscribe failed %s (%s)", mosquitto_strerror (e), sub);
       if (debug)
          warnx ("MQTT Sub %s", sub);
-      sub = "info/BlueCoinT/+/report";
+      sub = "info/BLE-Env/+/report";
       e = mosquitto_subscribe (mqtt, NULL, sub, 0);
       if (e)
          errx (1, "MQTT subscribe failed %s (%s)", mosquitto_strerror (e), sub);
@@ -274,7 +274,7 @@ main (int argc, const char *argv[])
             }
          }
          const char *v;
-         if (!strcmp (topic, "info/BlueCoinT"))
+         if (!strcmp (topic, "info/BLE-Env"))
          {
             log_t *l = find (j_get (data, "name"));
             if ((v = j_get (data, "temp")))
