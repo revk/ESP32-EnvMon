@@ -278,10 +278,10 @@ main (int argc, const char *argv[])
          {
             log_t *l = find (j_get (data, "name"));
             if ((v = j_get (data, "temp")))
-            {
                logval ("temp", &l->temp, v);
-               done (l, 1);
-            }
+            if ((v = j_get (data, "rh")))
+               logval ("rh", &l->temp, v);
+            done (l, 1);
          } else if (!strcmp (type, "RESULT"))
          {                      // Tasmota (power control) - log as heat
             j_t j = j_first (data);
