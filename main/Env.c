@@ -14,7 +14,7 @@ const char TAG[] = "Env";
 #include <ds18b20.h>
 #include "gfx.h"
 #include "icons.h"
-#include "ela.h"
+#include "bleenv.h"
 
 /*
  * Setting for "logo" is 32 x32 bytes(4 bits per pixel) Note that MQTT config needs to allow a large enough message for the logo
@@ -141,7 +141,7 @@ static float lastotemp = NAN;
 static float thisco2 = NAN;
 static float thistemp = NAN;
 #ifdef	ELA
-static ela_t *bletemp = NULL;
+static bleenv_t *bletemp = NULL;
 #endif
 static float thisrh = NAN;
 static float temptargetmin = NAN;
@@ -1516,7 +1516,7 @@ app_main ()
 
 #ifdef	ELA
    if (*bluecoint)
-      ela_run ();
+      bleenv_run ();
 #endif
 
    while (1)
@@ -1534,9 +1534,9 @@ app_main ()
 #ifdef	ELA
          if (*bluecoint)
          {                      // BLE working
-            ela_expire (60);
+            bleenv_expire (60);
             if (!bletemp)
-               for (ela_t * e = ela; e; e = e->next)
+               for (bleenv_t * e = bleenv; e; e = e->next)
                   if (!strcmp (e->name, bluecoint))
                   {
                      ESP_LOGI (TAG, "Found BLE %s", bluecoint);

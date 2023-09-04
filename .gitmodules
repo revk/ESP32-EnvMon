@@ -17,9 +17,9 @@
 [submodule "components/ESP32-GFX"]
 	path = components/ESP32-GFX
 	url = https://github.com/revk/ESP32-GFX
-[submodule "ESP32-BlueCoinT"]
-	path = ESP32-BlueCoinT
-	url = https://github.com/revk/ESP32-BlueCoinT
 [submodule "PCB/PCBCase"]
 	path = PCB/PCBCase
 	url = https://github.com/revk/PCBCase
+[submodule "ESP32-BLE-Env"]
+	path = ESP32-BLE-Env
+	url = https://github.com/revk/ESP32-BLE-Env
