@@ -474,6 +474,16 @@ main (int argc, const char *argv[])
    int maxy = 0;
    // Normalise min and work out y size
    int offset = 0;
+   // Temps are same scale
+   if (data[TEMP].max > data[TEMPO].max)
+      data[TEMPO].max = data[TEMP].max;
+   else
+      data[TEMP].max = data[TEMPO].max;
+   if (data[TEMP].min < data[TEMPO].min)
+      data[TEMPO].min = data[TEMP].min;
+   else
+      data[TEMP].min = data[TEMPO].min;
+   // Limits on scaled
    for (d = 0; d < MAX; d++)
       if (data[d].count)
       {
@@ -483,15 +493,10 @@ main (int argc, const char *argv[])
          int y = v * data[d].scale - (offset - 1) * ysize;
          if (y > maxy)
             maxy = y;
-         offset -= spacing;
       }
    for (d = 0; d < MAX; d++)
       if (data[d].count)
          data[d].max = data[d].min + (double) maxy / data[d].scale;
-   if (data[TEMP].max > data[TEMPO].max)
-      data[TEMPO].max = data[TEMP].max;
-   else
-      data[TEMP].max = data[TEMPO].max;
    if (!nogrid)
    {                            // Grid
       xml_add (grid, "@stroke", "black");
