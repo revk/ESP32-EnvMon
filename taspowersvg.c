@@ -276,8 +276,8 @@ main (int argc, const char *argv[])
    {                            // Year
       periods = 12;
       q = sql_printf
-         ("SELECT *,substring(`ts`,6,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%%' GROUP BY `device`,`P` ORDER BY `device`,`P`",
-          sqltable, Y);
+         ("SELECT *,substring(`ts`,6,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts`>='%04d-01-01' AND `ts`<'%04d-01-01' GROUP BY `device`,`P` ORDER BY `device`,`P`",
+          sqltable, Y,Y+1);
    } else if (!D)
    {                            // Month
       struct tm t = { };
@@ -288,20 +288,20 @@ main (int argc, const char *argv[])
       timelocal (&t);
       periods = t.tm_mday;
       q = sql_printf
-         ("SELECT *,substring(`ts`,9,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%%' GROUP BY `device`,`P` ORDER BY `device`,`P`",
-          sqltable, Y, M);
+         ("SELECT *,substring(`ts`,9,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts`>='%04d-%02d-01' AND `ts`<date_add('%04d-%02d-01',interval 1 month) GROUP BY `device`,`P` ORDER BY `device`,`P`",
+          sqltable, Y, M,Y,M);
    } else if (!trace)
    {                            // Day
       periods = 24;             // DST causes gap or double on change...
       q = sql_printf
-         ("SELECT *,substring(`ts`,12,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`",
-          sqltable, Y, M, D);
+         ("SELECT *,substring(`ts`,12,2) AS `P`,sum(`wh`) AS `T` FROM `%#S` WHERE `ts`>='%04d-%02d-%02d' AND `ts`<date_add('%04d-%02d-%02d',interval 1 day) GROUP BY `device`,`P` ORDER BY `device`,`P`",
+          sqltable, Y, M, D,Y,M,D);
    } else
    {
       periods = 24;             // DST causes gap or double on change...
       q = sql_printf
-         ("SELECT *,substring(`ts`,12,8) AS `P`,sum(if(`w` is null,`power`,`w`)) AS `T` FROM `%#S` WHERE `ts` LIKE '%04d-%02d-%02d %%' GROUP BY `device`,`P` ORDER BY `device`,`P`",
-          sqltable, Y, M, D);
+         ("SELECT *,substring(`ts`,12,8) AS `P`,sum(if(`w` is null,`power`,`w`)) AS `T` FROM `%#S` WHERE `ts`>='%04d-%02d-%02d' AND `ts`<date_add('%04d-%02d-%02d',interval 1 day) GROUP BY `device`,`P` ORDER BY `device`,`P`",
+          sqltable, Y, M, D,Y,M,D);
    }
    SQL_RES *res = sql_safe_query_store_free (&sql, q);
    // Plot

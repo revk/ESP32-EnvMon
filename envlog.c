@@ -129,7 +129,7 @@ main (int argc, const char *argv[])
          errx (1, "MQTT subscribe failed %s (%s)", mosquitto_strerror (e), sub);
       if (debug)
          warnx ("MQTT Sub %s", sub);
-      sub = "info/BlueCoinT/+/report";
+      sub = "info/BLE-Env/+/report";
       e = mosquitto_subscribe (mqtt, NULL, sub, 0);
       if (e)
          errx (1, "MQTT subscribe failed %s (%s)", mosquitto_strerror (e), sub);
@@ -274,14 +274,14 @@ main (int argc, const char *argv[])
             }
          }
          const char *v;
-         if (!strcmp (topic, "info/BlueCoinT"))
+         if (!strcmp (topic, "info/BLE-Env"))
          {
             log_t *l = find (j_get (data, "name"));
             if ((v = j_get (data, "temp")))
-            {
                logval ("temp", &l->temp, v);
-               done (l, 1);
-            }
+            if ((v = j_get (data, "rh")))
+               logval ("rh", &l->rh, v);
+            done (l, 1);
          } else if (!strcmp (type, "RESULT"))
          {                      // Tasmota (power control) - log as heat
             j_t j = j_first (data);
