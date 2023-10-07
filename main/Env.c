@@ -251,8 +251,8 @@ reportall (time_t now)
             jo_int (j, "bat", bletemp->bat);
          if (bletemp->volt)
             jo_litf (j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
-      } else
-         jo_bool (j, "ble",bleenv?1:0);
+      } else if (*ble)
+         jo_bool (j, "ble", bleenv ? 1 : 0);
 #endif
       revk_state ("data", &j);
       if (*heataircon && !isnan (lasttemp))
@@ -1003,32 +1003,32 @@ ds18b20_task (void *p)
 {
    p = p;
    ESP_LOGI (TAG, "DS18B20 start (%d sensor%s)", num_ds18b20, num_ds18b20 == 1 ? "" : "s");
-        onewire_bus_config_t bus_config={ds18b20&IO_MASK};
-        onewire_bus_rmt_config_t rmt_config={20};
-        onewire_bus_handle_t bus_handle={0};
-        REVK_ERR_CHECK(onewire_new_bus_rmt(&bus_config,&rmt_config,&bus_handle));
-        onewire_device_iter_handle_t iter={0};
-        REVK_ERR_CHECK(onewire_new_device_iter(bus_handle,&iter));
-	onewire_device_t dev={};
-        while(!onewire_device_iter_get_next(iter,&dev)&&num_ds18b20<sizeof(adr_ds18b20)/sizeof(*adr_ds18b20))
-	{
-                ESP_LOGE(TAG,"Found %llX",dev.address);
-		 ds18b20_config_t config={};
-                REVK_ERR_CHECK(ds18b20_new_device(&dev, &config,&adr_ds18b20[num_ds18b20]));
-                REVK_ERR_CHECK(ds18b20_set_resolution(adr_ds18b20[num_ds18b20],DS18B20_RESOLUTION_12B));
-                num_ds18b20++;
-        }
-        if(!num_ds18b20)
-	{
-         jo_t j = jo_object_alloc ();
-         jo_string (j, "error", "No DS18B20 devices");
-         jo_int (j, "port", ds18b20 & IO_MASK);
-         revk_error ("temp", &j);
-         ESP_LOGE (TAG, "No DS18B20 port %d", ds18b20 & IO_MASK);
-		vTaskDelete (NULL);
-		return ;
-	}
-         sendinfo = 1;
+   onewire_bus_config_t bus_config = { ds18b20 & IO_MASK };
+   onewire_bus_rmt_config_t rmt_config = { 20 };
+   onewire_bus_handle_t bus_handle = { 0 };
+   REVK_ERR_CHECK (onewire_new_bus_rmt (&bus_config, &rmt_config, &bus_handle));
+   onewire_device_iter_handle_t iter = { 0 };
+   REVK_ERR_CHECK (onewire_new_device_iter (bus_handle, &iter));
+   onewire_device_t dev = { };
+   while (!onewire_device_iter_get_next (iter, &dev) && num_ds18b20 < sizeof (adr_ds18b20) / sizeof (*adr_ds18b20))
+   {
+      ESP_LOGE (TAG, "Found %llX", dev.address);
+      ds18b20_config_t config = { };
+      REVK_ERR_CHECK (ds18b20_new_device (&dev, &config, &adr_ds18b20[num_ds18b20]));
+      REVK_ERR_CHECK (ds18b20_set_resolution (adr_ds18b20[num_ds18b20], DS18B20_RESOLUTION_12B));
+      num_ds18b20++;
+   }
+   if (!num_ds18b20)
+   {
+      jo_t j = jo_object_alloc ();
+      jo_string (j, "error", "No DS18B20 devices");
+      jo_int (j, "port", ds18b20 & IO_MASK);
+      revk_error ("temp", &j);
+      ESP_LOGE (TAG, "No DS18B20 port %d", ds18b20 & IO_MASK);
+      vTaskDelete (NULL);
+      return;
+   }
+   sendinfo = 1;
    while (1)
    {
       usleep (250000);
@@ -1039,8 +1039,8 @@ ds18b20_task (void *p)
       float c[num_ds18b20];
       for (int i = 0; i < num_ds18b20; ++i)
       {
-	       REVK_ERR_CHECK(ds18b20_trigger_temperature_conversion(adr_ds18b20[num_ds18b20]));
-                REVK_ERR_CHECK(ds18b20_get_temperature(adr_ds18b20[num_ds18b20],&c[i]));
+         REVK_ERR_CHECK (ds18b20_trigger_temperature_conversion (adr_ds18b20[num_ds18b20]));
+         REVK_ERR_CHECK (ds18b20_get_temperature (adr_ds18b20[num_ds18b20], &c[i]));
       }
       if (!isnan (c[0]))
       {
@@ -1457,7 +1457,7 @@ app_main ()
    if (i2cport >= 0)
       revk_task ("I2C", i2c_task, NULL, 4);
    if (ds18b20)
-         revk_task ("DS18B20", ds18b20_task, NULL, 4);
+      revk_task ("DS18B20", ds18b20_task, NULL, 4);
    gfx_lock ();
    gfx_clear (0);
    gfx_unlock ();
@@ -1596,12 +1596,15 @@ app_main ()
 
       if (ha_send)
          send_ha_config ();
-      if (!isnan (lastals))
+      if (alsaddress)
       {                         // ALS based night mode
-         if (lastals > alsdark) // LUX*100
-            gfx_dark = 0;
-         else
-            gfx_dark = 1;
+         if (!isnan (lastals))
+         {
+            if (lastals > alsdark)      // LUX*100
+               gfx_dark = 0;
+            else
+               gfx_dark = 1;
+         }
       } else if (hhmmnight || hhmmday)
       {                         /* Time bases night mode */
          if (hhmmnight > hhmmday && hhmm >= hhmmnight)
