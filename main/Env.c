@@ -88,7 +88,7 @@ const char TAG[] = "Env";
 	s32a(tempmaxmC,10)	\
 	s32a(tempminmC,10)	\
 	ioa(button,3,4 13 15)	\
-	s(bluecoint)		\
+	s(bleenv)		\
 	b(ha)			\
 
 #define u32(n,d)	uint32_t n;
@@ -1515,7 +1515,7 @@ app_main ()
    }
 
 #ifdef	ELA
-   if (*bluecoint)
+   if (*bleenv)
       bleenv_run ();
 #endif
 
@@ -1532,14 +1532,14 @@ app_main ()
       {                         // every second
          lastup = up;
 #ifdef	ELA
-         if (*bluecoint)
+         if (*bleenv)
          {                      // BLE working
             bleenv_expire (60);
             if (!bletemp)
                for (bleenv_t * e = bleenv; e; e = e->next)
-                  if (!strcmp (e->name, bluecoint))
+                  if (!strcmp (e->name, bleenv))
                   {
-                     ESP_LOGI (TAG, "Found BLE %s", bluecoint);
+                     ESP_LOGI (TAG, "Found BLE %s", bleenv);
                      bletemp = e;
                      break;
                   }
