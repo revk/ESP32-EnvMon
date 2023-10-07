@@ -88,7 +88,7 @@ const char TAG[] = "Env";
 	s32a(tempmaxmC,10)	\
 	s32a(tempminmC,10)	\
 	ioa(button,3,4 13 15)	\
-	s(bluecoint)		\
+	s(ble)		\
 	b(ha)			\
 
 #define u32(n,d)	uint32_t n;
@@ -251,7 +251,8 @@ reportall (time_t now)
             jo_int (j, "bat", bletemp->bat);
          if (bletemp->volt)
             jo_litf (j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
-      }
+      } else
+         jo_bool (j, "ble",bleenv?1:0);
 #endif
       revk_state ("data", &j);
       if (*heataircon && !isnan (lasttemp))
@@ -1515,7 +1516,7 @@ app_main ()
    }
 
 #ifdef	ELA
-   if (*bluecoint)
+   if (*ble)
       bleenv_run ();
 #endif
 
@@ -1532,14 +1533,14 @@ app_main ()
       {                         // every second
          lastup = up;
 #ifdef	ELA
-         if (*bluecoint)
+         if (*ble)
          {                      // BLE working
             bleenv_expire (60);
             if (!bletemp)
                for (bleenv_t * e = bleenv; e; e = e->next)
-                  if (!strcmp (e->name, bluecoint))
+                  if (!strcmp (e->name, ble))
                   {
-                     ESP_LOGI (TAG, "Found BLE %s", bluecoint);
+                     ESP_LOGI (TAG, "Found BLE %s", ble);
                      bletemp = e;
                      break;
                   }
