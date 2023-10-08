@@ -1006,16 +1006,25 @@ ds18b20_task (void *p)
    onewire_bus_rmt_config_t rmt_config = { 20 };
    onewire_bus_handle_t bus_handle = { 0 };
    REVK_ERR_CHECK (onewire_new_bus_rmt (&bus_config, &rmt_config, &bus_handle));
-   onewire_device_iter_handle_t iter = { 0 };
-   REVK_ERR_CHECK (onewire_new_device_iter (bus_handle, &iter));
-   onewire_device_t dev = { };
-   while (!onewire_device_iter_get_next (iter, &dev) && num_ds18b20 < sizeof (adr_ds18b20) / sizeof (*adr_ds18b20))
+   void init (void)
    {
-      ESP_LOGE (TAG, "Found %llX", dev.address);
-      ds18b20_config_t config = { };
-      REVK_ERR_CHECK (ds18b20_new_device (&dev, &config, &adr_ds18b20[num_ds18b20]));
-      REVK_ERR_CHECK (ds18b20_set_resolution (adr_ds18b20[num_ds18b20], DS18B20_RESOLUTION_12B));
-      num_ds18b20++;
+      onewire_device_iter_handle_t iter = { 0 };
+      REVK_ERR_CHECK (onewire_new_device_iter (bus_handle, &iter));
+      onewire_device_t dev = { };
+      while (!onewire_device_iter_get_next (iter, &dev) && num_ds18b20 < sizeof (adr_ds18b20) / sizeof (*adr_ds18b20))
+      {
+         ESP_LOGE (TAG, "Found %llX", dev.address);
+         ds18b20_config_t config = { };
+         REVK_ERR_CHECK (ds18b20_new_device (&dev, &config, &adr_ds18b20[num_ds18b20]));
+         REVK_ERR_CHECK (ds18b20_set_resolution (adr_ds18b20[num_ds18b20], DS18B20_RESOLUTION_12B));
+         num_ds18b20++;
+      }
+   }
+   init ();
+   if (!num_ds18b20)
+   {
+      usleep (100000);
+      init ();
    }
    if (!num_ds18b20)
    {
@@ -1562,28 +1571,29 @@ app_main ()
          else
             icon = airconmode;  // Display icon
       }
-      if (sendinfo && (co2_found 
-#if 0
-			      || num_ds18b20 // FFS library does not expose address any more
-#endif
-			      || sht_found) && !do_co2)
+      if (sendinfo && (co2_found || num_ds18b20 || sht_found) && !do_co2)
       {                         /* Send device info */
          sendinfo = 0;
          jo_t j = jo_object_alloc ();
          if (co2_found)
          {
-            jo_object (j, scd41 ? "SCD41" : "SCD30");
-            if (scd_serial)
-               jo_stringf (j, "serial", "%012llX", scd_serial);
-            if (scd_tempoffset)
-               jo_int (j, "temperature-offset", scd_tempoffset);
-            if (scd_altitude)
-               jo_int (j, "sensor-altitude", scd_altitude);
-            if (scd41)
-               jo_bool (j, "automatic-self-calibration", scd_selfcal);
-            jo_close (j);
+            if (!scd_serial && !scd_tempoffset && !scd_altitude && !scd41)
+               jo_bool (j, "SCD30", 1);
+            else
+            {
+               jo_object (j, scd41 ? "SCD41" : "SCD30");
+               if (scd_serial)
+                  jo_stringf (j, "serial", "%012llX", scd_serial);
+               if (scd_tempoffset)
+                  jo_int (j, "temperature-offset", scd_tempoffset);
+               if (scd_altitude)
+                  jo_int (j, "sensor-altitude", scd_altitude);
+               if (scd41)
+                  jo_bool (j, "automatic-self-calibration", scd_selfcal);
+               jo_close (j);
+            }
          }
-#if 0	// FFS library does not expose address any more
+#if 0                           // FFS library does not expose address any more
          if (num_ds18b20)
          {
             jo_array (j, "DS18B20");
@@ -1591,6 +1601,9 @@ app_main ()
                jo_stringf (j, NULL, "%016llX", *(unsigned long long *) &adr_ds18b20[i].address);
             jo_close (j);
          }
+#else
+         if (num_ds18b20)
+            jo_bool (j, "DS18B20", 1);
 #endif
          if (sht_found)
             jo_stringf (j, "SHT40", "%08lX", sht_serial);
