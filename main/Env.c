@@ -251,8 +251,7 @@ reportall (time_t now)
             jo_int (j, "bat", bletemp->bat);
          if (bletemp->volt)
             jo_litf (j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
-      } else if (*ble)
-         jo_bool (j, "ble", bleenv ? 1 : 0);
+      }
 #endif
       revk_state ("data", &j);
       if (*heataircon && !isnan (lasttemp))
