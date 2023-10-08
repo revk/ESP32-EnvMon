@@ -87,7 +87,7 @@ const char TAG[] = "Env";
 	u16a(temphhmm,10)	\
 	s32a(tempmaxmC,10)	\
 	s32a(tempminmC,10)	\
-	ioa(button,3,4 13 15)	\
+	ioa(button,3,)	\
 	s(ble)		\
 	b(ha)			\
 
