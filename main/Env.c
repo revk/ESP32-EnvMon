@@ -1579,7 +1579,7 @@ app_main ()
                jo_bool (j, "automatic-self-calibration", scd_selfcal);
             jo_close (j);
          }
-#if 0
+#if 0	// FFS library does not expose address any more
          if (num_ds18b20)
          {
             jo_array (j, "DS18B20");
