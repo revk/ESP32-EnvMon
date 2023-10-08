@@ -1039,8 +1039,8 @@ ds18b20_task (void *p)
       float c[num_ds18b20];
       for (int i = 0; i < num_ds18b20; ++i)
       {
-         REVK_ERR_CHECK (ds18b20_trigger_temperature_conversion (adr_ds18b20[num_ds18b20]));
-         REVK_ERR_CHECK (ds18b20_get_temperature (adr_ds18b20[num_ds18b20], &c[i]));
+         REVK_ERR_CHECK (ds18b20_trigger_temperature_conversion (adr_ds18b20[i]));
+         REVK_ERR_CHECK (ds18b20_get_temperature (adr_ds18b20[i], &c[i]));
       }
       if (!isnan (c[0]))
       {
@@ -1270,7 +1270,7 @@ web_root (httpd_req_t * req)
    httpd_resp_sendstr_chunk (req, "<tr><td>Temp</td><td id=TEMP align=right></td><td>℃</td></tr>");
    httpd_resp_sendstr_chunk (req, "</table>");
    if (webcontrol >= 2)
-      httpd_resp_sendstr_chunk (req, "<p><a href='wifi'>WiFi Setup</a></p>");
+      httpd_resp_sendstr_chunk (req, "<p><a href='revk-settings'>WiFi Setup</a></p>");
    httpd_resp_sendstr_chunk (req, "<script>"    //
                              "var ws=0;"        //
                              "var temp=0;"      //
