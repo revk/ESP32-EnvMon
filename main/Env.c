@@ -1562,7 +1562,11 @@ app_main ()
          else
             icon = airconmode;  // Display icon
       }
-      if (sendinfo && (co2_found || num_ds18b20 || sht_found) && !do_co2)
+      if (sendinfo && (co2_found 
+#if 0
+			      || num_ds18b20 // FFS library does not expose address any more
+#endif
+			      || sht_found) && !do_co2)
       {                         /* Send device info */
          sendinfo = 0;
          jo_t j = jo_object_alloc ();
