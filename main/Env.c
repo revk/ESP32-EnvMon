@@ -294,7 +294,7 @@ report (const char *tag, float last, float this, int places)
    for (v = values; v && v->tag != tag; v = v->next);
    if (!v)
    {
-      v = malloc (sizeof (*v));
+      v = mallocspi (sizeof (*v));
       v->tag = tag;
       v->places = places;
       v->next = values;
