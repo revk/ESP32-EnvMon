@@ -37,10 +37,14 @@ issue:
 	git commit -a -m release
 	git push
 
-set:    wroom wroom-mono wroom-blind pico-blind pico s3
+set:    wroom wroom-mono wroom-blind pico-blind pico s3 s3-blind
 
 s3:
 	components/ESP32-RevK/setbuildsuffix -S3-MINI-N4-R2-SSD1351
+	@make
+
+s3-blind:
+	components/ESP32-RevK/setbuildsuffix -S3-MINI-N4-R2-GFXNONE
 	@make
 
 pico:
