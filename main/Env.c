@@ -1543,7 +1543,7 @@ app_main ()
 #ifdef	ELA
          if (*ble)
          {                      // BLE working
-            bleenv_expire (60);
+            bleenv_expire (120);
             if (!bletemp)
                for (bleenv_t * e = bleenv; e; e = e->next)
                   if (!strcmp (e->name, ble))
