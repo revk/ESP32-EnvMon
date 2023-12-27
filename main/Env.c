@@ -35,11 +35,11 @@ const char TAG[] = "Env";
 	u8(webcontrol,2)	\
 	u32(reporting,60)	\
 	u8l(lag,5)	\
-	io(sda,22)	\
-	io(scl,21)	\
+	io(sda,)	\
+	io(scl,)	\
 	s8(co2address,0x62)	\
-	s8(alsaddress,0x10)	\
-	s8(shtaddress,0x44)	\
+	s8(alsaddress,0)	\
+	s8(shtaddress,0)	\
 	s8(shtofft10,0)		\
 	u16(alsdark,200)	\
 	s8(alsplaces,0)	\
@@ -49,16 +49,16 @@ const char TAG[] = "Env";
 	s8(tempplaces,1)	\
 	s8(rhplaces,0)	\
 	u32(rhdamp,10)	\
-	io(ds18b20,14)	\
+	io(ds18b20,)	\
 	s32(ds18b20mC,0)	\
-	io(gfxmosi,32)	\
-	io(gfxsck,33)	\
-	io(gfxcs,25)	\
-	io(gfxdc,26)	\
-	io(gfxrst,27)	\
-	u8(gfxflip,3)	\
-	u8(gfxlight,255)\
-	u8(gfxdark,1)	\
+	io(gfxmosi,)	\
+	io(gfxsck,)	\
+	io(gfxcs,)	\
+	io(gfxdc,)	\
+	io(gfxrst,)	\
+	u8(gfxflip,0)	\
+	u8(gfxlight,0)\
+	u8(gfxdark,0)	\
 	u32(msgtime,30)	\
 	b(f)	\
 	s(fanon)	\
