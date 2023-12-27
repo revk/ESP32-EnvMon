@@ -1,5 +1,6 @@
 ## IDF Component Manager Manifest File
 dependencies:
+  espressif/led_strip: "*"
   espressif/ds18b20: "*"
   ## Required IDF version
   idf:
