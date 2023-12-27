@@ -1,6 +1,10 @@
 // Generated case design for EnvHT/EnvHT.kicad_pcb
 // By https://github.com/revk/PCBCase
+<<<<<<< HEAD
 // Generated 2023-12-20 16:05:15
+=======
+// Generated 2023-12-20 16:06:26
+>>>>>>> 13a4a1d5bb2fd245e3b0a404070361b21f97d073
 // title:	EnvMonHT
 // rev:	4
 // comment:	www.me.uk
