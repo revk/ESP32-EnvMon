@@ -1,6 +1,6 @@
 // Generated case design for USBC/USBC.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2023-12-30 13:55:01
+// Generated 2023-12-30 18:36:24
 // title:	PCB-USBA
 // rev:	1
 // comment:	www.me.uk
@@ -30,7 +30,7 @@ pcblength=15.928932;
 // Parts to go on PCB (top)
 module parts_top(part=false,hole=false,block=false){
 translate([23.700000,4.564466,1.200000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
-translate([38.601041,5.864466,1.200000])rotate([0,0,-45.000000])m1(part,hole,block,casetop); // D4 (back)
+translate([36.301041,5.864466,1.200000])rotate([0,0,-45.000000])m1(part,hole,block,casetop); // D4 (back)
 translate([21.720000,8.144466,1.200000])rotate([0,0,-90.000000])m2(part,hole,block,casetop); // RevK:C_0603_ C_0603_1608Metric (back)
 translate([23.700000,7.964466,1.200000])rotate([0,0,135.000000])m1(part,hole,block,casetop); // D4 (back)
 translate([19.225000,6.839466,1.200000])rotate([0,0,180.000000])m3(part,hole,block,casetop); // RevK:SOT-23-6-MD8942 SOT-23-6 (back)
@@ -40,9 +40,9 @@ translate([23.700000,10.064466,1.200000])rotate([0,0,135.000000])m1(part,hole,bl
 translate([19.220000,4.944466,1.200000])rotate([0,0,180.000000])m4(part,hole,block,casetop); // RevK:R_0402_ R_0402_1005Metric (back)
 translate([21.020000,4.944466,1.200000])rotate([0,0,180.000000])m4(part,hole,block,casetop); // RevK:R_0402_ R_0402_1005Metric (back)
 translate([30.000000,7.964466,1.200000])m5(part,hole,block,casetop); // U3 (back)
-translate([38.600000,7.964466,1.200000])rotate([0,0,-45.000000])m1(part,hole,block,casetop); // D4 (back)
+translate([36.300000,7.964466,1.200000])rotate([0,0,-45.000000])m1(part,hole,block,casetop); // D4 (back)
 translate([22.450000,3.414466,1.200000])rotate([0,0,-90.000000])m4(part,hole,block,casetop); // RevK:R_0402_ R_0402_1005Metric (back)
-translate([38.601041,10.064466,1.200000])rotate([0,0,-45.000000])m1(part,hole,block,casetop); // D4 (back)
+translate([36.301041,10.064466,1.200000])rotate([0,0,-45.000000])m1(part,hole,block,casetop); // D4 (back)
 translate([16.400000,10.664466,1.200000])rotate([0,0,90.000000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
 translate([23.700000,5.864466,1.200000])rotate([0,0,135.000000])m1(part,hole,block,casetop); // D4 (back)
 translate([16.720000,8.144466,1.200000])rotate([0,0,90.000000])m2(part,hole,block,casetop); // RevK:C_0603_ C_0603_1608Metric (back)
