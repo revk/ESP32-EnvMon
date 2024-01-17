@@ -1,6 +1,6 @@
 // Generated case design for USBC/USBC.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2023-12-30 18:36:24
+// Generated 2024-01-09 07:00:35
 // title:	PCB-USBA
 // rev:	1
 // comment:	www.me.uk
@@ -138,7 +138,7 @@ if(part)
 	hull()
 	{
 		for(x=[-3.3,3.333])for(y=[-3.3,3.3])translate([x,y,0])cylinder(r=1,h=1,$fn=8);
-		for(x=[-3,3])for(y=[-3,3])translate([x,y,4.8])sphere(r=1,$fn=12);
+		for(x=[-3,3])for(y=[-3,3])translate([x,y,4.8])sphere(r=2,$fn=12);
 	}
 }
 if(hole)
