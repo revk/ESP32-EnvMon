@@ -31,7 +31,7 @@ icons/%.h:	icons/%.gray
 issue:  
 	-git pull
 	-git submodule update --recursive
-	-git commit -a -m checkpoint
+	-git commit -a
 	@make set
 	cp Env*.bin release
 	git commit -a -m release
@@ -90,9 +90,11 @@ pull:
 	git submodule update --recursive
 
 update:
-	git submodule update --init --remote --merge --recursive
+	-git pull
+	-git commit -a
+	git submodule update --init --recursive --remote
 	-git commit -a -m "Library update"
-
+	-git push
 
 # Set GPIO low (whichever CBUS is set to mode 8/GPIO)
 bootmode: ftdizap/ftdizap
