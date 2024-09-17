@@ -42,7 +42,9 @@ static char airconmode = 0;
 static uint32_t airconlast = 0;
 
 static uint8_t logo[LOGOW * LOGOH / 2];
+#ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
 static char lasticon = 0;
+#endif
 static float lastco2 = NAN;
 static float lastals = NAN;
 static float lastalsr = NAN;
@@ -139,7 +141,7 @@ reportall (time_t now)
       if (fanlast >= 0)
          jo_bool (j, "fan", fanlast);
       if (
-#ifndef  CONFIG_GFX_NONE
+#ifndef  CONFIG_GFX_BUILD_SUFFIX_GFXNONE
             gfxmosi.set ||
 #endif
             als_found)
@@ -485,7 +487,7 @@ co2_scd41_stop_measure (void)
 static esp_err_t
 co2_scd41_start_measure (void)
 {
-   scd41_settled = uptime () + startup; /* Time for temp to settle */
+   scd41_settled = uptime () + co2startup; /* Time for temp to settle */
    return co2_command (0x21b1); /* Start measurement(SCD41) */
 }
 
@@ -968,7 +970,7 @@ ds18b20_task (void *p)
 #define N 10
          static float last[N] = { 0 }, tot = 0;
          static int p = 0;
-         c[0] += ((float) ds18b20mC) / 1000.0;  // Offset compensation
+         c[0] += ((float) ds18b20offset) / 1000.0;  // Offset compensation
          // Moving average
          if (++p >= N)
             p = 0;
@@ -987,8 +989,10 @@ ds18b20_task (void *p)
 void
 menuinit (void)
 {                               /* Common menu stuff */
+#ifndef	CONFIG_GFX_BUILD_SUFFIX_GFXNONE
    gfx_set_contrast (gfxlight);
    gfx_clear (0);
+#endif
 }
 
 void
@@ -1069,17 +1073,17 @@ menufunc1 (char key)
       char s[30];
       if (!isnan (temptargetmin))
       {
-         sprintf (s, "tempminmC%d", temptimeprev + 1);
-         jo_int (j, s, 1000 * d + tempminmC[temptimeprev]);
-         sprintf (s, "tempminmC%d", temptimenext + 1);
-         jo_int (j, s, 1000 * d + tempminmC[temptimenext]);
+         sprintf (s, "tempmin%d", temptimeprev + 1);
+         jo_int (j, s, 1000 * d + tempmin[temptimeprev]);
+         sprintf (s, "tempmin%d", temptimenext + 1);
+         jo_int (j, s, 1000 * d + tempmin[temptimenext]);
       }
       if (!isnan (temptargetmax))
       {
-         sprintf (s, "tempmaxmC%d", temptimeprev + 1);
-         jo_int (j, s, 1000 * d + tempmaxmC[temptimeprev]);
-         sprintf (s, "tempmaxmC%d", temptimenext + 1);
-         jo_int (j, s, 1000 * d + tempmaxmC[temptimenext]);
+         sprintf (s, "tempmax%d", temptimeprev + 1);
+         jo_int (j, s, 1000 * d + tempmax[temptimeprev]);
+         sprintf (s, "tempmax%d", temptimenext + 1);
+         jo_int (j, s, 1000 * d + tempmax[temptimenext]);
       }
       revk_setting (j);
       jo_free (&j);
@@ -1317,7 +1321,7 @@ app_main ()
             i2c_set_timeout (i2cport, 80000 * 5);       /* 5 ms ? allow for clock stretching */
       }
    }
-#ifndef	CONFIG_GFX_NONE
+#ifndef	CONFIG_GFX_BUILD_SUFFIX_GFXNONE
    if (gfxmosi.set)
    {
     const char *e = gfx_init (cs: gfxcs.num, sck: gfxsck.num, mosi: gfxmosi.num, dc: gfxdc.num, rst: gfxrst.num, flip:gfxflip);
@@ -1344,6 +1348,7 @@ app_main ()
    gfx_clear (0);
    gfx_unlock ();
    /* Main task... */
+#ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
    time_t showtime = 0;
    char showlogo = 1;
    float showco2 = NAN;
@@ -1359,6 +1364,7 @@ app_main ()
       showrh = NAN;
       lasticon = 0;
    };
+#endif
    if (alsdark && sda.set && scl.set && alsaddress)
       gfx_dark = 1;             // Start dark
 
@@ -1437,6 +1443,7 @@ app_main ()
          airconpower = 0;
          airconlast = 0;
       }
+#ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
       char icon = 0;
       if (airconpower)
       {
@@ -1445,6 +1452,7 @@ app_main ()
          else
             icon = airconmode;  // Display icon
       }
+#endif
       if (sendinfo && (co2_found || num_ds18b20 || sht_found) && !do_co2)
       {                         /* Send device info */
          sendinfo = 0;
@@ -1505,13 +1513,13 @@ app_main ()
             gfx_dark = 1;
       }
       /* Reference temp */
-      /* heatdaymC or heatnightmC take priority.If not set(0) then temphhmm / tempminmC / tempmaxmC apply */
+      /* heatday or heatnight take priority.If not set(0) then temphhmm / tempmin / tempmax apply */
       /*
        * The temp are a set, with hhmm points(in order, can start 0000) and heating and cooling settings, and 0 means same as other
        * setting
        */
-      int32_t heat_target = (gfx_dark ? heatnightmC : heatdaymC);
-      if (!tempminmC[0] && !tempmaxmC[0])
+      int32_t heat_target = (gfx_dark ? heatnight : heatday);
+      if (!tempmin[0] && !tempmax[0])
       {                         /* Temp is set based on night / day, use that as heating basis(min) and no cooling set - legacy */
          if (heat_target)
          {
@@ -1521,15 +1529,15 @@ app_main ()
          temptimeprev = temptimenext = -1;
       } else
       {
-         /* Setting from temphhmm / tempminmC / tempmaxmC */
+         /* Setting from temphhmm / tempmin / tempmax */
 #define	TIMES	(sizeof(temphhmm)/sizeof(*temphhmm))
          int i;
          temptimeprev = 0;
          temptimenext = 0;
-         for (i = 0; i < TIMES && (tempminmC[i] || tempmaxmC[i]) && temphhmm[i] <= hhmm; i++);
+         for (i = 0; i < TIMES && (tempmin[i] || tempmax[i]) && temphhmm[i] <= hhmm; i++);
          if (!i)
          {                      /* wrap as first entry is later */
-            for (i = 1; i < TIMES && (tempminmC[i] || tempmaxmC[i]); i++);
+            for (i = 1; i < TIMES && (tempmin[i] || tempmax[i]); i++);
             temptimeprev = i - 1;
             temptimenext = 0;
          } else if (i < TIMES && temphhmm[i] > hhmm)
@@ -1549,14 +1557,14 @@ app_main ()
             max = NAN;
          int a,
            b;
-         if ((a = (tempminmC[temptimeprev] ? : tempmaxmC[temptimeprev]))
-             && (b = (tempminmC[temptimenext] ? : tempmaxmC[temptimenext])))
+         if ((a = (tempmin[temptimeprev] ? : tempmax[temptimeprev]))
+             && (b = (tempmin[temptimenext] ? : tempmax[temptimenext])))
          {                      /* Heat valid */
             heat_target = a + (b - a) * (snow - sprev) / (snext - sprev);
             min = ((float) heat_target) / 1000.0;
          }
-         if ((a = (tempmaxmC[temptimeprev] ? : tempminmC[temptimeprev]))
-             && (b = (tempmaxmC[temptimenext] ? : tempminmC[temptimenext])))
+         if ((a = (tempmax[temptimeprev] ? : tempmin[temptimeprev]))
+             && (b = (tempmax[temptimenext] ? : tempmin[temptimenext])))
             max = (float) (a + (b - a) * (snow - sprev) / (snext - sprev)) / 1000.0;    /* Cool valid */
          else
             max = min;          /* same as heat */
@@ -1604,9 +1612,11 @@ app_main ()
                   revk_mqtt_send_str (fan);
                }
             }
+	    #ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
             if (fanon && *fanon && fanlast == 1)
                icon = 'E';      // Extractor fan icon
-            if (!isnan (thistemp) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio.set || heaton || heatoff))
+#endif
+            if (!isnan (thistemp) && (heatnight || heatday || tempmin[0] || heat_target || heatgpio.set || heaton || heatoff))
             {                   /* Heat control */
                static int32_t last1 = 0,
                   last2 = 0;
@@ -1619,8 +1629,8 @@ app_main ()
                   int32_t predict = thismC;
                   if (heatahead && ((last2 <= last1 && last1 <= thismC) ||      // going up - turn off early if predict above target
                                     ((last2 >= last1 && last1 >= thismC) &&     // going down - turn on early in 10 min stages if predict is below target
-                                     (!heatfademC || !heatfadem
-                                      || (lastmin % heatfadem) < (heat_target + heatfademC - thismC) * heatfadem / heatfademC))))
+                                     (!heatfade || !heatfadem
+                                      || (lastmin % heatfadem) < (heat_target + heatfade - thismC) * heatfadem / heatfade))))
                      predict += heatahead * (thismC - last2) / 2;       // Use predicted value, i.e. turn on/off early
                   if (!heat_target || predict > heat_target || (airconpower && airconmode != 'H'))
                   {             /* Heat off */
@@ -1647,8 +1657,10 @@ app_main ()
             }
          }
       }
+      #ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
       if (heaton && *heaton && heatlast == 1)
          icon = 'R';            // Radiator icon
+#endif
       static uint8_t menu = 0;  /* Menu selection - 0 if idle */
       /* Handle key presses */
       char key = 0;
@@ -1679,6 +1691,7 @@ app_main ()
       /* Report */
       if (up > 60 || sntp_get_sync_status () == SNTP_SYNC_STATUS_COMPLETED)
          reportall (now);       /* Don 't report right away if clock may be duff */
+#ifndef	CONFIG_GFX_BUILD_SUFFIX_GFXNONE
       /* Display */
       char s[30];               /* Temp string */
       if (gfx_msg_time)
@@ -1879,5 +1892,6 @@ app_main ()
                      'A' ? icon_modeA : icon == 'P' ? icon_power : icon == 'N' ? icon_nowifi : NULL);
       }
       gfx_unlock ();
+#endif
    }
 }

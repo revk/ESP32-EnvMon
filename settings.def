@@ -1,22 +1,23 @@
-u8	webcontrol	2			//
-u32	reporting	60			//
-u8	lag		5			//
-gpio	sda					//
-gpio	scl					//
-s8	co2.address	0x62			//
-s8	als.address	0			//
-s8	sht.address	0			//
-s8	sht.offt10	0			//
-u16	als.dark	200			//
-s8	als.places	0			//
-s8	co2.places	-1			//
-u32	co2.damp	100			//
-u32	startup		240			//
-s8	temp.places	1			//
-s8	rh.places	0			//
-u32	rh.damp		10			//
-gpio	ds18b20					//
-s32	ds18b20mC	0			//
+u8	webcontrol	2			// Web control
+u32	reporting	60			// Reporting interval (s)
+u8	lag		5			// Lag
+gpio	sda					// I2C SDA
+gpio	scl					// I2C SCL
+u8	co2.address	62	.hex=1		// CO2 I2C address
+u8	als.address	00	.hex=1		// ALS I2C address
+u8	sht.address	00	.hex=1		// SHT I2C address
+s8	sht.offt10	0			// 
+u16	als.dark	200			// ALS Dark level
+s8	als.places	0			// ALS reporting places
+s8	co2.places	-1			// CO2 reporting places
+u32	co2.damp	100			// CO2 damping level
+u32	co2.startup	240			// CO2 startup time (s)
+s8	temp.places	1			// Temp reporting places
+s8	rh.places	0			// RH reporting places
+u32	rh.damp		10			// RH damping level
+gpio	ds18b20					// DS18B20 GPIO
+s32	ds18b20offset	0 .decimal=3		// DS18B20 Offset
+#ifndef  CONFIG_GFX_BUILD_SUFFIX_GFXNONE 
 gpio	gfx.mosi				//
 gpio	gfx.sck					//
 gpio	gfx.cs					//
@@ -25,6 +26,7 @@ gpio	gfx.rst					//
 u8	gfx.flip	0			//
 u8	gfx.light	0			//
 u8	gfx.dark	0			//
+#endif
 u32	msgtime		30			//
 bit	fahrenheit				//
 s	fan.on					//
@@ -41,18 +43,18 @@ s	heat.aircon				//
 bit	heat.monitor				//
 u8	heat.ahead	30			//
 u8	heat.fadem	10			//
-u32	heat.fademC	1000			//
+u32	heat.fade	1	.decimal=3	//
 u32	heat.resend	600			//
 gpio	heat.gpio				//
 u16	hhmm.night	0			//
 u16	hhmm.day	0			//
 bit	no.logo					//
 bit	no.time					//
-s32	heat.daymC	0			//
-s32	heat.nightmC	0			//
-u16	temp.hhmm	10	.array=10	//
-s32	temp.maxmC	10	.array=10	//
-s32	temp.minmC	10	.array=10	//
-gpio	button		3	.array=3	//
+s32	heat.day	0	.decimal=3	//
+s32	heat.night	0	.decimal=3	//
+u16	temp.hhmm		.array=10	//
+s32	temp.max		.decimal=3 .array=10	//
+s32	temp.min		.decimal=3 .array=10	//
+gpio	button			.array=3	//
 s	ble					//
 bit	ha					//
