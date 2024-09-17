@@ -1,0 +1,58 @@
+u8	webcontrol	2			//
+u32	reporting	60			//
+u8	lag		5			//
+gpio	sda					//
+gpio	scl					//
+s8	co2.address	0x62			//
+s8	als.address	0			//
+s8	sht.address	0			//
+s8	sht.offt10	0			//
+u16	als.dark	200			//
+s8	als.places	0			//
+s8	co2.places	-1			//
+u32	co2.damp	100			//
+u32	startup		240			//
+s8	temp.places	1			//
+s8	rh.places	0			//
+u32	rh.damp		10			//
+gpio	ds18b20					//
+s32	ds18b20mC	0			//
+gpio	gfx.mosi				//
+gpio	gfx.sck					//
+gpio	gfx.cs					//
+gpio	gfx.dc					//
+gpio	gfx.rst					//
+u8	gfx.flip	0			//
+u8	gfx.light	0			//
+u8	gfx.dark	0			//
+u32	msgtime		30			//
+bit	fahrenheit				//
+s	fan.on					//
+s	fan.off					//
+u32	fan.co2on	0			//
+u32	fan.co2off	0			//
+u32	fan.rhon	0			//
+u32	fan.rhoff	0			//
+gpio	fan.co2gpio				//
+u32	fan.resend	600			//
+s	heat.on					//
+s	heat.off				//
+s	heat.aircon				//
+bit	heat.monitor				//
+u8	heat.ahead	30			//
+u8	heat.fadem	10			//
+u32	heat.fademC	1000			//
+u32	heat.resend	600			//
+gpio	heat.gpio				//
+u16	hhmm.night	0			//
+u16	hhmm.day	0			//
+bit	no.logo					//
+bit	no.time					//
+s32	heat.daymC	0			//
+s32	heat.nightmC	0			//
+u16	temp.hhmm	10	.array=10	//
+s32	temp.maxmC	10	.array=10	//
+s32	temp.minmC	10	.array=10	//
+gpio	button		3	.array=3	//
+s	ble					//
+bit	ha					//
