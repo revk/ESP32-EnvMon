@@ -31,93 +31,6 @@ const char TAG[] = "Env";
 
 /* temp targets of 0 mean off, so use 1 or - 1 if really targeting 0 */
 
-#define settings	\
-	u8(webcontrol,2)	\
-	u32(reporting,60)	\
-	u8l(lag,5)	\
-	io(sda,)	\
-	io(scl,)	\
-	s8(co2address,0x62)	\
-	s8(alsaddress,0)	\
-	s8(shtaddress,0)	\
-	s8(shtofft10,0)		\
-	u16(alsdark,200)	\
-	s8(alsplaces,0)	\
-	s8(co2places,-1)	\
-	u32(co2damp,100)	\
-	u32(startup,240)	\
-	s8(tempplaces,1)	\
-	s8(rhplaces,0)	\
-	u32(rhdamp,10)	\
-	io(ds18b20,)	\
-	s32(ds18b20mC,0)	\
-	io(gfxmosi,)	\
-	io(gfxsck,)	\
-	io(gfxcs,)	\
-	io(gfxdc,)	\
-	io(gfxrst,)	\
-	u8(gfxflip,0)	\
-	u8(gfxlight,0)\
-	u8(gfxdark,0)	\
-	u32(msgtime,30)	\
-	b(f)	\
-	s(fanon)	\
-	s(fanoff)	\
-	u32(fanco2on,0)	\
-	u32(fanco2off,0)	\
-	u32(fanrhon,0)	\
-	u32(fanrhoff,0)	\
-	io(fanco2gpio,)	\
-	u32(fanresend,600)	\
-	s(heaton)	\
-	s(heatoff)	\
-	s(heataircon)	\
-	b(heatmonitor)	\
-	u8l(heatahead,30)	\
-	u8l(heatfadem,10)	\
-	u32(heatfademC,1000)	\
-	u32(heatresend,600)	\
-	io(heatgpio,)	\
-	u16(hhmmnight,0)	\
-	u16(hhmmday,0)		\
-	b(nologo)	\
-	b(notime)	\
-	s32(heatdaymC,0)	\
-	s32(heatnightmC,0)	\
-	u16a(temphhmm,10)	\
-	s32a(tempmaxmC,10)	\
-	s32a(tempminmC,10)	\
-	ioa(button,3,)	\
-	s(ble)		\
-	b(ha)			\
-
-#define u32(n,d)	uint32_t n;
-#define u16(n,d)	uint16_t n;
-#define u16a(n,q)	uint16_t n[q];
-#define s32(n,d)	int32_t n;
-#define s32a(n,q)	int32_t n[q];
-#define s8(n,d)	int8_t n;
-#define u8(n,d)	uint8_t n;
-#define u8l(n,d)	uint8_t n;
-#define b(n) uint8_t n;
-#define s(n) char * n;
-#define io(n,d)         uint16_t n;
-#define ioa(n,a,d)      uint16_t n[a];
-#define	IO_MASK	0x3FFF
-#define	IO_INV	0x4000
-settings
-#undef u32
-#undef u16
-#undef u16a
-#undef s32
-#undef s32a
-#undef s8
-#undef u8
-#undef u8l
-#undef b
-#undef s
-#undef io
-#undef ioa
 static uint8_t ha_send = 0;
 static uint8_t scd41 = 0;
 static uint32_t scd41_settled = 1;      /* uptime when started measurements */
@@ -227,7 +140,7 @@ reportall (time_t now)
          jo_bool (j, "fan", fanlast);
       if (
 #ifndef  CONFIG_GFX_NONE
-            gfxmosi ||
+            gfxmosi.set ||
 #endif
             als_found)
          jo_bool (j, "dark", gfx_dark);
@@ -363,7 +276,7 @@ send_ha_config (void)
          free (topic);
       }
    }
-   if (ds18b20 || i2cport >= 0)
+   if (ds18b20.set || i2cport >= 0)
       add ("Temp", "temperature", "°C", "temp");
    if (i2cport >= 0)
       add ("R/H", "humidity", "%", "rh");
@@ -699,8 +612,8 @@ i2c_task (void *p)
          jo_t j = jo_object_alloc ();
          jo_string (j, "error", "No CO2 sensor");
          jo_string (j, "device", scd41 ? "SCD41" : "SCD30");
-         jo_int (j, "sda", sda & IO_MASK);
-         jo_int (j, "scl", scl & IO_MASK);
+         jo_int (j, "sda", sda.num);
+         jo_int (j, "scl", scl.num);
          jo_int (j, "adr", co2address);
          jo_int (j, "code", err);
          jo_string (j, "description", esp_err_to_name (err));
@@ -729,8 +642,8 @@ i2c_task (void *p)
          ESP_LOGE (TAG, "No ALS %02X (%04X)", alsaddress, id);
          jo_t j = jo_object_alloc ();
          jo_string (j, "error", "No ALS");
-         jo_int (j, "sda", sda & IO_MASK);
-         jo_int (j, "scl", scl & IO_MASK);
+         jo_int (j, "sda", sda.num);
+         jo_int (j, "scl", scl.num);
          jo_int (j, "adr", alsaddress);
          if (id >= 0)
             jo_stringf (j, "09", "%04X", id);
@@ -752,8 +665,8 @@ i2c_task (void *p)
          ESP_LOGE (TAG, "No SHT %02X", shtaddress);
          jo_t j = jo_object_alloc ();
          jo_string (j, "error", "No SHT");
-         jo_int (j, "sda", sda & IO_MASK);
-         jo_int (j, "scl", scl & IO_MASK);
+         jo_int (j, "sda", sda.num);
+         jo_int (j, "scl", scl.num);
          jo_int (j, "sht", shtaddress);
          revk_error ("SHT", &j);
       } else
@@ -1002,7 +915,7 @@ ds18b20_task (void *p)
 {
    p = p;
    ESP_LOGI (TAG, "DS18B20 start (%d sensor%s)", num_ds18b20, num_ds18b20 == 1 ? "" : "s");
-   onewire_bus_config_t bus_config = { ds18b20 & IO_MASK };
+   onewire_bus_config_t bus_config = { ds18b20.num };
    onewire_bus_rmt_config_t rmt_config = { 20 };
    onewire_bus_handle_t bus_handle = { 0 };
    REVK_ERR_CHECK (onewire_new_bus_rmt (&bus_config, &rmt_config, &bus_handle));
@@ -1030,9 +943,9 @@ ds18b20_task (void *p)
    {
       jo_t j = jo_object_alloc ();
       jo_string (j, "error", "No DS18B20 devices");
-      jo_int (j, "port", ds18b20 & IO_MASK);
+      jo_int (j, "port", ds18b20.num);
       revk_error ("temp", &j);
-      ESP_LOGE (TAG, "No DS18B20 port %d", ds18b20 & IO_MASK);
+      ESP_LOGE (TAG, "No DS18B20 port %d", ds18b20.num);
       vTaskDelete (NULL);
       return;
    }
@@ -1082,7 +995,7 @@ void
 gfx_temp (float t)
 {
    char s[30];                  /* Temp string */
-   if (f)
+   if (fahrenheit)
    {                            /* Fahrenheit */
       int fh = (t + 40.0) * 1.8 - 40.0;
       if (fh <= -100)
@@ -1103,7 +1016,7 @@ gfx_temp (float t)
    gfx_text (5, s);
    gfx_text (1, "o");
    gfx_pos (gfx_x (), gfx_y (), GFX_T | GFX_L | GFX_V);
-   gfx_text (2, f ? "F" : "C");
+   gfx_text (2, fahrenheit ? "F" : "C");
 #ifdef	ELA
    if (bletemp)
       gfx_text (1, bletemp->missing ? "~~" : "BT");
@@ -1360,50 +1273,16 @@ void
 app_main ()
 {
    revk_boot (&app_callback);
-   revk_register ("heat", 0, 0, &heaton, NULL, SETTING_SECRET);
-   revk_register ("fan", 0, 0, &fanon, NULL, SETTING_SECRET);
-   revk_register ("gfx", 0, sizeof (gfxmosi), &gfxmosi, NULL, SETTING_SECRET);
-   revk_register ("co2", 0, sizeof (co2places), &co2places, "-1", SETTING_SIGNED | SETTING_SECRET);
-   revk_register ("hhmm", 0, sizeof (hhmmday), &hhmmday, NULL, SETTING_SECRET);
-#define str(x) #x
-#define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
-#define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define u16(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define u16a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,SETTING_LIVE);
-#define s32(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED|SETTING_LIVE);
-#define s32a(n,q) revk_register(#n,q,sizeof(*n),&n,NULL,SETTING_SIGNED|SETTING_LIVE);
-#define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
-#define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define u8l(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_LIVE);
-#define s(n) revk_register(#n,0,0,&n,NULL,0);
-#define io(n,d)         revk_register(#n,0,sizeof(n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD|SETTING_FIX);
-#define ioa(n,a,d)      revk_register(#n,a,sizeof(*n),&n,"- "str(d),SETTING_SET|SETTING_BITFIELD|SETTING_FIX);
-   settings
-#undef u32
-#undef u16
-#undef u16a
-#undef s32
-#undef s32a
-#undef s8
-#undef u8
-#undef u8l
-#undef b
-#undef s
-#undef io
-#undef ioa
-      revk_register ("logo", 0, sizeof (logo), &logo, NULL, SETTING_BINDATA);   /* fixed logo */
    revk_start ();
-   if (fanco2gpio)
-      gpio_set_direction (fanco2gpio & IO_MASK, GPIO_MODE_OUTPUT);
-   if (heatgpio)
-      gpio_set_direction (heatgpio & IO_MASK, GPIO_MODE_OUTPUT);
+   revk_gpio_output (fanco2gpio, 0);
+   revk_gpio_output (heatgpio, 0);
    {
       int p;
       for (p = 0; p < sizeof (logo) && !logo[p]; p++);
       if (p == sizeof (logo))
          memcpy (logo, icon_logo, sizeof (icon_logo));  /* default */
    }
-   if (sda && scl)
+   if (sda.set && scl.set)
    {
       scd41 = (co2address == 0x62 ? 1 : 0);
       i2cport = 0;
@@ -1411,16 +1290,16 @@ app_main ()
       {
          jo_t j = jo_object_alloc ();
          jo_string (j, "error", "Install fail");
-         jo_int (j, "sda", sda & IO_MASK);
-         jo_int (j, "scl", scl & IO_MASK);
+         jo_int (j, "sda", sda.num);
+         jo_int (j, "scl", scl.num);
          revk_error ("I2C", &j);
          i2cport = -1;
       } else
       {
          i2c_config_t config = {
             .mode = I2C_MODE_MASTER,
-            .sda_io_num = sda & IO_MASK,
-            .scl_io_num = scl & IO_MASK,
+            .sda_io_num = sda.num,
+            .scl_io_num = scl.num,
             .sda_pullup_en = true,
             .scl_pullup_en = true,
             .master.clk_speed = 100000,
@@ -1430,8 +1309,8 @@ app_main ()
             i2c_driver_delete (i2cport);
             jo_t j = jo_object_alloc ();
             jo_string (j, "error", "Config fail");
-            jo_int (j, "sda", sda & IO_MASK);
-            jo_int (j, "scl", scl & IO_MASK);
+            jo_int (j, "sda", sda.num);
+            jo_int (j, "scl", scl.num);
             revk_error ("I2C", &j);
             i2cport = -1;
          } else
@@ -1439,9 +1318,9 @@ app_main ()
       }
    }
 #ifndef	CONFIG_GFX_NONE
-   if (gfxmosi)
+   if (gfxmosi.set)
    {
-    const char *e = gfx_init (cs: gfxcs & IO_MASK, sck: gfxsck & IO_MASK, mosi: gfxmosi & IO_MASK, dc: gfxdc & IO_MASK, rst: gfxrst & IO_MASK, flip:gfxflip);
+    const char *e = gfx_init (cs: gfxcs.num, sck: gfxsck.num, mosi: gfxmosi.num, dc: gfxdc.num, rst: gfxrst.num, flip:gfxflip);
       if (e)
       {
          jo_t j = jo_object_alloc ();
@@ -1452,19 +1331,14 @@ app_main ()
    }
 #endif
    for (int i = 0; i < sizeof (button) / sizeof (*button); i++)
-      if (button[i])
-      {                         /* Control buttons */
-         gpio_reset_pin (button[i] & IO_MASK);
-         gpio_set_direction (button[i] & IO_MASK, GPIO_MODE_INPUT);
-         gpio_set_pull_mode (button[i] & IO_MASK, GPIO_PULLUP_ONLY);
-      }
+      revk_gpio_input (button[i]);
    gfx_lock ();
    gfx_colour ('B');
    gfx_box (gfx_width (), gfx_height (), 255);
    gfx_unlock ();
    if (i2cport >= 0)
       revk_task ("I2C", i2c_task, NULL, 4);
-   if (ds18b20)
+   if (ds18b20.set)
       revk_task ("DS18B20", ds18b20_task, NULL, 4);
    gfx_lock ();
    gfx_clear (0);
@@ -1485,7 +1359,7 @@ app_main ()
       showrh = NAN;
       lasticon = 0;
    };
-   if (alsdark && sda && scl && alsaddress)
+   if (alsdark && sda.set && scl.set && alsaddress)
       gfx_dark = 1;             // Start dark
 
    httpd_config_t config = HTTPD_DEFAULT_CONFIG ();
@@ -1712,15 +1586,13 @@ app_main ()
                {                /* Fan on */
                   if (fanlast != 1)
                   {             /* Change */
-                     if (fanco2gpio)
-                        gpio_set_level (fanco2gpio & IO_MASK, (fanco2gpio & IO_INV) ? 0 : 1);
+                     revk_gpio_set (fanco2gpio, 1);
                      fan = fanon;
                      fanlast = 1;
                   }
                } else if (fanlast != 0)
                {                /* Fan off, change */
-                  if (fanco2gpio)
-                     gpio_set_level (fanco2gpio & IO_MASK, (fanco2gpio & IO_INV) ? 1 : 0);
+                  revk_gpio_set (fanco2gpio, 0);
                   fan = fanoff;
                   fanlast = 0;
                }
@@ -1734,7 +1606,7 @@ app_main ()
             }
             if (fanon && *fanon && fanlast == 1)
                icon = 'E';      // Extractor fan icon
-            if (!isnan (thistemp) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio || heaton || heatoff))
+            if (!isnan (thistemp) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio.set || heaton || heatoff))
             {                   /* Heat control */
                static int32_t last1 = 0,
                   last2 = 0;
@@ -1754,15 +1626,13 @@ app_main ()
                   {             /* Heat off */
                      if (heatlast != 0)
                      {          /* Change */
-                        if (heatgpio)
-                           gpio_set_level (heatgpio & IO_MASK, (heatgpio & IO_INV) ? 1 : 0);
+                        revk_gpio_set (heatgpio, 0);
                         heat = heatoff;
                         heatlast = 0;
                      }
                   } else if (heatlast != 1)
                   {             /* Heat on, change */
-                     if (heatgpio)
-                        gpio_set_level (heatgpio & IO_MASK, (heatgpio & IO_INV) ? 0 : 1);
+                     revk_gpio_set (heatgpio, 1);
                      heat = heaton;
                      heatlast = 1;
                   }
@@ -1787,7 +1657,7 @@ app_main ()
          static uint8_t last1 = 0;
          static uint8_t last2 = 0;
          for (int i = 0; i < sizeof (button) / sizeof (*button); i++)
-            if (button[i] && !gpio_get_level (button[i] & IO_MASK))
+            if (revk_gpio_get (button[i]))
                last0 |= (1 << i);
          if (last0 == last1)
          {                      // stable
