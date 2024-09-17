@@ -6,7 +6,7 @@ gpio	scl					// I2C SCL
 u8	co2.address	62	.hex=1		// CO2 I2C address
 u8	als.address	00	.hex=1		// ALS I2C address
 u8	sht.address	00	.hex=1		// SHT I2C address
-s8	sht.offt10	0			// 
+s8	sht.offset	0	.decimal=1	// SHT offset %
 u16	als.dark	200			// ALS Dark level
 s8	als.places	0			// ALS reporting places
 s8	co2.places	-1			// CO2 reporting places
@@ -26,7 +26,7 @@ gpio	gfx.rst					// GFX RST GPIO
 u8	gfx.flip	0			// GFX Flip
 u8	gfx.light	0			// GFX Light contrast
 u8	gfx.dark	0			// GFX Dark contrast
-o128	logo		.base64=1		// Logo (32x32 pixel data)
+o512	logo		.base64=1		// Logo (32x32 4 bit grey)
 #endif
 u32	msgtime		30			// Message time (s)
 bit	fahrenheit				// Use Fahrenheit

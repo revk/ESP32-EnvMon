@@ -888,7 +888,7 @@ i2c_task (void *p)
          uint32_t v = sht_read (0xFD);
          if (v)
          {
-            float t = -45.0 + 175 * (float) (v >> 16) / 65535.0 + 0.1 * shtofft10;
+            float t = -45.0 + 175 * (float) (v >> 16) / 65535.0 + 0.1 * shtoffset;
             float h = -6.0 + 125 * (float) (v & 65535) / 65535.0;
             lasttemp = report ("temp", lasttemp, thistemp = t, tempplaces);
             lastrh = report ("rh", lastrh, thisrh = h, rhplaces);
@@ -966,7 +966,7 @@ ds18b20_task (void *p)
 #define N 10
          static float last[N] = { 0 }, tot = 0;
          static int p = 0;
-         c[0] += ((float) ds18b20offset) / 1000.0;      // Offset compensation
+         c[0] += ((float) ds18b20offset) / ds18b20offset_scale; // Offset compensation
          // Moving average
          if (++p >= N)
             p = 0;
@@ -1070,16 +1070,16 @@ menufunc1 (char key)
       if (!isnan (temptargetmin))
       {
          sprintf (s, "tempmin%d", temptimeprev + 1);
-         jo_int (j, s, 1000 * d + tempmin[temptimeprev]);
+         jo_int (j, s, tempmin_scale * d + tempmin[temptimeprev]);
          sprintf (s, "tempmin%d", temptimenext + 1);
-         jo_int (j, s, 1000 * d + tempmin[temptimenext]);
+         jo_int (j, s, tempmin_scale * d + tempmin[temptimenext]);
       }
       if (!isnan (temptargetmax))
       {
          sprintf (s, "tempmax%d", temptimeprev + 1);
-         jo_int (j, s, 1000 * d + tempmax[temptimeprev]);
+         jo_int (j, s, tempmax_scale * d + tempmax[temptimeprev]);
          sprintf (s, "tempmax%d", temptimenext + 1);
-         jo_int (j, s, 1000 * d + tempmax[temptimenext]);
+         jo_int (j, s, tempmax_scale * d + tempmax[temptimenext]);
       }
       revk_setting (j);
       jo_free (&j);
@@ -1191,7 +1191,7 @@ web_root (httpd_req_t * req)
    httpd_resp_sendstr_chunk (req, "<tr><td>Temp</td><td id=TEMP align=right></td><td>℃</td></tr>");
    httpd_resp_sendstr_chunk (req, "</table>");
    if (webcontrol >= 2)
-      httpd_resp_sendstr_chunk (req, "<p><a href='revk-settings'>WiFi Setup</a></p>");
+      httpd_resp_sendstr_chunk (req, "<p><a href='revk-settings'>Settings</a></p>");
    httpd_resp_sendstr_chunk (req, "<script>"    //
                              "var ws=0;"        //
                              "var temp=0;"      //
