@@ -19,10 +19,6 @@ const char TAG[] = "Env";
 #include "icons.h"
 #include "bleenv.h"
 
-/*
- * Setting for "logo" is 32 x32 bytes(4 bits per pixel) Note that MQTT config needs to allow a large enough message for the logo
- */
-
 #define ACK_CHECK_EN 0x1        /* !< I2C master will check ack from slave */
 #define ACK_CHECK_DIS 0x0       /* !< I2C master will not check ack from slave */
 #define ACK_VAL 0x0             /* !< I2C ack value */
@@ -43,7 +39,6 @@ static char airconmode = 0;
 static uint32_t airconlast = 0;
 
 #ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
-static uint8_t logo[LOGOW * LOGOH / 2];
 static char lasticon = 0;
 #endif
 static float lastco2 = NAN;

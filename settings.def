@@ -26,6 +26,7 @@ gpio	gfx.rst					// GFX RST GPIO
 u8	gfx.flip	0			// GFX Flip
 u8	gfx.light	0			// GFX Light contrast
 u8	gfx.dark	0			// GFX Dark contrast
+o128	logo		.base64=1		// Logo (32x32 pixel data)
 #endif
 u32	msgtime		30			// Message time (s)
 bit	fahrenheit				// Use Fahrenheit
