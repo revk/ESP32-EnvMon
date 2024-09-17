@@ -47,13 +47,13 @@ u8	heat.ahead	30			// Heat ahead time
 u8	heat.fadem	10			// Heat fade (mins)
 u32	heat.fade	1	.decimal=3	// Heat fade C
 gpio	heat.gpio				// Heat GPIO
-u16	hhmm.night	0			// Night HHMM
-u16	hhmm.day	0			// Day HHMM
+u16	hhmm.night	0	.digits=4	// Night HHMM
+u16	hhmm.day	0	.digits=4	// Day HHMM
 bit	no.logo					// No logo shown
 bit	no.time					// No time shown
 s32	heat.day	0	.decimal=3	// Heat day temp C
 s32	heat.night	0	.decimal=3	// Heat night temp C
-u16	temp.hhmm		.array=10	// Temp control (HHMM)
+u16	temp.hhmm		.digits=4 .array=10	// Temp control (HHMM)
 s32	temp.max		.decimal=3 .array=10	// Temp control (min) C
 s32	temp.min		.decimal=3 .array=10	// Temp control (max) C
 gpio	button			.array=3	// Button GPIO
