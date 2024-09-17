@@ -18,43 +18,43 @@ u32	rh.damp		10			// RH damping level
 gpio	ds18b20					// DS18B20 GPIO
 s32	ds18b20offset	0 .decimal=3		// DS18B20 Offset
 #ifndef  CONFIG_GFX_BUILD_SUFFIX_GFXNONE 
-gpio	gfx.mosi				//
-gpio	gfx.sck					//
-gpio	gfx.cs					//
-gpio	gfx.dc					//
-gpio	gfx.rst					//
-u8	gfx.flip	0			//
-u8	gfx.light	0			//
-u8	gfx.dark	0			//
+gpio	gfx.mosi				// GFX MOSI GPIO
+gpio	gfx.sck					// GFX SCK GPIO
+gpio	gfx.cs					// GFX CS GPIO
+gpio	gfx.dc					// GFX DC GPIO
+gpio	gfx.rst					// GFX RST GPIO
+u8	gfx.flip	0			// GFX Flip
+u8	gfx.light	0			// GFX Light contrast
+u8	gfx.dark	0			// GFX Dark contrast
 #endif
-u32	msgtime		30			//
-bit	fahrenheit				//
-s	fan.on					//
-s	fan.off					//
-u32	fan.co2on	0			//
-u32	fan.co2off	0			//
-u32	fan.rhon	0			//
-u32	fan.rhoff	0			//
-gpio	fan.co2gpio				//
-u32	fan.resend	600			//
-s	heat.on					//
-s	heat.off				//
-s	heat.aircon				//
-bit	heat.monitor				//
-u8	heat.ahead	30			//
-u8	heat.fadem	10			//
-u32	heat.fade	1	.decimal=3	//
-u32	heat.resend	600			//
-gpio	heat.gpio				//
-u16	hhmm.night	0			//
-u16	hhmm.day	0			//
-bit	no.logo					//
-bit	no.time					//
-s32	heat.day	0	.decimal=3	//
-s32	heat.night	0	.decimal=3	//
-u16	temp.hhmm		.array=10	//
-s32	temp.max		.decimal=3 .array=10	//
-s32	temp.min		.decimal=3 .array=10	//
-gpio	button			.array=3	//
-s	ble					//
-bit	ha					//
+u32	msgtime		30			// Message time (s)
+bit	fahrenheit				// Use Fahrenheit
+s	fan.on					// Fan MQTT on
+s	fan.off					// Fan MQTT off
+u32	fan.resend	600			// Fan MQTT resend time (s)
+gpio	fan.co2gpio				// Fan GPIO
+u32	fan.co2on	0			// Fan CO2 level for on (ppm)
+u32	fan.co2off	0			// Fan CO2 level for off (ppm)
+u32	fan.rhon	0			// Fan RH level on (%)
+u32	fan.rhoff	0			// Fan RH level off (%)
+s	heat.on					// Heat MQTT on
+s	heat.off				// Heat MQTT off
+u32	heat.resend	600			// Heat MQTT resend (s)
+s	heat.aircon				// Heat A/C Faikin hostname
+bit	heat.monitor				// Heat monitor mode
+u8	heat.ahead	30			// Heat ahead time
+u8	heat.fadem	10			// Heat fade (mins)
+u32	heat.fade	1	.decimal=3	// Heat fade C
+gpio	heat.gpio				// Heat GPIO
+u16	hhmm.night	0			// Night HHMM
+u16	hhmm.day	0			// Day HHMM
+bit	no.logo					// No logo shown
+bit	no.time					// No time shown
+s32	heat.day	0	.decimal=3	// Heat day temp C
+s32	heat.night	0	.decimal=3	// Heat night temp C
+u16	temp.hhmm		.array=10	// Temp control (HHMM)
+s32	temp.max		.decimal=3 .array=10	// Temp control (min) C
+s32	temp.min		.decimal=3 .array=10	// Temp control (max) C
+gpio	button			.array=3	// Button GPIO
+s	ble					// BLE device ID
+bit	ha					// Home Assistant

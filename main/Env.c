@@ -4,6 +4,9 @@ const char TAG[] = "Env";
 
 /* #define       DEBUGTEMP */
 
+#define LOGOW   32
+#define LOGOH   32
+
 #include "revk.h"
 #include <driver/i2c.h>
 #include <hal/spi_types.h>
@@ -19,8 +22,6 @@ const char TAG[] = "Env";
 /*
  * Setting for "logo" is 32 x32 bytes(4 bits per pixel) Note that MQTT config needs to allow a large enough message for the logo
  */
-#define LOGOW   32
-#define LOGOH   32
 
 #define ACK_CHECK_EN 0x1        /* !< I2C master will check ack from slave */
 #define ACK_CHECK_DIS 0x0       /* !< I2C master will not check ack from slave */
@@ -41,8 +42,8 @@ static uint8_t airconantifreeze = 0;
 static char airconmode = 0;
 static uint32_t airconlast = 0;
 
-static uint8_t logo[LOGOW * LOGOH / 2];
 #ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
+static uint8_t logo[LOGOW * LOGOH / 2];
 static char lasticon = 0;
 #endif
 static float lastco2 = NAN;
@@ -487,7 +488,7 @@ co2_scd41_stop_measure (void)
 static esp_err_t
 co2_scd41_start_measure (void)
 {
-   scd41_settled = uptime () + co2startup; /* Time for temp to settle */
+   scd41_settled = uptime () + co2startup;      /* Time for temp to settle */
    return co2_command (0x21b1); /* Start measurement(SCD41) */
 }
 
@@ -970,7 +971,7 @@ ds18b20_task (void *p)
 #define N 10
          static float last[N] = { 0 }, tot = 0;
          static int p = 0;
-         c[0] += ((float) ds18b20offset) / 1000.0;  // Offset compensation
+         c[0] += ((float) ds18b20offset) / 1000.0;      // Offset compensation
          // Moving average
          if (++p >= N)
             p = 0;
@@ -1280,12 +1281,14 @@ app_main ()
    revk_start ();
    revk_gpio_output (fanco2gpio, 0);
    revk_gpio_output (heatgpio, 0);
+#ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
    {
       int p;
       for (p = 0; p < sizeof (logo) && !logo[p]; p++);
       if (p == sizeof (logo))
          memcpy (logo, icon_logo, sizeof (icon_logo));  /* default */
    }
+#endif
    if (sda.set && scl.set)
    {
       scd41 = (co2address == 0x62 ? 1 : 0);
@@ -1557,14 +1560,12 @@ app_main ()
             max = NAN;
          int a,
            b;
-         if ((a = (tempmin[temptimeprev] ? : tempmax[temptimeprev]))
-             && (b = (tempmin[temptimenext] ? : tempmax[temptimenext])))
+         if ((a = (tempmin[temptimeprev] ? : tempmax[temptimeprev])) && (b = (tempmin[temptimenext] ? : tempmax[temptimenext])))
          {                      /* Heat valid */
             heat_target = a + (b - a) * (snow - sprev) / (snext - sprev);
             min = ((float) heat_target) / 1000.0;
          }
-         if ((a = (tempmax[temptimeprev] ? : tempmin[temptimeprev]))
-             && (b = (tempmax[temptimenext] ? : tempmin[temptimenext])))
+         if ((a = (tempmax[temptimeprev] ? : tempmin[temptimeprev])) && (b = (tempmax[temptimenext] ? : tempmin[temptimenext])))
             max = (float) (a + (b - a) * (snow - sprev) / (snext - sprev)) / 1000.0;    /* Cool valid */
          else
             max = min;          /* same as heat */
@@ -1612,7 +1613,7 @@ app_main ()
                   revk_mqtt_send_str (fan);
                }
             }
-	    #ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
+#ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
             if (fanon && *fanon && fanlast == 1)
                icon = 'E';      // Extractor fan icon
 #endif
@@ -1657,7 +1658,7 @@ app_main ()
             }
          }
       }
-      #ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
+#ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
       if (heaton && *heaton && heatlast == 1)
          icon = 'R';            // Radiator icon
 #endif
