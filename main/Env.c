@@ -288,7 +288,6 @@ send_ha_config (void)
 const char *
 app_callback (int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
-	ESP_LOGE(TAG,"aircon %s prefix %s target %s suffix %s j %d",aircon?:"?",prefix?:"?",target?:"?",suffix?:"?",jo_here(j)); // TODO
    if (*aircon && prefix && !strcmp (prefix, "Faikin") && target && airconlast)
    {
       airconlast = uptime ();
