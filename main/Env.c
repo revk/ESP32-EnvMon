@@ -164,9 +164,10 @@ reportall (time_t now)
             jo_litf (j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
       }
 #endif
+#ifndef  CONFIG_GFX_BUILD_SUFFIX_GFXNONE
       if (lasticon)
          jo_stringf (j,"icon", "%c", lasticon);
-      jo_int(j,"airconlast",airconlast);
+#endif
       revk_state ("data", &j);
       if (*aircon && !isnan (lasttemp))
       {                         /* Aircon control */
