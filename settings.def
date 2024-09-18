@@ -1,5 +1,6 @@
 u8	webcontrol	2			// Web control
 u32	reporting	60			// Reporting interval (s)
+s	aircon					// Faikin hostname
 u8	lag		5			// Lag
 gpio	sda					// I2C SDA
 gpio	scl					// I2C SCL
@@ -41,7 +42,6 @@ u32	fan.rhoff	0			// Fan RH level off (%)
 s	heat.on					// Heat MQTT on
 s	heat.off				// Heat MQTT off
 u32	heat.resend	600			// Heat MQTT resend (s)
-s	heat.aircon				// Heat A/C Faikin hostname
 bit	heat.monitor				// Heat monitor mode
 u8	heat.ahead	30			// Heat ahead time
 u8	heat.fadem	10			// Heat fade (mins)

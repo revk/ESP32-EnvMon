@@ -164,14 +164,17 @@ reportall (time_t now)
             jo_litf (j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
       }
 #endif
+      if (lasticon)
+         jo_stringf (j,"icon", "%c", lasticon);
+      jo_int(j,"airconlast",airconlast);
       revk_state ("data", &j);
-      if (*heataircon && !isnan (lasttemp))
+      if (*aircon && !isnan (lasttemp))
       {                         /* Aircon control */
          static float last = NAN;
          if (isnan (last) || last != lasttemp || !reporting || now / reporting != reportlast / reporting)
          {
             char topic[100];
-            snprintf (topic, sizeof (topic), "command/%s/control", heataircon);
+            snprintf (topic, sizeof (topic), "command/%s/control", aircon);
             jo_t j = jo_object_alloc ();
             if (tempplaces <= 0)
                jo_litf (j, "env", "%d", (int) lasttemp);
@@ -285,12 +288,13 @@ send_ha_config (void)
 const char *
 app_callback (int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
-   if (*heataircon && prefix && !strcmp (prefix, "Faikin") && target && !strcmp (target, heataircon) && airconlast)
+	ESP_LOGE(TAG,"aircon %s prefix %s target %s suffix %s j %d",aircon?:"?",prefix?:"?",target?:"?",suffix?:"?",jo_here(j)); // TODO
+   if (*aircon && prefix && !strcmp (prefix, "Faikin") && target && airconlast)
    {
       airconlast = uptime ();
       return "";
    }
-   if (*heataircon && prefix && !strcmp (prefix, "state") && target && !strcmp (target, heataircon) && jo_here (j) == JO_OBJECT)
+   if (*aircon && prefix && !strcmp (prefix, "state") && target && !strcmp (target, aircon) && jo_here (j) == JO_OBJECT)
    {                            // Aircon state
       airconlast = uptime ();
       jo_type_t t = jo_next (j);        // Start object
@@ -343,12 +347,12 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       fanlast = -1;
       heatlast = -1;
       sendall ();
-      if (*heataircon)
+      if (*aircon)
       {
          char temp[100];
-         snprintf (temp, sizeof (temp), "state/%s/status", heataircon);
+         snprintf (temp, sizeof (temp), "state/%s/status", aircon);
          lwmqtt_subscribe (revk_mqtt (0), temp);
-         snprintf (temp, sizeof (temp), "Faikin/%s", heataircon);
+         snprintf (temp, sizeof (temp), "Faikin/%s", aircon);
          lwmqtt_subscribe (revk_mqtt (0), temp);
       }
       if (ha)
