@@ -166,7 +166,7 @@ reportall (time_t now)
 #endif
 #ifndef  CONFIG_GFX_BUILD_SUFFIX_GFXNONE
       if (lasticon)
-         jo_stringf (j,"icon", "%c", lasticon);
+         jo_stringf (j, "icon", "%c", lasticon);
 #endif
       revk_state ("data", &j);
       if (*aircon && !isnan (lasttemp))
@@ -250,30 +250,30 @@ static void
 send_ha_config (void)
 {
    ha_send = 0;
+   char *hastatus = revk_topic (topicstate, NULL, NULL);
    char *topic;
-   const char *us = hostname;
-   if (!*us)
-      us = revk_id;
    void add (const char *tag, const char *type, const char *unit, const char *json)
    {
-      if (asprintf (&topic, "homeassistant/sensor/%s-%c/config", us, *tag) >= 0)
+      if (asprintf (&topic, "homeassistant/sensor/%s-%c/config", hostname, *tag) >= 0)
       {
          jo_t j = jo_object_alloc ();
-         jo_stringf (j, "unique_id", "%s-%c", us, *tag);
+         jo_stringf (j, "unique_id", "%s-%c", hostname, *tag);
          jo_object (j, "dev");
          jo_array (j, "ids");
          jo_string (j, NULL, revk_id);
          jo_close (j);
-         jo_string (j, "name", us);
+         jo_string (j, "name", hostname);
          jo_string (j, "mdl", appname);
          jo_string (j, "sw", revk_version);
          jo_string (j, "mf", "www.me.uk");
          jo_close (j);
          jo_string (j, "dev_cla", type);
-         jo_stringf (j, "name", "%s %s", us, tag);
-         jo_stringf (j, "stat_t", "state/%s/%s/data", appname, us);
+         jo_stringf (j, "name", "%s %s", hostname, tag);
+         jo_stringf (j, "stat_t", hastatus);
          jo_string (j, "unit_of_meas", unit);
          jo_stringf (j, "val_tpl", "{{value_json.%s}}", json);
+         jo_string (j, "avty_t", hastatus);
+         jo_string (j, "avty_tpl", "{{value_json.up}}");
          revk_mqtt_send (NULL, 1, topic, &j);
          free (topic);
       }
@@ -284,6 +284,7 @@ send_ha_config (void)
       add ("R/H", "humidity", "%", "rh");
    if (i2cport >= 0)
       add ("CO₂", "carbon_dioxide", "ppm", "co2");
+   free (hastatus);
 }
 
 const char *
