@@ -104,101 +104,84 @@ value_t *values = NULL;
 time_t reportlast = 0,
    reportchange = 0;
 
-static void
-reportall (time_t now)
+void
+revk_state_extra (jo_t j)
 {                               /* Do reporting of values */
-   if ((!reportchange || now < reportchange + lag) && (!reporting || now / reporting == reportlast / reporting))
-      return;                   /* Slight delay on changes */
-   if (values)
+   time_t now = time (0);
+   value_t *v;
+   void add (const char *tag, float value, int8_t places)
    {
-      value_t *v;
-      jo_t j = jo_object_alloc ();
-      void add (const char *tag, float value, int8_t places)
-      {
-         if (places <= 0)
-            jo_litf (j, tag, "%d", (int) value);
-         else
-            jo_litf (j, tag, "%.*f", places, value);
-      }
-      if (now < 1000000000)
-         jo_litf (j, "ts", "%ld", now);
+      if (places <= 0)
+         jo_litf (j, tag, "%d", (int) value);
+      else
+         jo_litf (j, tag, "%.*f", places, value);
+   }
+   for (v = values; v; v = v->next)
+      if (!isnan (v->value))
+         add (v->tag, v->value, v->places);
+   if (heatlast >= 0)
+      jo_bool (j, "heat", heatlast);
+   if (fanlast >= 0)
+      jo_bool (j, "fan", fanlast);
+   if (
+#ifndef  CONFIG_GFX_BUILD_SUFFIX_GFXNONE
+         gfxmosi.set ||
+#endif
+         als_found)
+      jo_bool (j, "dark", gfx_dark);
+   if (!isnan (temptargetmin) && !isnan (temptargetmax))
+   {
+      if (temptargetmin == temptargetmax)
+         jo_litf (j, "temp-target", "%.3f", temptargetmin);
       else
       {
-         struct tm tm;
-         gmtime_r (&now, &tm);
-         jo_stringf (j, "ts", "%04d-%02d-%02dT%02d:%02d:%02dZ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min,
-                     tm.tm_sec);
+         jo_array (j, "temp-target");
+         jo_litf (j, NULL, "%.3f", temptargetmin);
+         jo_litf (j, NULL, "%.3f", temptargetmax);
+         jo_close (j);
       }
-      for (v = values; v; v = v->next)
-         if (!isnan (v->value))
-            add (v->tag, v->value, v->places);
-      if (heatlast >= 0)
-         jo_bool (j, "heat", heatlast);
-      if (fanlast >= 0)
-         jo_bool (j, "fan", fanlast);
-      if (
-#ifndef  CONFIG_GFX_BUILD_SUFFIX_GFXNONE
-            gfxmosi.set ||
-#endif
-            als_found)
-         jo_bool (j, "dark", gfx_dark);
-      if (!isnan (temptargetmin) && !isnan (temptargetmax))
-      {
-         if (temptargetmin == temptargetmax)
-            jo_litf (j, "temp-target", "%.3f", temptargetmin);
-         else
-         {
-            jo_array (j, "temp-target");
-            jo_litf (j, NULL, "%.3f", temptargetmin);
-            jo_litf (j, NULL, "%.3f", temptargetmax);
-            jo_close (j);
-         }
-      }
+   }
 #ifdef	ELA
-      if (bletemp && !bletemp->missing)
-      {
-         jo_string (j, "source", bletemp->name);
-         if (bletemp->bat)
-            jo_int (j, "bat", bletemp->bat);
-         if (bletemp->volt)
-            jo_litf (j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
-      }
+   if (bletemp && !bletemp->missing)
+   {
+      jo_string (j, "source", bletemp->name);
+      if (bletemp->bat)
+         jo_int (j, "bat", bletemp->bat);
+      if (bletemp->volt)
+         jo_litf (j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
+   }
 #endif
 #ifndef  CONFIG_GFX_BUILD_SUFFIX_GFXNONE
-      if (lasticon)
-         jo_stringf (j, "icon", "%c", lasticon);
+   if (lasticon)
+      jo_stringf (j, "icon", "%c", lasticon);
 #endif
-      revk_state ("data", &j);
-      if (*aircon && !isnan (lasttemp))
-      {                         /* Aircon control */
-         static float last = NAN;
-         if (isnan (last) || last != lasttemp || !reporting || now / reporting != reportlast / reporting)
+   if (*aircon && !isnan (lasttemp))
+   {                            /* Aircon control */
+      static float last = NAN;
+      if (isnan (last) || last != lasttemp || !reporting || now / reporting != reportlast / reporting)
+      {
+         char topic[100];
+         snprintf (topic, sizeof (topic), "command/%s/control", aircon);
+         jo_t j = jo_object_alloc ();
+         if (tempplaces <= 0)
+            jo_litf (j, "env", "%d", (int) lasttemp);
+         else
+            jo_litf (j, "env", "%.*f", tempplaces, lasttemp);
+         if (!heatmonitor)
          {
-            char topic[100];
-            snprintf (topic, sizeof (topic), "command/%s/control", aircon);
-            jo_t j = jo_object_alloc ();
-            if (tempplaces <= 0)
-               jo_litf (j, "env", "%d", (int) lasttemp);
+            if (!isnan (temptargetmin) && temptargetmin == temptargetmax)
+               jo_litf (j, "target", "%.3f", temptargetmin);
             else
-               jo_litf (j, "env", "%.*f", tempplaces, lasttemp);
-            if (!heatmonitor)
             {
-               if (!isnan (temptargetmin) && temptargetmin == temptargetmax)
-                  jo_litf (j, "target", "%.3f", temptargetmin);
-               else
-               {
-                  jo_array (j, "target");
-                  jo_litf (j, NULL, "%.3f", temptargetmin);
-                  jo_litf (j, NULL, "%.3f", temptargetmax);
-                  jo_close (j);
-               }
+               jo_array (j, "target");
+               jo_litf (j, NULL, "%.3f", temptargetmin);
+               jo_litf (j, NULL, "%.3f", temptargetmax);
+               jo_close (j);
             }
-            revk_mqtt_send_clients (NULL, 0, topic, &j, 1);
-            last = lasttemp;
          }
+         revk_mqtt_send_clients (NULL, 0, topic, &j, 1);
+         last = lasttemp;
       }
-      reportlast = now;
-      reportchange = 0;
    }
 }
 
@@ -274,6 +257,8 @@ send_ha_config (void)
          jo_stringf (j, "val_tpl", "{{value_json.%s}}", json);
          jo_string (j, "avty_t", hastatus);
          jo_string (j, "avty_tpl", "{{value_json.up}}");
+         jo_bool (j, "pl_avail", 1);
+         jo_bool (j, "pl_not_avail", 0);
          revk_mqtt_send (NULL, 1, topic, &j);
          free (topic);
       }
@@ -1690,8 +1675,13 @@ app_main ()
       if (scd41_settled && scd41_settled < up)
          scd41_settled = 0;     // Settled
       /* Report */
-      if (up > 60 || sntp_get_sync_status () == SNTP_SYNC_STATUS_COMPLETED)
-         reportall (now);       /* Don 't report right away if clock may be duff */
+      if (values && (up > 60 || sntp_get_sync_status () == SNTP_SYNC_STATUS_COMPLETED)
+          && !((!reportchange || now < reportchange + lag) && (!reporting || now / reporting == reportlast / reporting)))
+      {
+         revk_command ("status", NULL);
+         reportlast = now;
+         reportchange = 0;
+      }
 #ifndef	CONFIG_GFX_BUILD_SUFFIX_GFXNONE
       /* Display */
       char s[30];               /* Temp string */
