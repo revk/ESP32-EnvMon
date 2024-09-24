@@ -19,6 +19,7 @@ const char TAG[] = "Env";
 #include "led_strip.h"
 #include "icons.h"
 #include "bleenv.h"
+#include "halib.h"
 
 #define ACK_CHECK_EN 0x1        /* !< I2C master will check ack from slave */
 #define ACK_CHECK_DIS 0x0       /* !< I2C master will not check ack from slave */
@@ -238,43 +239,12 @@ static void
 send_ha_config (void)
 {
    ha_send = 0;
-   char *hastatus = revk_topic (topicstate, NULL, NULL);
-   char *topic;
-   void add (const char *tag, const char *type, const char *unit, const char *json)
-   {
-      if (asprintf (&topic, "homeassistant/sensor/%s-%c/config", hostname, *tag) >= 0)
-      {
-         jo_t j = jo_object_alloc ();
-         jo_stringf (j, "unique_id", "%s-%c", hostname, *tag);
-         jo_object (j, "dev");
-         jo_array (j, "ids");
-         jo_string (j, NULL, revk_id);
-         jo_close (j);
-         jo_string (j, "name", hostname);
-         jo_string (j, "mdl", appname);
-         jo_string (j, "sw", revk_version);
-         jo_string (j, "mf", "www.me.uk");
-         jo_close (j);
-         jo_string (j, "dev_cla", type);
-         jo_stringf (j, "name", "%s %s", hostname, tag);
-         jo_stringf (j, "stat_t", hastatus);
-         jo_string (j, "unit_of_meas", unit);
-         jo_stringf (j, "val_tpl", "{{value_json.%s}}", json);
-         jo_string (j, "avty_t", hastatus);
-         jo_string (j, "avty_tpl", "{{value_json.up}}");
-         jo_bool (j, "pl_avail", 1);
-         jo_bool (j, "pl_not_avail", 0);
-         revk_mqtt_send (NULL, 1, topic, &j);
-         free (topic);
-      }
-   }
    if (ds18b20.set || i2cport >= 0)
-      add ("Temp", "temperature", "°C", "temp");
+    ha_config_sensor ("temp", name: "Temp", type: "temperature", unit:"°C");
    if (i2cport >= 0)
-      add ("R/H", "humidity", "%", "rh");
+    ha_config_sensor ("rh", name: "R/H", type: "humidity", unit:"%");
    if (i2cport >= 0)
-      add ("CO₂", "carbon_dioxide", "ppm", "co2");
-   free (hastatus);
+    ha_config_sensor ("co2", name: "CO₂", type: "carbon_dioxide", unit:"ppm");
 }
 
 const char *
