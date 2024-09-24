@@ -13,9 +13,9 @@ s8	als.places	0			// ALS reporting places
 s8	co2.places	-1			// CO2 reporting places
 u32	co2.damp	100			// CO2 damping level
 u32	co2.startup	240			// CO2 startup time (s)
-u16	co2.high	2000			// CO2 too high above this
-u16	co2.ok		1000			// CO2 just about OK below this
-u16	co2.good	700			// CO2 good below this
+u16	co2.high	2000	.live=1		// CO2 too high above this
+u16	co2.ok		1000	.live=1		// CO2 just about OK below this
+u16	co2.good	700	.live=1		// CO2 good below this
 s8	temp.places	1			// Temp reporting places
 s8	rh.places	0			// RH reporting places
 u32	rh.damp		10			// RH damping level

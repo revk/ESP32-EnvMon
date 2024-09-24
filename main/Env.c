@@ -1928,7 +1928,7 @@ app_main ()
                   c = 'Y';
                else
                   c = 'G';
-               n = lednum * lastco2 / co2high;
+               n = (lednum * lastco2 + co2high / 2) / co2high;
             }
             if (n > lednum)
                n = lednum;
