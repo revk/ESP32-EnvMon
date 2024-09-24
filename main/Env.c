@@ -16,6 +16,7 @@ const char TAG[] = "Env";
 #include <onewire_bus.h>
 #include <ds18b20.h>
 #include "gfx.h"
+#include "led_strip.h"
 #include "icons.h"
 #include "bleenv.h"
 
@@ -31,6 +32,10 @@ const char TAG[] = "Env";
 static uint8_t ha_send = 0;
 static uint8_t scd41 = 0;
 static uint32_t scd41_settled = 1;      /* uptime when started measurements */
+
+#ifdef  CONFIG_REVK_LED_STRIP
+led_strip_handle_t strip = NULL;
+#endif
 
 static uint8_t airconpower = 0;
 static uint8_t airconslave = 0;
@@ -1266,6 +1271,26 @@ app_main ()
    revk_start ();
    revk_gpio_output (fanco2gpio, 0);
    revk_gpio_output (heatgpio, 0);
+#ifdef CONFIG_REVK_LED_STRIP
+   if (ledrgb.set && lednum)
+   {
+      led_strip_config_t strip_config = {
+         .strip_gpio_num = (ledrgb.num),
+         .max_leds = lednum,    // The number of LEDs in the strip,
+         .led_pixel_format = LED_PIXEL_FORMAT_GRB,      // Pixel format of your LED strip
+         .led_model = LED_MODEL_WS2812, // LED strip model
+         .flags.invert_out = ledrgb.invert,     // whether to invert the output signal (useful when your hardware has a level inverter)
+      };
+      led_strip_rmt_config_t rmt_config = {
+         .clk_src = RMT_CLK_SRC_DEFAULT,        // different clock source can lead to different power consumption
+         .resolution_hz = 10 * 1000 * 1000,     // 10MHz
+#ifdef  CONFIG_IDF_TARGET_ESP32S3
+         .flags.with_dma = true,
+#endif
+      };
+      REVK_ERR_CHECK (led_strip_new_rmt_device (&strip_config, &rmt_config, &strip));
+   }
+#endif
 #ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
    {
       int p;
@@ -1883,6 +1908,40 @@ app_main ()
                      'A' ? icon_modeA : icon == 'P' ? icon_power : icon == 'N' ? icon_nowifi : NULL);
       }
       gfx_unlock ();
+#endif
+#ifdef  CONFIG_REVK_LED_STRIP
+      if (strip)
+      {                         // LED status
+         for (int i = 0; i < lednum; i++)
+            led_strip_set_pixel (strip, i, 0, 0, 0);
+         if (ledco2)
+         {                      // Show CO2 on LEDs
+            int n = 0;
+            char c = 'K';
+            if (!isnan (lastco2) && co2high)
+            {
+               if (lastco2 > co2high)
+                  c = 'R';
+               else if (lastco2 > co2ok)
+                  c = 'O';
+               else if (lastco2 > co2good)
+                  c = 'Y';
+               else
+                  c = 'G';
+               n = lednum * lastco2 / co2high;
+            }
+            if (n > lednum)
+               n = lednum;
+            if (!n)
+            {
+               n = 1;
+               c = 'b';
+            }
+            for (int i = 0; i < n; i++)
+               revk_led (strip, i, 255, revk_rgb (c));
+         }
+         REVK_ERR_CHECK (led_strip_refresh (strip));
+      }
 #endif
    }
 }
