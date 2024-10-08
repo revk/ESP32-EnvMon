@@ -214,7 +214,7 @@ main (int argc, const char *argv[])
             return l;
          }
          if (debug)
-            warnx ("Tag [%s] Type [%s] Val [%.*s]", tag, type, msg->payloadlen, (char *) msg->payload);
+            warnx ("Topic [%s] Tag [%s] Type [%s] Val [%.*s]", topic, tag, type, msg->payloadlen, (char *) msg->payload);
          time_t now = (time (0) / interval) * interval;
          void logval (const char *type, vals_t * v, const char *val)
          {                      // Store value
@@ -347,9 +347,9 @@ main (int argc, const char *argv[])
                   }
                   free (shelly);
                }
-         } else if (!strncmp (topic, "state/", 6) && !strcmp (type, "data"))
+         } else if (!strncmp (topic, "state", 5) && (!strcmp (tag, "Env") || !strcmp (type, "data")))
          {                      // Env
-            log_t *l = find (tag);
+            log_t *l = find (!strcmp (tag, "Env") ? type : tag);
             if ((v = j_get (data, "ts")))
             {
                time_t t = j_time (v);

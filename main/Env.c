@@ -4,6 +4,9 @@ const char TAG[] = "Env";
 
 /* #define       DEBUGTEMP */
 
+#define LOGOW   32
+#define LOGOH   32
+
 #include "revk.h"
 #include <driver/i2c.h>
 #include <hal/spi_types.h>
@@ -13,14 +16,10 @@ const char TAG[] = "Env";
 #include <onewire_bus.h>
 #include <ds18b20.h>
 #include "gfx.h"
+#include "led_strip.h"
 #include "icons.h"
 #include "bleenv.h"
-
-/*
- * Setting for "logo" is 32 x32 bytes(4 bits per pixel) Note that MQTT config needs to allow a large enough message for the logo
- */
-#define LOGOW   32
-#define LOGOH   32
+#include "halib.h"
 
 #define ACK_CHECK_EN 0x1        /* !< I2C master will check ack from slave */
 #define ACK_CHECK_DIS 0x0       /* !< I2C master will not check ack from slave */
@@ -35,14 +34,19 @@ static uint8_t ha_send = 0;
 static uint8_t scd41 = 0;
 static uint32_t scd41_settled = 1;      /* uptime when started measurements */
 
+#ifdef  CONFIG_REVK_LED_STRIP
+led_strip_handle_t strip = NULL;
+#endif
+
 static uint8_t airconpower = 0;
 static uint8_t airconslave = 0;
 static uint8_t airconantifreeze = 0;
 static char airconmode = 0;
 static uint32_t airconlast = 0;
 
-static uint8_t logo[LOGOW * LOGOH / 2];
+#ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
 static char lasticon = 0;
+#endif
 static float lastco2 = NAN;
 static float lastals = NAN;
 static float lastalsr = NAN;
@@ -106,97 +110,84 @@ value_t *values = NULL;
 time_t reportlast = 0,
    reportchange = 0;
 
-static void
-reportall (time_t now)
+void
+revk_state_extra (jo_t j)
 {                               /* Do reporting of values */
-   if ((!reportchange || now < reportchange + lag) && (!reporting || now / reporting == reportlast / reporting))
-      return;                   /* Slight delay on changes */
-   if (values)
+   time_t now = time (0);
+   value_t *v;
+   void add (const char *tag, float value, int8_t places)
    {
-      value_t *v;
-      jo_t j = jo_object_alloc ();
-      void add (const char *tag, float value, int8_t places)
-      {
-         if (places <= 0)
-            jo_litf (j, tag, "%d", (int) value);
-         else
-            jo_litf (j, tag, "%.*f", places, value);
-      }
-      if (now < 1000000000)
-         jo_litf (j, "ts", "%ld", now);
+      if (places <= 0)
+         jo_litf (j, tag, "%d", (int) value);
+      else
+         jo_litf (j, tag, "%.*f", places, value);
+   }
+   for (v = values; v; v = v->next)
+      if (!isnan (v->value))
+         add (v->tag, v->value, v->places);
+   if (heatlast >= 0)
+      jo_bool (j, "heat", heatlast);
+   if (fanlast >= 0)
+      jo_bool (j, "fan", fanlast);
+   if (
+#ifndef  CONFIG_GFX_BUILD_SUFFIX_GFXNONE
+         gfxmosi.set ||
+#endif
+         als_found)
+      jo_bool (j, "dark", gfx_dark);
+   if (!isnan (temptargetmin) && !isnan (temptargetmax))
+   {
+      if (temptargetmin == temptargetmax)
+         jo_litf (j, "temp-target", "%.3f", temptargetmin);
       else
       {
-         struct tm tm;
-         gmtime_r (&now, &tm);
-         jo_stringf (j, "ts", "%04d-%02d-%02dT%02d:%02d:%02dZ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min,
-                     tm.tm_sec);
+         jo_array (j, "temp-target");
+         jo_litf (j, NULL, "%.3f", temptargetmin);
+         jo_litf (j, NULL, "%.3f", temptargetmax);
+         jo_close (j);
       }
-      for (v = values; v; v = v->next)
-         if (!isnan (v->value))
-            add (v->tag, v->value, v->places);
-      if (heatlast >= 0)
-         jo_bool (j, "heat", heatlast);
-      if (fanlast >= 0)
-         jo_bool (j, "fan", fanlast);
-      if (
-#ifndef  CONFIG_GFX_NONE
-            gfxmosi.set ||
-#endif
-            als_found)
-         jo_bool (j, "dark", gfx_dark);
-      if (!isnan (temptargetmin) && !isnan (temptargetmax))
-      {
-         if (temptargetmin == temptargetmax)
-            jo_litf (j, "temp-target", "%.3f", temptargetmin);
-         else
-         {
-            jo_array (j, "temp-target");
-            jo_litf (j, NULL, "%.3f", temptargetmin);
-            jo_litf (j, NULL, "%.3f", temptargetmax);
-            jo_close (j);
-         }
-      }
+   }
 #ifdef	ELA
-      if (bletemp && !bletemp->missing)
-      {
-         jo_string (j, "source", bletemp->name);
-         if (bletemp->bat)
-            jo_int (j, "bat", bletemp->bat);
-         if (bletemp->volt)
-            jo_litf (j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
-      }
+   if (bletemp && !bletemp->missing)
+   {
+      jo_string (j, "source", bletemp->name);
+      if (bletemp->bat)
+         jo_int (j, "bat", bletemp->bat);
+      if (bletemp->volt)
+         jo_litf (j, "voltage", "%d.%03d", bletemp->volt / 1000, bletemp->volt % 1000);
+   }
 #endif
-      revk_state ("data", &j);
-      if (*heataircon && !isnan (lasttemp))
-      {                         /* Aircon control */
-         static float last = NAN;
-         if (isnan (last) || last != lasttemp || !reporting || now / reporting != reportlast / reporting)
+#ifndef  CONFIG_GFX_BUILD_SUFFIX_GFXNONE
+   if (lasticon)
+      jo_stringf (j, "icon", "%c", lasticon);
+#endif
+   if (*aircon && !isnan (lasttemp))
+   {                            /* Aircon control */
+      static float last = NAN;
+      if (isnan (last) || last != lasttemp || !reporting || now / reporting != reportlast / reporting)
+      {
+         char topic[100];
+         snprintf (topic, sizeof (topic), "command/%s/control", aircon);
+         jo_t j = jo_object_alloc ();
+         if (tempplaces <= 0)
+            jo_litf (j, "env", "%d", (int) lasttemp);
+         else
+            jo_litf (j, "env", "%.*f", tempplaces, lasttemp);
+         if (!heatmonitor)
          {
-            char topic[100];
-            snprintf (topic, sizeof (topic), "command/%s/control", heataircon);
-            jo_t j = jo_object_alloc ();
-            if (tempplaces <= 0)
-               jo_litf (j, "env", "%d", (int) lasttemp);
+            if (!isnan (temptargetmin) && temptargetmin == temptargetmax)
+               jo_litf (j, "target", "%.3f", temptargetmin);
             else
-               jo_litf (j, "env", "%.*f", tempplaces, lasttemp);
-            if (!heatmonitor)
             {
-               if (!isnan (temptargetmin) && temptargetmin == temptargetmax)
-                  jo_litf (j, "target", "%.3f", temptargetmin);
-               else
-               {
-                  jo_array (j, "target");
-                  jo_litf (j, NULL, "%.3f", temptargetmin);
-                  jo_litf (j, NULL, "%.3f", temptargetmax);
-                  jo_close (j);
-               }
+               jo_array (j, "target");
+               jo_litf (j, NULL, "%.3f", temptargetmin);
+               jo_litf (j, NULL, "%.3f", temptargetmax);
+               jo_close (j);
             }
-            revk_mqtt_send_clients (NULL, 0, topic, &j, 1);
-            last = lasttemp;
          }
+         revk_mqtt_send_clients (NULL, 0, topic, &j, 1);
+         last = lasttemp;
       }
-      reportlast = now;
-      reportchange = 0;
    }
 }
 
@@ -248,51 +239,23 @@ static void
 send_ha_config (void)
 {
    ha_send = 0;
-   char *topic;
-   const char *us = hostname;
-   if (!*us)
-      us = revk_id;
-   void add (const char *tag, const char *type, const char *unit, const char *json)
-   {
-      if (asprintf (&topic, "homeassistant/sensor/%s-%c/config", us, *tag) >= 0)
-      {
-         jo_t j = jo_object_alloc ();
-         jo_stringf (j, "unique_id", "%s-%c", us, *tag);
-         jo_object (j, "dev");
-         jo_array (j, "ids");
-         jo_string (j, NULL, revk_id);
-         jo_close (j);
-         jo_string (j, "name", us);
-         jo_string (j, "mdl", appname);
-         jo_string (j, "sw", revk_version);
-         jo_string (j, "mf", "www.me.uk");
-         jo_close (j);
-         jo_string (j, "dev_cla", type);
-         jo_stringf (j, "name", "%s %s", us, tag);
-         jo_stringf (j, "stat_t", "state/%s/%s/data", appname, us);
-         jo_string (j, "unit_of_meas", unit);
-         jo_stringf (j, "val_tpl", "{{value_json.%s}}", json);
-         revk_mqtt_send (NULL, 1, topic, &j);
-         free (topic);
-      }
-   }
    if (ds18b20.set || i2cport >= 0)
-      add ("Temp", "temperature", "°C", "temp");
+    ha_config_sensor ("temp", name: "Temp", type: "temperature", unit:"°C");
    if (i2cport >= 0)
-      add ("R/H", "humidity", "%", "rh");
+    ha_config_sensor ("rh", name: "R/H", type: "humidity", unit:"%");
    if (i2cport >= 0)
-      add ("CO₂", "carbon_dioxide", "ppm", "co2");
+    ha_config_sensor ("co2", name: "CO₂", type: "carbon_dioxide", unit:"ppm");
 }
 
 const char *
 app_callback (int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
-   if (*heataircon && prefix && !strcmp (prefix, "Faikin") && target && !strcmp (target, heataircon) && airconlast)
+   if (*aircon && prefix && !strcmp (prefix, "Faikin") && target && airconlast)
    {
       airconlast = uptime ();
       return "";
    }
-   if (*heataircon && prefix && !strcmp (prefix, "state") && target && !strcmp (target, heataircon) && jo_here (j) == JO_OBJECT)
+   if (*aircon && prefix && !strcmp (prefix, "state") && target && !strcmp (target, aircon) && jo_here (j) == JO_OBJECT)
    {                            // Aircon state
       airconlast = uptime ();
       jo_type_t t = jo_next (j);        // Start object
@@ -345,12 +308,12 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       fanlast = -1;
       heatlast = -1;
       sendall ();
-      if (*heataircon)
+      if (*aircon)
       {
          char temp[100];
-         snprintf (temp, sizeof (temp), "state/%s/status", heataircon);
+         snprintf (temp, sizeof (temp), "state/%s/status", aircon);
          lwmqtt_subscribe (revk_mqtt (0), temp);
-         snprintf (temp, sizeof (temp), "Faikin/%s", heataircon);
+         snprintf (temp, sizeof (temp), "Faikin/%s", aircon);
          lwmqtt_subscribe (revk_mqtt (0), temp);
       }
       if (ha)
@@ -485,7 +448,7 @@ co2_scd41_stop_measure (void)
 static esp_err_t
 co2_scd41_start_measure (void)
 {
-   scd41_settled = uptime () + startup; /* Time for temp to settle */
+   scd41_settled = uptime () + co2startup;      /* Time for temp to settle */
    return co2_command (0x21b1); /* Start measurement(SCD41) */
 }
 
@@ -890,7 +853,7 @@ i2c_task (void *p)
          uint32_t v = sht_read (0xFD);
          if (v)
          {
-            float t = -45.0 + 175 * (float) (v >> 16) / 65535.0 + 0.1 * shtofft10;
+            float t = -45.0 + 175 * (float) (v >> 16) / 65535.0 + 0.1 * shtoffset;
             float h = -6.0 + 125 * (float) (v & 65535) / 65535.0;
             lasttemp = report ("temp", lasttemp, thistemp = t, tempplaces);
             lastrh = report ("rh", lastrh, thisrh = h, rhplaces);
@@ -968,7 +931,7 @@ ds18b20_task (void *p)
 #define N 10
          static float last[N] = { 0 }, tot = 0;
          static int p = 0;
-         c[0] += ((float) ds18b20mC) / 1000.0;  // Offset compensation
+         c[0] += ((float) ds18b20offset) / ds18b20offset_scale; // Offset compensation
          // Moving average
          if (++p >= N)
             p = 0;
@@ -987,8 +950,10 @@ ds18b20_task (void *p)
 void
 menuinit (void)
 {                               /* Common menu stuff */
+#ifndef	CONFIG_GFX_BUILD_SUFFIX_GFXNONE
    gfx_set_contrast (gfxlight);
    gfx_clear (0);
+#endif
 }
 
 void
@@ -1069,17 +1034,17 @@ menufunc1 (char key)
       char s[30];
       if (!isnan (temptargetmin))
       {
-         sprintf (s, "tempminmC%d", temptimeprev + 1);
-         jo_int (j, s, 1000 * d + tempminmC[temptimeprev]);
-         sprintf (s, "tempminmC%d", temptimenext + 1);
-         jo_int (j, s, 1000 * d + tempminmC[temptimenext]);
+         sprintf (s, "tempmin%d", temptimeprev + 1);
+         jo_int (j, s, tempmin_scale * d + tempmin[temptimeprev]);
+         sprintf (s, "tempmin%d", temptimenext + 1);
+         jo_int (j, s, tempmin_scale * d + tempmin[temptimenext]);
       }
       if (!isnan (temptargetmax))
       {
-         sprintf (s, "tempmaxmC%d", temptimeprev + 1);
-         jo_int (j, s, 1000 * d + tempmaxmC[temptimeprev]);
-         sprintf (s, "tempmaxmC%d", temptimenext + 1);
-         jo_int (j, s, 1000 * d + tempmaxmC[temptimenext]);
+         sprintf (s, "tempmax%d", temptimeprev + 1);
+         jo_int (j, s, tempmax_scale * d + tempmax[temptimeprev]);
+         sprintf (s, "tempmax%d", temptimenext + 1);
+         jo_int (j, s, tempmax_scale * d + tempmax[temptimenext]);
       }
       revk_setting (j);
       jo_free (&j);
@@ -1191,7 +1156,7 @@ web_root (httpd_req_t * req)
    httpd_resp_sendstr_chunk (req, "<tr><td>Temp</td><td id=TEMP align=right></td><td>℃</td></tr>");
    httpd_resp_sendstr_chunk (req, "</table>");
    if (webcontrol >= 2)
-      httpd_resp_sendstr_chunk (req, "<p><a href='revk-settings'>WiFi Setup</a></p>");
+      httpd_resp_sendstr_chunk (req, "<p><a href='revk-settings'>Settings</a></p>");
    httpd_resp_sendstr_chunk (req, "<script>"    //
                              "var ws=0;"        //
                              "var temp=0;"      //
@@ -1276,12 +1241,34 @@ app_main ()
    revk_start ();
    revk_gpio_output (fanco2gpio, 0);
    revk_gpio_output (heatgpio, 0);
+#ifdef CONFIG_REVK_LED_STRIP
+   if (ledrgb.set && lednum)
+   {
+      led_strip_config_t strip_config = {
+         .strip_gpio_num = (ledrgb.num),
+         .max_leds = lednum,    // The number of LEDs in the strip,
+         .led_pixel_format = LED_PIXEL_FORMAT_GRB,      // Pixel format of your LED strip
+         .led_model = LED_MODEL_WS2812, // LED strip model
+         .flags.invert_out = ledrgb.invert,     // whether to invert the output signal (useful when your hardware has a level inverter)
+      };
+      led_strip_rmt_config_t rmt_config = {
+         .clk_src = RMT_CLK_SRC_DEFAULT,        // different clock source can lead to different power consumption
+         .resolution_hz = 10 * 1000 * 1000,     // 10MHz
+#ifdef  CONFIG_IDF_TARGET_ESP32S3
+         .flags.with_dma = true,
+#endif
+      };
+      REVK_ERR_CHECK (led_strip_new_rmt_device (&strip_config, &rmt_config, &strip));
+   }
+#endif
+#ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
    {
       int p;
       for (p = 0; p < sizeof (logo) && !logo[p]; p++);
       if (p == sizeof (logo))
          memcpy (logo, icon_logo, sizeof (icon_logo));  /* default */
    }
+#endif
    if (sda.set && scl.set)
    {
       scd41 = (co2address == 0x62 ? 1 : 0);
@@ -1317,7 +1304,7 @@ app_main ()
             i2c_set_timeout (i2cport, 80000 * 5);       /* 5 ms ? allow for clock stretching */
       }
    }
-#ifndef	CONFIG_GFX_NONE
+#ifndef	CONFIG_GFX_BUILD_SUFFIX_GFXNONE
    if (gfxmosi.set)
    {
     const char *e = gfx_init (cs: gfxcs.num, sck: gfxsck.num, mosi: gfxmosi.num, dc: gfxdc.num, rst: gfxrst.num, flip:gfxflip);
@@ -1344,6 +1331,7 @@ app_main ()
    gfx_clear (0);
    gfx_unlock ();
    /* Main task... */
+#ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
    time_t showtime = 0;
    char showlogo = 1;
    float showco2 = NAN;
@@ -1359,6 +1347,7 @@ app_main ()
       showrh = NAN;
       lasticon = 0;
    };
+#endif
    if (alsdark && sda.set && scl.set && alsaddress)
       gfx_dark = 1;             // Start dark
 
@@ -1437,6 +1426,7 @@ app_main ()
          airconpower = 0;
          airconlast = 0;
       }
+#ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
       char icon = 0;
       if (airconpower)
       {
@@ -1445,6 +1435,7 @@ app_main ()
          else
             icon = airconmode;  // Display icon
       }
+#endif
       if (sendinfo && (co2_found || num_ds18b20 || sht_found) && !do_co2)
       {                         /* Send device info */
          sendinfo = 0;
@@ -1505,13 +1496,13 @@ app_main ()
             gfx_dark = 1;
       }
       /* Reference temp */
-      /* heatdaymC or heatnightmC take priority.If not set(0) then temphhmm / tempminmC / tempmaxmC apply */
+      /* heatday or heatnight take priority.If not set(0) then temphhmm / tempmin / tempmax apply */
       /*
        * The temp are a set, with hhmm points(in order, can start 0000) and heating and cooling settings, and 0 means same as other
        * setting
        */
-      int32_t heat_target = (gfx_dark ? heatnightmC : heatdaymC);
-      if (!tempminmC[0] && !tempmaxmC[0])
+      int32_t heat_target = (gfx_dark ? heatnight : heatday);
+      if (!tempmin[0] && !tempmax[0])
       {                         /* Temp is set based on night / day, use that as heating basis(min) and no cooling set - legacy */
          if (heat_target)
          {
@@ -1521,15 +1512,15 @@ app_main ()
          temptimeprev = temptimenext = -1;
       } else
       {
-         /* Setting from temphhmm / tempminmC / tempmaxmC */
+         /* Setting from temphhmm / tempmin / tempmax */
 #define	TIMES	(sizeof(temphhmm)/sizeof(*temphhmm))
          int i;
          temptimeprev = 0;
          temptimenext = 0;
-         for (i = 0; i < TIMES && (tempminmC[i] || tempmaxmC[i]) && temphhmm[i] <= hhmm; i++);
+         for (i = 0; i < TIMES && (tempmin[i] || tempmax[i]) && temphhmm[i] <= hhmm; i++);
          if (!i)
          {                      /* wrap as first entry is later */
-            for (i = 1; i < TIMES && (tempminmC[i] || tempmaxmC[i]); i++);
+            for (i = 1; i < TIMES && (tempmin[i] || tempmax[i]); i++);
             temptimeprev = i - 1;
             temptimenext = 0;
          } else if (i < TIMES && temphhmm[i] > hhmm)
@@ -1549,14 +1540,12 @@ app_main ()
             max = NAN;
          int a,
            b;
-         if ((a = (tempminmC[temptimeprev] ? : tempmaxmC[temptimeprev]))
-             && (b = (tempminmC[temptimenext] ? : tempmaxmC[temptimenext])))
+         if ((a = (tempmin[temptimeprev] ? : tempmax[temptimeprev])) && (b = (tempmin[temptimenext] ? : tempmax[temptimenext])))
          {                      /* Heat valid */
             heat_target = a + (b - a) * (snow - sprev) / (snext - sprev);
             min = ((float) heat_target) / 1000.0;
          }
-         if ((a = (tempmaxmC[temptimeprev] ? : tempminmC[temptimeprev]))
-             && (b = (tempmaxmC[temptimenext] ? : tempminmC[temptimenext])))
+         if ((a = (tempmax[temptimeprev] ? : tempmin[temptimeprev])) && (b = (tempmax[temptimenext] ? : tempmin[temptimenext])))
             max = (float) (a + (b - a) * (snow - sprev) / (snext - sprev)) / 1000.0;    /* Cool valid */
          else
             max = min;          /* same as heat */
@@ -1604,9 +1593,11 @@ app_main ()
                   revk_mqtt_send_str (fan);
                }
             }
+#ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
             if (fanon && *fanon && fanlast == 1)
                icon = 'E';      // Extractor fan icon
-            if (!isnan (thistemp) && (heatnightmC || heatdaymC || tempminmC[0] || heat_target || heatgpio.set || heaton || heatoff))
+#endif
+            if (!isnan (thistemp) && (heatnight || heatday || tempmin[0] || heat_target || heatgpio.set || heaton || heatoff))
             {                   /* Heat control */
                static int32_t last1 = 0,
                   last2 = 0;
@@ -1619,8 +1610,8 @@ app_main ()
                   int32_t predict = thismC;
                   if (heatahead && ((last2 <= last1 && last1 <= thismC) ||      // going up - turn off early if predict above target
                                     ((last2 >= last1 && last1 >= thismC) &&     // going down - turn on early in 10 min stages if predict is below target
-                                     (!heatfademC || !heatfadem
-                                      || (lastmin % heatfadem) < (heat_target + heatfademC - thismC) * heatfadem / heatfademC))))
+                                     (!heatfade || !heatfadem
+                                      || (lastmin % heatfadem) < (heat_target + heatfade - thismC) * heatfadem / heatfade))))
                      predict += heatahead * (thismC - last2) / 2;       // Use predicted value, i.e. turn on/off early
                   if (!heat_target || predict > heat_target || (airconpower && airconmode != 'H'))
                   {             /* Heat off */
@@ -1647,8 +1638,10 @@ app_main ()
             }
          }
       }
+#ifndef CONFIG_GFX_BUILD_SUFFIX_GFXNONE
       if (heaton && *heaton && heatlast == 1)
          icon = 'R';            // Radiator icon
+#endif
       static uint8_t menu = 0;  /* Menu selection - 0 if idle */
       /* Handle key presses */
       char key = 0;
@@ -1677,8 +1670,14 @@ app_main ()
       if (scd41_settled && scd41_settled < up)
          scd41_settled = 0;     // Settled
       /* Report */
-      if (up > 60 || sntp_get_sync_status () == SNTP_SYNC_STATUS_COMPLETED)
-         reportall (now);       /* Don 't report right away if clock may be duff */
+      if (values && (up > 60 || sntp_get_sync_status () == SNTP_SYNC_STATUS_COMPLETED)
+          && !((!reportchange || now < reportchange + lag) && (!reporting || now / reporting == reportlast / reporting)))
+      {
+         revk_command ("status", NULL);
+         reportlast = now;
+         reportchange = 0;
+      }
+#ifndef	CONFIG_GFX_BUILD_SUFFIX_GFXNONE
       /* Display */
       char s[30];               /* Temp string */
       if (gfx_msg_time)
@@ -1879,5 +1878,40 @@ app_main ()
                      'A' ? icon_modeA : icon == 'P' ? icon_power : icon == 'N' ? icon_nowifi : NULL);
       }
       gfx_unlock ();
+#endif
+#ifdef  CONFIG_REVK_LED_STRIP
+      if (strip)
+      {                         // LED status
+         for (int i = 0; i < lednum; i++)
+            led_strip_set_pixel (strip, i, 0, 0, 0);
+         if (ledco2)
+         {                      // Show CO2 on LEDs
+            int n = 0;
+            char c = 'K';
+            if (!isnan (lastco2) && co2high)
+            {
+               if (lastco2 > co2high)
+                  c = 'R';
+               else if (lastco2 > co2ok)
+                  c = 'O';
+               else if (lastco2 > co2good)
+                  c = 'Y';
+               else
+                  c = 'G';
+               n = (lednum * lastco2 + co2high / 2) / co2high;
+            }
+            if (n > lednum)
+               n = lednum;
+            if (!n)
+            {
+               n = 1;
+               c = 'b';
+            }
+            for (int i = 0; i < n; i++)
+               revk_led (strip, i, 255, revk_rgb (c));
+         }
+         REVK_ERR_CHECK (led_strip_refresh (strip));
+      }
+#endif
    }
 }
