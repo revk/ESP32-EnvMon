@@ -22,3 +22,4 @@ managed_components
 dependencies.lock
 settings.h
 settings.c
+backups
