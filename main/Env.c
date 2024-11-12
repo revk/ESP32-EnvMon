@@ -1247,7 +1247,7 @@ app_main ()
       led_strip_config_t strip_config = {
          .strip_gpio_num = (ledrgb.num),
          .max_leds = lednum,    // The number of LEDs in the strip,
-         .led_pixel_format = LED_PIXEL_FORMAT_GRB,      // Pixel format of your LED strip
+         .color_component_format = LED_STRIP_COLOR_COMPONENT_FMT_GRB,
          .led_model = LED_MODEL_WS2812, // LED strip model
          .flags.invert_out = ledrgb.invert,     // whether to invert the output signal (useful when your hardware has a level inverter)
       };
@@ -1897,7 +1897,7 @@ app_main ()
                else if (lastco2 > co2good)
                   c = 'Y';
                else
-                  c = 'G';
+                  c = dark ? 'K' : 'G';
                n = (lednum * lastco2 + co2high / 2) / co2high;
             }
             if (n > lednum)
