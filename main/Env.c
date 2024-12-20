@@ -355,12 +355,12 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    if (!strcmp (suffix, "co2cal"))
       return co2_setting (scd41 ? 0x362f : 0x5204, jo_read_int (j));    /* ppm */
    if (!strcmp (suffix, "co2tempoffset"))
-      return co2_setting (scd41 ? 0x241d : 0x5403, jo_read_int (j));    /* Use T * 65536 / 175 */
+      return co2_setting (scd41 ? 0x241d : 0x5403, scd_tempoffset = jo_read_int (j));   /* Use T * 65536 / 175 */
    if (!strcmp (suffix, "co2tempcal"))
    {                            // Set the current temp in C
       if (isnan (lasttemp))
          return "No temp now";
-      return co2_setting (scd41 ? 0x241d : 0x5403, scd_tempoffset - (jo_read_float (j) - lasttemp) * 65536.0 / 175.0);  // Oddly the offset seems to be negative
+      return co2_setting (scd41 ? 0x241d : 0x5403, scd_tempoffset = (scd_tempoffset - (jo_read_float (j) - lasttemp) * 65536.0 / 175.0));       // Oddly the offset seems to be negative
    }
    if (!strcmp (suffix, "co2alt"))
       return co2_setting (scd41 ? 0x2427 : 0x5102, jo_read_int (j));    /* m */
