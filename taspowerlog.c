@@ -190,22 +190,22 @@ main (int argc, const char *argv[])
                if (j_isarray (period))
                {
                   if (strchr (tag, '-'))
-                     for (int n = 0; n < j_len (period); n++)
+                     for (int n = j_len (period) - 1; n >= 0; n--)
                      {          // Expect enough dashes to make names
                         char *dot = strchr (tag, '-');
                         if (dot)
                            *dot++ = 0;
                         if (*tag)
-                           process (tag, j_index (period, n), j_len (period) - n);
+                           process (tag, j_index (period, n), n + 1);
                         if (dot)
                            tag = dot;
                   } else        // No dots
-                     for (int n = 0; n < j_len (period); n++)
+                     for (int n = j_len (period) - 1; n >= 0; n--)
                      {
                         char *tag2 = NULL;
                         if (asprintf (&tag2, "%s.%d", tag, n + 1) < 0)
                            errx (1, "malloc");
-                        process (tag2, j_index (period, n), j_len (period) - n);
+                        process (tag2, j_index (period, n), n + 1);
                         free (tag2);
                      }
                } else
