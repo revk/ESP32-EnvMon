@@ -196,7 +196,7 @@ main (int argc, const char *argv[])
                         if (dot)
                            *dot++ = 0;
                         if (*tag)
-                           process (tag, j_index (period, n), n + 1);
+                           process (tag, j_index (period, n), j_len (period) - n);
                         if (dot)
                            tag = dot;
                   } else        // No dots
@@ -205,7 +205,7 @@ main (int argc, const char *argv[])
                         char *tag2 = NULL;
                         if (asprintf (&tag2, "%s.%d", tag, n + 1) < 0)
                            errx (1, "malloc");
-                        process (tag2, j_index (period, n), n + 1);
+                        process (tag2, j_index (period, n), _len (period) - n);
                         free (tag2);
                      }
                } else
