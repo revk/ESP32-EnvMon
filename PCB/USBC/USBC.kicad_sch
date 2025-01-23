@@ -323,7 +323,7 @@
 					(hide yes)
 				)
 			)
-			(property "LCSC Part #" "C3013941"
+			(property "MPN" "C3013941"
 				(at 0 -32.385 0)
 				(effects
 					(font
@@ -1757,7 +1757,7 @@
 					(hide yes)
 				)
 			)
-			(property "LCSC Part #" "C2684786"
+			(property "MPN" "C2684786"
 				(at 0 -26.67 0)
 				(effects
 					(font
@@ -2581,7 +2581,7 @@
 					(hide yes)
 				)
 			)
-			(property "LCSC Part #" "C399938"
+			(property "MPN" "C399938"
 				(at 0 0 0)
 				(effects
 					(font
@@ -3264,7 +3264,7 @@
 					(hide yes)
 				)
 			)
-			(property "LCSC Part #" "C5349953"
+			(property "MPN" "C5349953"
 				(at 1.27 -11.43 0)
 				(effects
 					(font
@@ -4537,7 +4537,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC Part #" "C1691"
+		(property "MPN" "C1691"
 			(at 193.675 123.825 0)
 			(effects
 				(font
@@ -4840,7 +4840,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC Part #" "C2684786"
+		(property "MPN" "C2684786"
 			(at 172.72 154.94 0)
 			(effects
 				(font
@@ -4948,7 +4948,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC Part #" "C194427"
+		(property "MPN" "C194427"
 			(at 193.675 121.92 0)
 			(effects
 				(font
@@ -5120,7 +5120,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC Part #" "C5349953"
+		(property "MPN" "C5349953"
 			(at 184.785 87.63 0)
 			(effects
 				(font
@@ -5491,7 +5491,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC Part #" "C5349953"
+		(property "MPN" "C5349953"
 			(at 240.665 87.63 0)
 			(effects
 				(font
@@ -5864,7 +5864,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC Part #" "C399938"
+		(property "MPN" "C399938"
 			(at 178.435 54.61 0)
 			(effects
 				(font
@@ -6142,7 +6142,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC Part #" "C5349953"
+		(property "MPN" "C5349953"
 			(at 224.155 87.63 0)
 			(effects
 				(font
@@ -6973,7 +6973,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC Part #" "C5349953"
+		(property "MPN" "C5349953"
 			(at 201.295 87.63 0)
 			(effects
 				(font
@@ -7487,7 +7487,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC Part #" "C3013941"
+		(property "MPN" "C3013941"
 			(at 109.22 111.76 0)
 			(effects
 				(font
@@ -8691,7 +8691,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC Part #" "C5349953"
+		(property "MPN" "C5349953"
 			(at 232.41 87.63 0)
 			(effects
 				(font
@@ -8780,7 +8780,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC Part #" "C5349953"
+		(property "MPN" "C5349953"
 			(at 193.04 87.63 0)
 			(effects
 				(font
