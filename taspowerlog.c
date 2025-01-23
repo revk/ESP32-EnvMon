@@ -190,7 +190,7 @@ main (int argc, const char *argv[])
                if (j_isarray (period))
                {
                   if (strchr (tag, '-'))
-                     for (int n = 0; n < j_len (period); n++)
+                     for (int n = j_len (period) - 1; n >= 0; n--)
                      {          // Expect enough dashes to make names
                         char *dot = strchr (tag, '-');
                         if (dot)
@@ -200,7 +200,7 @@ main (int argc, const char *argv[])
                         if (dot)
                            tag = dot;
                   } else        // No dots
-                     for (int n = 0; n < j_len (period); n++)
+                     for (int n = j_len (period) - 1; n >= 0; n--)
                      {
                         char *tag2 = NULL;
                         if (asprintf (&tag2, "%s.%d", tag, n + 1) < 0)
