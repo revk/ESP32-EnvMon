@@ -268,7 +268,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
          if (!strcmp (tag, "mode"))
          {
             jo_strncpy (j, val, sizeof (val));
-            airconmode = *val;
+            airconmode = toupper((int)(uint8_t)*val);
          } else if (!strcmp (tag, "power"))
             airconpower = (t == JO_TRUE);
          else if (!strcmp (tag, "slave"))
