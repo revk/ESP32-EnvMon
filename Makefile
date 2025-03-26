@@ -6,7 +6,7 @@
 PROJECT_NAME := Env
 SUFFIX := $(shell components/ESP32-RevK/buildsuffix)
 
-all:	settings.h
+all:	main/settings.h
 	@echo Make: $(PROJECT_NAME)$(SUFFIX).bin
 	@idf.py build
 	@cp build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
@@ -33,7 +33,7 @@ issue:
 
 tools: envlog envgraph taspowerlog taspowersvg taspowerse glowlog
 
-settings.h:     components/ESP32-RevK/revk_settings settings.def components/ESP32-RevK/settings.def
+main/settings.h:     components/ESP32-RevK/revk_settings main/settings.def components/*/settings.def
 	components/ESP32-RevK/revk_settings $^
 
 components/ESP32-RevK/revk_settings: components/ESP32-RevK/revk_settings.c
@@ -53,7 +53,7 @@ icons/%.h:	icons/%.gray
 	od -Anone -tx1 -v -w64 $< | sed 's/ \(.\). \(.\)./0x\1\2,/g' >> $@
 	echo "};" >> $@
 
-set:    settings.h wroom wroom-mono wroom-blind pico-blind pico s3 s3-blind
+set:    main/settings.h wroom wroom-mono wroom-blind pico-blind pico s3 s3-blind
 
 s3:
 	components/ESP32-RevK/setbuildsuffix -S3-MINI-N4-R2-SSD1351
