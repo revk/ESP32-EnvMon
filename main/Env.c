@@ -268,7 +268,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
          if (!strcmp (tag, "mode"))
          {
             jo_strncpy (j, val, sizeof (val));
-            airconmode = toupper((int)(uint8_t)*val);
+            airconmode = toupper ((int) (uint8_t) * val);
          } else if (!strcmp (tag, "power"))
             airconpower = (t == JO_TRUE);
          else if (!strcmp (tag, "slave"))
@@ -978,19 +978,19 @@ gfx_temp (float t)
       else
          sprintf (s, "%4.1f", t);
    }
-   gfx_text (5, s);
-   gfx_text (1, "o");
+   gfx_text (0, 5, s);
+   gfx_text (0, 1, "o");
    gfx_pos (gfx_x (), gfx_y (), GFX_T | GFX_L | GFX_V);
-   gfx_text (2, fahrenheit ? "F" : "C");
+   gfx_text (0, 2, fahrenheit ? "F" : "C");
 #ifdef	ELA
    if (bletemp)
-      gfx_text (1, bletemp->missing ? "~~" : "BT");
+      gfx_text (0, 1, bletemp->missing ? "~~" : "BT");
    else
 #endif
    if (num_ds18b20 || scd41)
-      gfx_text (2, " ");
+      gfx_text (0, 2, " ");
    else
-      gfx_text (2, "~");
+      gfx_text (0, 2, "~");
 }
 
 uint8_t
@@ -1015,7 +1015,7 @@ menufunc1 (char key)
    if (isnan (thistemp))
    {
       gfx_colour ('O');
-      gfx_text (5, "WAIT");
+      gfx_text (0, 5, "WAIT");
    } else
    {
       gfx_colour (thistemp < temptargetmin + d ? 'B' : thistemp > temptargetmax + d ? 'R' : 'G');
@@ -1065,11 +1065,11 @@ menufunc2 (char key)
    localtime_r (&now, &tm);
    sprintf (s, "%02d", tm.tm_hour);
    gfx_pos (gfx_width () / 2, 0, GFX_C | GFX_T | GFX_V);
-   gfx_text (6, s);
+   gfx_text (0, 6, s);
    sprintf (s, "%02d", tm.tm_min);
-   gfx_text (5, s);
+   gfx_text (0, 5, s);
    sprintf (s, "%02d", tm.tm_sec);
-   gfx_text (4, s);
+   gfx_text (0, 4, s);
    return 2;
 }
 
@@ -1711,7 +1711,7 @@ app_main ()
             {
                gfx_pos (gfx_width () / 2, gfx_height () / 2, GFX_M | GFX_C);
                sprintf (s, "%ld", t);
-               gfx_text (6, s);
+               gfx_text (0, 6, s);
             } else
             {
                gfx_pos (gfx_width () / 2 - t, gfx_height () / 2 - t, 0);
@@ -1761,7 +1761,7 @@ app_main ()
                d = 60 - d;
             int x = gfx_width () / 2 + (d - 30) * 2 / 6;        /* Adjusted to fit display */
             gfx_pos (x, y, GFX_M | GFX_C);
-            gfx_text (4, s);
+            gfx_text (0, 4, s);
          }
          gfx_unlock ();
          continue;
@@ -1786,7 +1786,7 @@ app_main ()
             gfx_colour ('w');
             strftime (s, sizeof (s), "%F\004%T %Z", &t);
             gfx_pos (0, gfx_height () - 1, GFX_B | GFX_L);
-            gfx_text (1, s);
+            gfx_text (0, 1, s);
          }
       }
       int y = 0,
@@ -1817,14 +1817,14 @@ app_main ()
          else
             sprintf (s, "%4d", (int) showco2);
          gfx_pos (4, y, GFX_T | GFX_L | GFX_H);
-         gfx_text (4, s);
+         gfx_text (0, 4, s);
          int x;
          gfx_pos (x = gfx_x (), gfx_y (), GFX_T | GFX_L | GFX_H);
-         gfx_text (1, "CO");
+         gfx_text (0, 1, "CO");
          gfx_pos (gfx_x (), gfx_y () + 3, GFX_T | GFX_L | GFX_V);
-         gfx_text (0, "2");
+         gfx_text (0, 0, "2");
          gfx_pos (x, gfx_y (), GFX_T | GFX_L | GFX_V);
-         gfx_text (-1, "ppm");
+         gfx_text (1, 1, "ppm");
       }
       y += 28 + space;
       gfx_pos (10, y, GFX_T | GFX_L | GFX_H);
@@ -1832,7 +1832,7 @@ app_main ()
       {                         // Waiting
          sprintf (s, "%ld:%02ld ", (scd41_settled - up) / 60, (scd41_settled - up) % 60);
          gfx_colour ('O');
-         gfx_text (5, scd41_settled <= up ? "-:--" : s);
+         gfx_text (0, 5, scd41_settled <= up ? "-:--" : s);
          showtemp = NAN;
       } else
       {
@@ -1855,10 +1855,10 @@ app_main ()
             strcpy (s, "^^");
          else
             sprintf (s, "%2d", (int) showrh);
-         gfx_text (3, s);
-         gfx_text (2, "%%");
-         gfx_text (1, "R");
-         gfx_text (1, "H");
+         gfx_text (0, 3, s);
+         gfx_text (0, 2, "%%");
+         gfx_text (0, 1, "R");
+         gfx_text (0, 1, "H");
       }
       y += 21 + space;
       if (!icon && airconlast)
