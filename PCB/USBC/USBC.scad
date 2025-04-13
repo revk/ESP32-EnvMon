@@ -1,6 +1,6 @@
 // Generated case design for USBC/USBC.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2024-01-09 07:00:35
+// Generated 2025-04-13 16:13:27
 // title:	PCB-USBA
 // rev:	1
 // comment:	www.me.uk
@@ -45,22 +45,23 @@ translate([22.450000,3.414466,1.200000])rotate([0,0,-90.000000])m4(part,hole,blo
 translate([36.301041,10.064466,1.200000])rotate([0,0,-45.000000])m1(part,hole,block,casetop); // D4 (back)
 translate([16.400000,10.664466,1.200000])rotate([0,0,90.000000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
 translate([23.700000,5.864466,1.200000])rotate([0,0,135.000000])m1(part,hole,block,casetop); // D4 (back)
+translate([24.300000,7.264466,1.200000])m6(part,hole,block,casetop); // REF** (back)
 translate([16.720000,8.144466,1.200000])rotate([0,0,90.000000])m2(part,hole,block,casetop); // RevK:C_0603_ C_0603_1608Metric (back)
-translate([18.475000,3.364466,1.200000])m6(part,hole,block,casetop); // RevK:C_1206 C_1206_3216Metric (back)
+translate([18.475000,3.364466,1.200000])m7(part,hole,block,casetop); // RevK:C_1206 C_1206_3216Metric (back)
 translate([37.500000,13.264466,1.200000])rotate([0,0,180.000000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
-translate([19.220000,11.444466,1.200000])rotate([0,0,180.000000])rotate([-0.000000,-0.000000,-90.000000])m7(part,hole,block,casetop); // RevK:L_4x4_ TYA4020 (back)
+translate([19.220000,11.444466,1.200000])rotate([0,0,180.000000])rotate([-0.000000,-0.000000,-90.000000])m8(part,hole,block,casetop); // RevK:L_4x4_ TYA4020 (back)
 translate([23.700000,11.364466,1.200000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
 translate([37.500000,2.664466,1.200000])rotate([0,0,180.000000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
 translate([19.000000,14.964466,1.200000])rotate([0,0,180.000000])m4(part,hole,block,casetop); // RevK:R_0402_ R_0402_1005Metric (back)
-translate([8.000000,7.964466,1.200000])rotate([0,0,90.000000])m8(part,hole,block,casetop); // U2 (back)
+translate([8.000000,7.964466,1.200000])rotate([0,0,90.000000])m9(part,hole,block,casetop); // U2 (back)
 translate([17.420000,4.944466,1.200000])rotate([0,0,180.000000])m4(part,hole,block,casetop); // RevK:R_0402_ R_0402_1005Metric (back)
 translate([16.400000,12.564466,1.200000])rotate([0,0,90.000000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
 }
 
-parts_top=8;
+parts_top=9;
 // Parts to go on PCB (bottom)
 module parts_bottom(part=false,hole=false,block=false){
-translate([37.500000,7.964466,0.000000])rotate([0,0,-90.000000])rotate([180,0,0])m9(part,hole,block,casebottom); // J1
+translate([37.500000,7.964466,0.000000])rotate([0,0,-90.000000])rotate([180,0,0])m10(part,hole,block,casebottom); // J1
 }
 
 parts_bottom=1;
@@ -80,13 +81,13 @@ module m1(part=false,hole=false,block=false,height)
 // 1x1mm LED
 if(part)
 {
-        b(0,0,0,1,1,.8);
+        b(0,0,0,1.2,1.2,.8);
 }
 if(hole)
 {
         hull()
         {
-                b(0,0,.8,1,1,1);
+                b(0,0,.8,1.2,1.2,1);
                 translate([0,0,height])cylinder(d=2,h=1,$fn=16);
         }
 }
@@ -94,7 +95,7 @@ if(block)
 {
         hull()
         {
-                b(0,0,0,2,2,1);
+                b(0,0,0,2.4,2.4,1);
                 translate([0,0,height])cylinder(d=4,h=1,$fn=16);
         }
 }
@@ -148,6 +149,11 @@ if(hole)
 }
 
 module m6(part=false,hole=false,block=false,height)
+{ // REF**
+// Nothing
+}
+
+module m7(part=false,hole=false,block=false,height)
 { // RevK:C_1206 C_1206_3216Metric
 // 1206 Capacitor
 if(part)
@@ -157,7 +163,7 @@ if(part)
 }
 }
 
-module m7(part=false,hole=false,block=false,height)
+module m8(part=false,hole=false,block=false,height)
 { // RevK:L_4x4_ TYA4020
 // 4x4 Inductor
 if(part)
@@ -166,7 +172,7 @@ if(part)
 }
 }
 
-module m8(part=false,hole=false,block=false,height)
+module m9(part=false,hole=false,block=false,height)
 { // U2
 // ESP32-S3-MINI-1
 translate([-15.4/2,-15.45/2,0])
@@ -183,7 +189,7 @@ translate([-15.4/2,-15.45/2,0])
 }
 }
 
-module m9(part=false,hole=false,block=false,height)
+module m10(part=false,hole=false,block=false,height)
 { // J1
 if(part)
 {	// Do this all as hole, no point doing hull over the part

@@ -1,6 +1,6 @@
 // Generated case design for EnvHT/EnvHT.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2023-12-30 13:00:52
+// Generated 2025-04-13 16:13:41
 // title:	EnvMonHT
 // rev:	4
 // comment:	www.me.uk
@@ -34,27 +34,27 @@ translate([34.274344,9.700000,1.000000])rotate([0,0,-90.000000])m0(part,hole,blo
 translate([34.474344,12.800000,1.000000])rotate([0,0,-90.000000])m0(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
 translate([11.674344,12.100000,1.000000])rotate([0,0,90.000000])m1(part,hole,block,casetop); // RevK:C_0603_ C_0603_1608Metric (back)
 translate([17.274344,9.500000,1.000000])rotate([0,0,-90.000000])m1(part,hole,block,casetop); // RevK:C_0603_ C_0603_1608Metric (back)
-translate([16.674344,3.250000,1.000000])rotate([0,0,-90.000000])m2(part,hole,block,casetop,2); // J1 (back)
-translate([25.674344,8.300000,1.000000])m3(part,hole,block,casetop); // U1 (back)
+translate([16.674344,3.250000,1.000000])rotate([0,0,-90.000000])m2(part,hole,block,casetop,2); // (null) (null) (back)
+translate([25.674344,8.300000,1.000000])m3(part,hole,block,casetop); // (null) (null) (back)
 translate([15.974344,15.300000,1.000000])m0(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
-// Missing model U7.1 LX5563LL-TR
-// Missing model S1.1 M3.5CSK
+// Missing model (null).1 LX5563LL-TR
+// Missing model (null).1 M3.5CSK
 translate([14.174344,15.300000,1.000000])m0(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
 translate([17.474344,7.200000,1.000000])rotate([0,0,-90.000000])m4(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
 translate([16.674344,12.100000,1.000000])rotate([0,0,90.000000])m1(part,hole,block,casetop); // RevK:C_0603_ C_0603_1608Metric (back)
 translate([34.274344,7.900000,1.000000])rotate([0,0,-90.000000])m4(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
 translate([12.374344,15.300000,1.000000])m0(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
-translate([36.074344,8.900000,1.000000])rotate([0,0,-90.000000])m5(part,hole,block,casetop); // D1 (back)
+translate([36.074344,8.900000,1.000000])rotate([0,0,-90.000000])m5(part,hole,block,casetop); // (null) (null) (back)
 translate([35.274344,12.800000,1.000000])rotate([0,0,-90.000000])m0(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
-// Missing model S2.1 M3.5CSK
-// Missing model D4.1 LED_0603_1608Metric
-// Missing model D4.2 LED_0603_1608Metric
+// Missing model (null).1 M3.5CSK
+translate([35.274344,14.500000,1.000000])rotate([0,0,180.000000])translate([0.000000,-0.400000,0.000000])m6(part,hole,block,casetop); // RevK:LED-RGB-1.6x1.6 LED_0603_1608Metric (back)
+translate([35.274344,14.500000,1.000000])rotate([0,0,180.000000])translate([0.000000,0.400000,0.000000])m6(part,hole,block,casetop); // RevK:LED-RGB-1.6x1.6 LED_0603_1608Metric (back)
 translate([40.174344,19.163908,1.000000])rotate([0,0,180.000000])m4(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
-translate([34.674344,3.350000,1.000000])rotate([0,0,90.000000])m2(part,hole,block,casetop,2); // J1 (back)
+translate([34.674344,3.350000,1.000000])rotate([0,0,90.000000])m2(part,hole,block,casetop,2); // (null) (null) (back)
 translate([36.074344,12.800000,1.000000])rotate([0,0,-90.000000])m0(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
 translate([14.174344,11.400000,1.000000])m1(part,hole,block,casetop); // RevK:C_0603_ C_0603_1608Metric (back)
-translate([14.174344,13.400000,1.000000])m6(part,hole,block,casetop); // RevK:SOT-23-6-MD8942 SOT-23-6 (back)
-translate([14.174344,8.800000,1.000000])rotate([-0.000000,-0.000000,-90.000000])m7(part,hole,block,casetop); // RevK:L_4x4_ TYA4020 (back)
+translate([14.174344,13.400000,1.000000])m7(part,hole,block,casetop); // RevK:SOT-23-6-MD8942 SOT-23-6 (back)
+translate([14.174344,8.800000,1.000000])rotate([-0.000000,-0.000000,-90.000000])m8(part,hole,block,casetop); // RevK:L_4x4_ TYA4020 (back)
 }
 
 parts_top=4;
@@ -85,7 +85,7 @@ if(part)
 }
 
 module m2(part=false,hole=false,block=false,height,N=0)
-{ // J1
+{ // (null) (null)
 // PTSM socket
 if(part)
 {
@@ -104,7 +104,7 @@ if(hole)
 }
 
 module m3(part=false,hole=false,block=false,height)
-{ // U1
+{ // (null) (null)
 // ESP32-S3-MINI-1
 translate([-15.4/2,-15.45/2,0])
 {
@@ -131,7 +131,7 @@ if(part)
 }
 
 module m5(part=false,hole=false,block=false,height)
-{ // D1
+{ // (null) (null)
 // SOD-123 Diode
 if(part)
 {
@@ -141,6 +141,20 @@ if(part)
 }
 
 module m6(part=false,hole=false,block=false,height)
+{ // RevK:LED-RGB-1.6x1.6 LED_0603_1608Metric
+if(part)
+{
+	b(0,0,0,1.6,0.8,0.25);
+	b(0,0,0,1.2,0.8,0.55);
+	b(0,0,0,0.8,0.8,0.95);
+}
+if(hole)
+{
+	b(0,0,0,0.999,0.999,20);
+}
+}
+
+module m7(part=false,hole=false,block=false,height)
 { // RevK:SOT-23-6-MD8942 SOT-23-6
 // SOT-23-6
 if(part)
@@ -150,7 +164,7 @@ if(part)
 }
 }
 
-module m7(part=false,hole=false,block=false,height)
+module m8(part=false,hole=false,block=false,height)
 { // RevK:L_4x4_ TYA4020
 // 4x4 Inductor
 if(part)
