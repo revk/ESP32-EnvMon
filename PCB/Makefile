@@ -1,7 +1,17 @@
-stl:	USBC/USBC.stl EnvHT/EnvHT.stl EnvMon/EnvMon.stl EnvMon/EnvMon-noco2.stl EnvMon/EnvMon-nooled.stl EnvMon/EnvMon-flush.stl EnvMon/EnvMon-flush-nooled.stl EnvMon/EnvMon-flush-noco2.scad
+all:	png stl
+
+stl:	USBC/USBC.stl EnvHT/EnvHT.stl EnvMon/EnvMon.stl EnvMon/EnvMon-noco2.stl EnvMon/EnvMon-nooled.stl EnvMon/EnvMon-flush.stl EnvMon/EnvMon-flush-nooled.stl EnvMon/EnvMon-flush-noco2.scad Env2/EnvMon.stl
+
+PCBCase/clean: PCBCase/clean.c
+	make -C PCBCase
 
 PCBCase/case: PCBCase/case.c
 	make -C PCBCase
+
+%.png:	%.kicad_pcb PCBCase/clean PCBCase/render Makefile
+	PCBCase/render $<
+
+png:	$(patsubst %.kicad_pcb,%.png,$(wildcard */*.kicad_pcb))
 
 %.stl: %.scad
 	echo "Making $@"

@@ -1247,7 +1247,11 @@ app_main ()
       led_strip_config_t strip_config = {
          .strip_gpio_num = (ledrgb.num),
          .max_leds = lednum,    // The number of LEDs in the strip,
-         .color_component_format = LED_STRIP_COLOR_COMPONENT_FMT_GRB,
+#ifdef	LED_STRIP_COLOR_COMPONENT_FMT_GRB
+            .color_component_format = LED_STRIP_COLOR_COMPONENT_FMT_GRB,
+#else
+            .led_pixel_format = LED_PIXEL_FORMAT_GRB,
+#endif
          .led_model = LED_MODEL_WS2812, // LED strip model
          .flags.invert_out = ledrgb.invert,     // whether to invert the output signal (useful when your hardware has a level inverter)
       };
