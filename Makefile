@@ -33,11 +33,7 @@ issue:
 
 tools: envlog envgraph taspowerlog taspowersvg taspowerse glowlog
 
-<<<<<<< HEAD
-main/settings.h:     components/ESP32-RevK/revk_settings main/settings.def components/ESP32-RevK/settings.def
-=======
 main/settings.h:     components/ESP32-RevK/revk_settings main/settings.def components/*/settings.def
->>>>>>> e0793537c71e4c329422ce9c6f7b4c5b051b83b9
 	components/ESP32-RevK/revk_settings $^
 
 components/ESP32-RevK/revk_settings: components/ESP32-RevK/revk_settings.c
