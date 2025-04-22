@@ -1,6 +1,6 @@
 // Generated case design for EnvMon/EnvMon.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2025-04-22 07:21:12
+// Generated 2025-04-22 09:42:31
 // title:	EnvMon
 // rev:	4
 // comment:	www.me.uk
@@ -44,25 +44,25 @@ translate([49.250000,35.250000,0.800000])rotate([0,0,-45.000000])m8(part,hole,bl
 translate([46.950000,21.815000,0.800000])m1(part,hole,block,casetop); // RevK:C_0603_ C_0603_1608Metric (back)
 translate([49.450000,22.515000,0.800000])rotate([0,0,90.000000])m1(part,hole,block,casetop); // RevK:C_0603_ C_0603_1608Metric (back)
 // Missing model U7.1 LX5563LL-TR
-// Missing model U8.1 VEML3235SL
-translate([37.250000,9.000000,0.800000])m9(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
+translate([20.600000,35.900000,0.800000])m9(part,hole,block,casetop); // U8 (back)
+translate([37.250000,9.000000,0.800000])m10(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
 translate([53.600000,30.600000,0.800000])rotate([0,0,180.000000])m4(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
-translate([46.950000,25.715000,0.800000])m9(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
+translate([46.950000,25.715000,0.800000])m10(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
 // Missing model M1.2 OLED15
 translate([26.850000,28.700000,0.800000])rotate([0,0,90.000000])m4(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
 translate([44.450000,29.400000,0.800000])rotate([0,0,-90.000000])m4(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
-translate([43.650000,29.400000,0.800000])rotate([0,0,90.000000])m9(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
-translate([33.450000,9.000000,0.800000])rotate([0,0,180.000000])m9(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
-translate([45.150000,25.715000,0.800000])m9(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
-translate([46.000000,9.150000,0.800000])rotate([0,0,90.000000])m10(part,hole,block,casetop); // J2 (back)
+translate([43.650000,29.400000,0.800000])rotate([0,0,90.000000])m10(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
+translate([33.450000,9.000000,0.800000])rotate([0,0,180.000000])m10(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
+translate([45.150000,25.715000,0.800000])m10(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
+translate([46.000000,9.150000,0.800000])rotate([0,0,90.000000])m12(part,hole,block,casetop); // J2 (back)
 // Missing model SW2.1 SW_PUSH_6mm_H13mm
-translate([48.750000,25.715000,0.800000])m9(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
-translate([46.950000,23.815000,0.800000])m11(part,hole,block,casetop); // RevK:SOT-23-6-MD8942 SOT-23-6 (back)
-translate([30.650000,15.700000,0.800000])m9(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
+translate([48.750000,25.715000,0.800000])m10(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
+translate([46.950000,23.815000,0.800000])m13(part,hole,block,casetop); // RevK:SOT-23-6-MD8942 SOT-23-6 (back)
+translate([30.650000,15.700000,0.800000])m10(part,hole,block,casetop); // RevK:R_0402 R_0402_1005Metric (back)
 // Missing model D2.1 D_1206_3216Metric
 }
 
-parts_top=6;
+parts_top=7;
 // Parts to go on PCB (bottom)
 module parts_bottom(part=false,hole=false,block=false){
 }
@@ -89,24 +89,24 @@ rotate([-90,0,0])translate([-4.47,-3.84,0])
 		translate([0,1.7,0])cube([8.94,1.6,1.6301]);
 	}
 	if(hole)
-	{
-		// Plug
 		translate([1.63,-20,1.63])
 		rotate([-90,0,0])
+	{
+		// Plug
 		hull()
 		{
 			cylinder(d=2.5,h=21,$fn=24);
 			translate([5.68,0,0])
 			cylinder(d=2.5,h=21,$fn=24);
 		}
-		translate([1.63,-22.5,1.63])
-		rotate([-90,0,0])
 		hull()
 		{
 			cylinder(d=7,h=21,$fn=24);
 			translate([5.68,0,0])
 			cylinder(d=7,h=21,$fn=24);
 		}
+		translate([2.84,0,-100])
+			cylinder(d=5,h=100,$fn=24);
 	}
 }
 }
@@ -221,6 +221,14 @@ if(block)
 }
 
 module m9(part=false,hole=false,block=false,height)
+{ // U8
+if(part)
+{
+	b(0,0,0,2,1.25,1);
+}
+}
+
+module m10(part=false,hole=false,block=false,height)
 { // RevK:R_0402 R_0402_1005Metric
 // 0402 Resistor
 if(part)
@@ -230,7 +238,22 @@ if(part)
 }
 }
 
-module m10(part=false,hole=false,block=false,height)
+module m11(part=false,hole=false,block=false,height,N=0)
+{ // RevK:OLED1.5-RGB PinHeader_1x07_P2.54mm_Vertical
+translate([0,-(N-1)*2.54/2,0])
+{
+if(part)
+{
+	b(0,0,0,2.54,N*2.54,4);
+}
+if(hole)
+{
+	b(0,0,0,2.54-0.01,N*2.54-0.01,height);
+}
+}
+}
+
+module m12(part=false,hole=false,block=false,height)
 { // J2
 // WAGO-2060-452-998-404
 N=2;
@@ -246,7 +269,7 @@ if(hole)
 	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])rotate([90,0,-90])cylinder(d=3,h=20);
 }
 
-module m11(part=false,hole=false,block=false,height)
+module m13(part=false,hole=false,block=false,height)
 { // RevK:SOT-23-6-MD8942 SOT-23-6
 // SOT-23-6
 if(part)
