@@ -1,6 +1,6 @@
 // Generated case design for Env3/EnvMon.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2025-04-23 10:01:21
+// Generated 2025-04-23 10:12:31
 // title:	Env3
 // comment:	www.me.uk
 // comment:	@TheRealRevK
@@ -46,15 +46,14 @@ translate([7.250000,44.000000,1.200000])rotate([0,0,180.000000])m0(part,hole,blo
 translate([43.000000,30.000000,1.200000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
 // Missing model J1.1 PinSocket_1x08_P2.54mm_Vertical
 // Missing model J1.2 LCD2
-// Missing model J1.3 M2x6Pillar
-// Missing model J1.4 M2x6Pillar
-// Missing model J1.5 M2x6Pillar
-// Missing model J1.6 M2x6Pillar
+translate([2.400000,39.390000,1.200000])translate([-0.100000,6.110000,0.000000])m5(part,hole,block,casetop); // RevK:LCD2 M2x6Pillar (back)
+translate([2.400000,39.390000,1.200000])translate([-0.100000,-23.890000,0.000000])m5(part,hole,block,casetop); // RevK:LCD2 M2x6Pillar (back)
+translate([2.400000,39.390000,1.200000])translate([52.900000,6.110000,0.000000])m5(part,hole,block,casetop); // RevK:LCD2 M2x6Pillar (back)
+translate([2.400000,39.390000,1.200000])translate([52.900000,-23.890000,0.000000])m5(part,hole,block,casetop); // RevK:LCD2 M2x6Pillar (back)
 translate([9.500000,39.750000,1.200000])rotate([0,0,90.000000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
-translate([30.500000,24.250000,1.200000])rotate([0,0,-90.000000])m5(part,hole,block,casetop); // D20 (back)
+translate([30.500000,24.250000,1.200000])rotate([0,0,-90.000000])m6(part,hole,block,casetop); // D20 (back)
 translate([32.137500,39.250000,1.200000])rotate([0,0,180.000000])m3(part,hole,block,casetop); // RevK:C_0603_ C_0603_1608Metric (back)
 translate([8.300000,0.800000,1.200000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
-translate([6.500000,6.500000,1.200000])rotate([0,0,180.000000])m6(part,hole,block,casetop); // U2 (back)
 translate([38.500000,23.000000,1.200000])rotate([0,0,90.000000])m7(part,hole,block,casetop); // J3 (back)
 translate([27.500000,19.430000,1.200000])translate([0.000000,-2.400000,0.000000])rotate([90.000000,-0.000000,-0.000000])m8(part,hole,block,casetop); // RevK:USB-C-Socket-H CSP-USC16-TR (back)
 translate([8.237500,36.337500,1.200000])rotate([0,0,90.000000])m9(part,hole,block,casetop); // C4 (back)
@@ -66,7 +65,7 @@ translate([32.137500,41.850000,1.200000])rotate([0,0,180.000000])scale([1.000000
 translate([30.925000,46.425000,1.200000])rotate([0,0,90.000000])m14(part,hole,block,casetop); // D4 (back)
 translate([19.000000,35.000000,1.200000])m15(part,hole,block,casetop); // U1 (back)
 translate([45.025000,44.750000,1.200000])rotate([0,0,90.000000])m16(part,hole,block,casetop); // U4 (back)
-translate([22.300000,25.400000,1.200000])rotate([0,0,180.000000])m5(part,hole,block,casetop); // D20 (back)
+translate([22.300000,25.400000,1.200000])rotate([0,0,180.000000])m6(part,hole,block,casetop); // D20 (back)
 translate([32.137500,35.350000,1.200000])rotate([0,0,180.000000])m1(part,hole,block,casetop); // RevK:R_0402_ R_0402_1005Metric (back)
 translate([29.000000,22.200000,1.200000])rotate([0,0,90.000000])m1(part,hole,block,casetop); // RevK:R_0402_ R_0402_1005Metric (back)
 translate([39.750000,41.250000,1.200000])rotate([0,0,90.000000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
@@ -74,7 +73,7 @@ translate([6.250000,38.750000,1.200000])rotate([0,0,-90.000000])m0(part,hole,blo
 translate([7.250000,45.250000,1.200000])rotate([0,0,180.000000])m1(part,hole,block,casetop); // RevK:R_0402_ R_0402_1005Metric (back)
 }
 
-parts_top=12;
+parts_top=11;
 // Parts to go on PCB (bottom)
 module parts_bottom(part=false,hole=false,block=false){
 }
@@ -140,29 +139,24 @@ if(part)
 }
 
 module m5(part=false,hole=false,block=false,height)
+{ // RevK:LCD2 M2x6Pillar
+if(part)
+{
+	translate([0,0,-2.5])cylinder(d=3.5,h=2.5,$fn=24);
+}
+if(hole)
+{
+	cylinder(d=3,h=8.5,$fn=24);
+}
+}
+
+module m6(part=false,hole=false,block=false,height)
 { // D20
 // SOD-123 Diode
 if(part)
 {
 	b(0,0,0,2.85,1.8,1.35); // part
 	b(0,0,0,4.2,1.2,0.7); // pads
-}
-}
-
-module m6(part=false,hole=false,block=false,height)
-{ // U2
-if(part)
-{
-	b(0,0,0,10.4,10.4,1);	// Base board
-	hull()
-	{
-		for(x=[-3.3,3.333])for(y=[-3.3,3.3])translate([x,y,0])cylinder(r=1,h=1,$fn=8);
-		for(x=[-3,3])for(y=[-3,3])translate([x,y,4.8])sphere(r=2,$fn=12);
-	}
-}
-if(hole)
-{
-		for(x=[-2,2])for(y=[-2,2])translate([x,y,1])cylinder(d=2,h=height,$fn=8);
 }
 }
 
