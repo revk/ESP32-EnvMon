@@ -34,8 +34,9 @@
 		(29 "B.CrtYd" user "B.Courtyard")
 		(35 "F.Fab" user)
 		(33 "B.Fab" user)
-		(39 "User.1" user)
-		(41 "User.2" user)
+		(39 "User.1" user "VCut")
+		(41 "User.2" user "Outline")
+		(43 "User.3" user "Case")
 	)
 	(setup
 		(stackup
@@ -18650,6 +18651,90 @@
 		)
 		(layer "User.2")
 		(uuid "ffe5689d-eb4c-4831-bbf7-df6d18082a91")
+	)
+	(gr_arc
+		(start 129 107.5)
+		(mid 128.267767 109.267767)
+		(end 126.5 110)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.3")
+		(uuid "15a71ea1-ba83-4566-9f6a-aa56195b6a5b")
+	)
+	(gr_arc
+		(start 73.5 110)
+		(mid 71.732233 109.267767)
+		(end 71 107.5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.3")
+		(uuid "2e97ab1d-73db-411a-b3fe-ee9406e6c58b")
+	)
+	(gr_arc
+		(start 71 77.5)
+		(mid 71.732233 75.732233)
+		(end 73.5 75)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.3")
+		(uuid "60334cf0-8016-4d58-b32e-e4a8a2fc4271")
+	)
+	(gr_line
+		(start 71 107.5)
+		(end 71 77.5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.3")
+		(uuid "8684e313-3f75-4b48-a094-356eddd15241")
+	)
+	(gr_line
+		(start 73.5 110)
+		(end 126.5 110)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.3")
+		(uuid "8f9dcccb-5901-49cb-8eab-003604fdeaab")
+	)
+	(gr_arc
+		(start 126.5 75)
+		(mid 128.267767 75.732233)
+		(end 129 77.5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.3")
+		(uuid "a117c32b-dffc-4f22-ae7b-1940c4342791")
+	)
+	(gr_line
+		(start 73.5 75)
+		(end 126.5 75)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.3")
+		(uuid "c6f196f4-ae21-4b4b-a087-7b2d40c07b40")
+	)
+	(gr_line
+		(start 129 77.5)
+		(end 129 107.5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.3")
+		(uuid "e7adbc4e-d8bc-4ee0-8ea1-75d93f9a8a0d")
 	)
 	(gr_text "${CURRENT_DATE}"
 		(at 88 111.5 0)

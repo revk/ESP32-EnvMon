@@ -14684,7 +14684,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "RevK:PinSocket_1x08_P2.54mm_Vertical_SMD"
+		(property "Footprint" "RevK:LCD2"
 			(at 120.65 109.855 0)
 			(effects
 				(font
