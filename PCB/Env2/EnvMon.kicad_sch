@@ -6564,16 +6564,6 @@
 			(embedded_fonts no)
 		)
 	)
-	(text "C136710 or C145900 may be good as a button"
-		(exclude_from_sim no)
-		(at 251.46 156.21 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "ff82c8c1-db83-4f51-b5d7-be304f4cab75")
-	)
 	(junction
 		(at 167.005 135.89)
 		(diameter 0)
