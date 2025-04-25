@@ -9478,7 +9478,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "RevK:SMD1010"
+		(property "Footprint" "RevK:SMD1010-Side"
 			(at 162.56 43.815 0)
 			(effects
 				(font
@@ -14265,7 +14265,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "RevK:VEML6040"
+		(property "Footprint" "RevK:VEML6040-Side"
 			(at 254 126.365 0)
 			(effects
 				(font
