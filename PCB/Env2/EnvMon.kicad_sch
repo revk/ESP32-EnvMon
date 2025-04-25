@@ -9478,7 +9478,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "RevK:SMD1010-Side"
+		(property "Footprint" "RevK:SMD1010-Side2"
 			(at 162.56 43.815 0)
 			(effects
 				(font
@@ -13325,7 +13325,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:MSOP-8_3x3mm_P0.65mm"
+		(property "Footprint" "RevK:MSOP-8_3x3mm_P0.65mm-SIde"
 			(at 253.365 109.22 0)
 			(effects
 				(font

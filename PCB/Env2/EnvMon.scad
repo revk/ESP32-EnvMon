@@ -1,6 +1,6 @@
 // Generated case design for Env2/EnvMon.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2025-04-25 14:35:33
+// Generated 2025-04-25 14:43:14
 // title:	Env2
 // comment:	www.me.uk
 // comment:	@TheRealRevK
@@ -290,7 +290,7 @@ if(hole)
 	hull()
 	{
                 b(0,0,0,1.2,1.2,1);
-        	rotate([-45,0,-90]) translate([0,0,10]) b(0,0,0,5,10,1);
+        	rotate([-45,0,0]) translate([0,0,10]) b(0,0,0,5,10,1);
 	}
 }
 if(block)
@@ -322,6 +322,18 @@ if(part)
 {
 	b(0,0,0,3,3,1.1);
 	b(0,0,0,4.9,2.5,0.6);
+}
+if(hole)
+{
+	hull()
+	{
+                b(0,0,-2,6,6,4);
+        	rotate([-45,0,-90]) translate([0,0,10]) b(0,0,0,8,10,1);
+	}
+}
+if(block)
+{
+    b(0,1,-2,7,5,height);
 }
 }
 

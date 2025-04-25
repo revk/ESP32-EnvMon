@@ -1,6 +1,6 @@
 all:	png stl
 
-stl:	USBC/USBC.stl EnvHT/EnvHT.stl EnvMon/EnvMon.stl EnvMon/EnvMon-noco2.stl EnvMon/EnvMon-nooled.stl EnvMon/EnvMon-flush.stl EnvMon/EnvMon-flush-nooled.stl EnvMon/EnvMon-flush-noco2.scad Env2/EnvMon.stl Env3/EnvMon.stl
+stl:	USBC/USBC.stl EnvHT/EnvHT.stl EnvMon/EnvMon.stl EnvMon/EnvMon-noco2.stl EnvMon/EnvMon-nooled.stl EnvMon/EnvMon-flush.stl EnvMon/EnvMon-flush-nooled.stl EnvMon/EnvMon-flush-noco2.scad Env2/EnvMon.stl
 
 PCBCase/clean: PCBCase/clean.c
 	make -C PCBCase
@@ -55,7 +55,4 @@ EnvMon/EnvMon-flush-nooled.scad: EnvMon/EnvMon.kicad_pcb PCBCase/case Makefile
 	@echo '}' >> $@
 
 Env2/EnvMon.scad: Env2/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --top=6 --bottom=2 --pcb=2 --case=3 --ignore=U2
-
-Env3/EnvMon.scad: Env3/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --top=6 --bottom=2 --pcb=2 --case=3 --ignore=U2
