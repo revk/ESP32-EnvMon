@@ -1,6 +1,6 @@
 // Generated case design for Env2/EnvMon.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2025-04-25 14:43:14
+// Generated 2025-04-26 07:40:00
 // title:	Env2
 // comment:	www.me.uk
 // comment:	@TheRealRevK
@@ -138,11 +138,11 @@ translate([0,-(N-1)*2.54/2,0])
 if(part)
 {
 	b(0,0,0,2.54,N*2.54,4);
-	for(x=[0:1:N-1])translate([0,(x-(N-1)/2)*2.54,-2.5])cylinder(r1=0.5,r2=1,h=1);
 }
 if(hole)
 {
-	b(0,0,0,2.54-0.01,N*2.54-0.01,height);
+	b(0,0,3,2.54-0.01,N*2.54-0.01,height);
+	for(x=[0:1:N-1])translate([0,(x-(N-1)/2)*2.54,-3.5])cylinder(r1=0.5,r2=1,h=2.5);
 }
 }
 }
@@ -155,7 +155,7 @@ if(part)
 }
 if(hole)
 {
-	cylinder(d=3,h=8.5,$fn=24);
+	cylinder(d=3.5,h=8.5,$fn=24);
 }
 }
 
@@ -182,7 +182,13 @@ if(part)
 	}
 }
 if(hole)
-	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])rotate([90,0,-90])cylinder(d=3,h=20);
+{
+	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])
+	{
+		rotate([90,0,-90])cylinder(d=3,h=20);
+		translate([-10,0,0])rotate([180,0,-90])cylinder(d=3,h=20);
+	}
+}
 }
 
 module m8(part=false,hole=false,block=false,height)
@@ -248,7 +254,13 @@ if(part)
 	}
 }
 if(hole)
-	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])rotate([90,0,-90])cylinder(d=3,h=20);
+{
+	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])
+	{
+		rotate([90,0,-90])cylinder(d=3,h=20);
+		translate([-10,0,0])rotate([180,0,-90])cylinder(d=3,h=20);
+	}
+}
 }
 
 module m11(part=false,hole=false,block=false,height)
@@ -333,7 +345,7 @@ if(hole)
 }
 if(block)
 {
-    b(0,1,-2,7,5,height);
+    b(0,1,-2,7,7,height);
 }
 }
 
@@ -566,4 +578,4 @@ module bottom()
 		pcb(height,r=margin);
 	}
 }
-translate([spacing*2,0,0])preview();
+bottom(); translate([spacing,0,0])top();

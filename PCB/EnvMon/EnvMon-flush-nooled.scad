@@ -1,6 +1,6 @@
 // Generated case design for EnvMon/EnvMon.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2025-04-25 14:45:24
+// Generated 2025-04-26 07:38:48
 // title:	EnvMon
 // rev:	4
 // comment:	www.me.uk
@@ -148,7 +148,13 @@ if(part)
 	}
 }
 if(hole)
-	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])rotate([90,0,-90])cylinder(d=3,h=20);
+{
+	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])
+	{
+		rotate([90,0,-90])cylinder(d=3,h=20);
+		translate([-10,0,0])rotate([180,0,-90])cylinder(d=3,h=20);
+	}
+}
 }
 
 module m4(part=false,hole=false,block=false,height)
@@ -248,7 +254,13 @@ if(part)
 	}
 }
 if(hole)
-	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])rotate([90,0,-90])cylinder(d=3,h=20);
+{
+	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])
+	{
+		rotate([90,0,-90])cylinder(d=3,h=20);
+		translate([-10,0,0])rotate([180,0,-90])cylinder(d=3,h=20);
+	}
+}
 }
 
 module m12(part=false,hole=false,block=false,height)
