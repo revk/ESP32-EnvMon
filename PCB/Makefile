@@ -55,7 +55,7 @@ EnvMon/EnvMon-flush-nooled.scad: EnvMon/EnvMon.kicad_pcb PCBCase/case Makefile
 	@echo '}' >> $@
 
 Env2/EnvMon.scad: Env2/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --top=6 --bottom=2 --pcb=2 --case=3 --ignore=U2
+	PCBCase/case -o $@ $< --top=6 --bottom=2 --pcb=2 --case=3 --ignore=U2,J1.2
 
 Env2/EnvMonCO2.scad: Env2/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --top=6 --bottom=2 --pcb=2

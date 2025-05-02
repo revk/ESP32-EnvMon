@@ -11,7 +11,7 @@ module lcd2(m)
                 // Main PCB
                 hull()for(x=[2.5,55.5])for(y=[2.5,32.5])translate([x,y,6])cylinder(r=2.5,h=1.5,$fn=24);
                 // Display
-                translate([5.085,0.2,6])cube([47.83,34.6,4]);
+                translate([5,0,6])cube([48,35,4]);
                 // Ribbon
                 translate([3.5,7.5,6])cube([2,20,3.5]);
                 translate([3.5,4,6])cube([2,2,3.5]);
