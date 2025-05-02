@@ -58,4 +58,4 @@ Env2/EnvMon.scad: Env2/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --top=6 --bottom=2 --pcb=2 --case=3 --ignore=U2,J1.2
 
 Env2/EnvMonCO2.scad: Env2/EnvMon.kicad_pcb PCBCase/case Makefile
-	PCBCase/case -o $@ $< --top=6 --bottom=2 --pcb=2
+	PCBCase/case -o $@ $< --top=12 --bottom=2 --pcb=2 --ignore=J1.1,J1.3,J1.4,J1.5,J1.6,J1.7
