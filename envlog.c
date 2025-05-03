@@ -383,9 +383,9 @@ main (int argc, const char *argv[])
                logval ("co2", &l->co2, v);
             if ((v = j_get (data, "als")))
                logval ("als", &l->als, v);
-            v = j_get (data, "heat");
+            v = j_get (data, "extrad") ? : j_get (data, "heat");
             logbool ("heat", &l->heat, v && *v == 't');
-            v = j_get (data, "fan");
+            v = j_get (data, "extfan") ? : j_get (data, "fan");
             logbool ("fan", &l->fan, v && *v == 't');
             done (l, 0);
          }
