@@ -356,9 +356,9 @@ main (int argc, const char *argv[])
                   }
                   free (shelly);
                }
-         } else if (!strncmp (topic, "state", 5) && (!strcmp (tag, "Env") || !strcmp (type, "data")))
+         } else if (!strncmp (topic, "state", 5) && (!strcmp (tag, "Env") || !strcmp (tag, "Remote") || !strcmp (type, "data")))
          {                      // Env
-            log_t *l = find (!strcmp (tag, "Env") ? type : tag);
+            log_t *l = find (!strcmp (tag, "Env") || !strcmp (tag, "Remote") ? type : tag);
             if ((v = j_get (data, "ts")))
             {
                time_t t = j_time (v);
