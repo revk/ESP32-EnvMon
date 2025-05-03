@@ -13,10 +13,11 @@ difference()
     translate([0,0,11])rotate([180,0,90])lcd24(0.4);
     translate([-8.89-24.1,55.65-32.85,5.2])rotate([0,0,-90])minkowski()
     {
-       pcb();
        cube([0.1,0.1,10]);
+       pcb();
     }
-    translate([-35,-30,5])rotate([90,0,0])hull()
+    translate([-30,-39,5])cube([10,5,10]);
+    translate([-36,-30,5])rotate([90,0,0])hull()
     {
         cylinder(d=6,h=100,$fn=24);
         translate([0,10,0])cylinder(d=6,h=100,$fn=24);
