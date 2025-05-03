@@ -58,6 +58,7 @@ main (int argc, const char *argv[])
    const char *mqttusername = NULL;
    const char *mqttpassword = NULL;
    const char *mqttappname = "Env";
+   const char *mqttappname2 = "Remote";
    const char *mqttid = NULL;
    int interval = 60;
    int debug = 0;
@@ -75,6 +76,7 @@ main (int argc, const char *argv[])
          {"mqtt-username", 'u', POPT_ARG_STRING, &mqttusername, 0, "MQTT username", "username"},
          {"mqtt-password", 'p', POPT_ARG_STRING, &mqttpassword, 0, "MQTT password", "password"},
          {"mqtt-appname", 'a', POPT_ARG_STRING | POPT_ARGFLAG_SHOW_DEFAULT, &mqttappname, 0, "MQTT appname", "appname"},
+         {"mqtt-appname", 0, POPT_ARG_STRING | POPT_ARGFLAG_SHOW_DEFAULT, &mqttappname2, 0, "MQTT appname", "appname"},
          {"mqtt-id", 0, POPT_ARG_STRING, &mqttid, 0, "MQTT id", "id"},
          {"interval", 'i', POPT_ARG_INT | POPT_ARGFLAG_SHOW_DEFAULT, &interval, 0, "Recording interval", "seconds"},
          {"debug", 'V', POPT_ARG_NONE, &debug, 0, "Debug"},
@@ -111,6 +113,13 @@ main (int argc, const char *argv[])
       char *sub = NULL;
       asprintf (&sub, "state/%s/#", mqttappname);
       int e = mosquitto_subscribe (mqtt, NULL, sub, 0);
+      if (e)
+         errx (1, "MQTT subscribe failed %s (%s)", mosquitto_strerror (e), sub);
+      if (debug)
+         warnx ("MQTT Sub %s", sub);
+      free (sub);
+      asprintf (&sub, "state/%s/#", mqttappname2);
+      e = mosquitto_subscribe (mqtt, NULL, sub, 0);
       if (e)
          errx (1, "MQTT subscribe failed %s (%s)", mosquitto_strerror (e), sub);
       if (debug)
@@ -347,9 +356,9 @@ main (int argc, const char *argv[])
                   }
                   free (shelly);
                }
-         } else if (!strncmp (topic, "state", 5) && (!strcmp (tag, "Env") || !strcmp (type, "data")))
+         } else if (!strncmp (topic, "state", 5) && (!strcmp (tag, "Env") || !strcmp (tag, "Remote") || !strcmp (type, "data")))
          {                      // Env
-            log_t *l = find (!strcmp (tag, "Env") ? type : tag);
+            log_t *l = find (!strcmp (tag, "Env") || !strcmp (tag, "Remote") ? type : tag);
             if ((v = j_get (data, "ts")))
             {
                time_t t = j_time (v);
@@ -374,9 +383,9 @@ main (int argc, const char *argv[])
                logval ("co2", &l->co2, v);
             if ((v = j_get (data, "als")))
                logval ("als", &l->als, v);
-            v = j_get (data, "heat");
+            v = j_get (data, "extrad") ? : j_get (data, "heat");
             logbool ("heat", &l->heat, v && *v == 't');
-            v = j_get (data, "fan");
+            v = j_get (data, "extfan") ? : j_get (data, "fan");
             logbool ("fan", &l->fan, v && *v == 't');
             done (l, 0);
          }
