@@ -993,6 +993,11 @@ gfx_temp (float t)
       gfx_text (0, 2, "~");
 }
 
+void gfx_colour(char c)
+{
+	gfx_foreground(gfx_rgb(c));
+}
+
 uint8_t
 menufunc1 (char key)
 {                               /* Initial menu: Temp control - eventually menu structure somehow... */
