@@ -1,6 +1,6 @@
 // Generated case design for USBC/USBC.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2025-05-02 14:25:34
+// Generated 2025-05-03 08:52:22
 // title:	PCB-USBA
 // rev:	1
 // comment:	www.me.uk

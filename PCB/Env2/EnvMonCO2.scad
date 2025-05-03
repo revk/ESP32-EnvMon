@@ -1,6 +1,6 @@
 // Generated case design for Env2/EnvMon.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2025-05-02 14:22:31
+// Generated 2025-05-03 09:00:43
 // title:	Env2
 // comment:	www.me.uk
 // comment:	@TheRealRevK
@@ -634,5 +634,4 @@ module bottom()
 		pcb(height,r=margin);
 	}
 }
-translate([spacing*2,0,0])preview();
 bottom(); translate([spacing,0,0])top();
