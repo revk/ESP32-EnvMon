@@ -1,6 +1,6 @@
 // Generated case design for Env2/EnvMon.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2025-05-03 08:58:45
+// Generated 2025-05-04 08:12:21
 // title:	Env2
 // comment:	www.me.uk
 // comment:	@TheRealRevK
@@ -122,7 +122,7 @@ if(hole)
 	{
 		
 		b(0,0,1,2,1.25,1);
-        	rotate([-45,0,0]) translate([0,0,10]) b(0,0,0,5,10,1);
+        	rotate([-60,0,0]) translate([0,0,5]) b(0,0,0,5,5,1);
 	}
 }
 if(block)
@@ -165,7 +165,7 @@ if(hole)
 translate([-29,17.5,8.25]) rotate([180,0,0])
 {
         translate([29+1.5,17.5,10])hull(){cube([42,32,1],center=true);translate([0,0,10])cube([52,42,1],center=true);}
-        hull()for(x=[2.5,55.5])for(y=[2.5,32.5])translate([x,y,0])cylinder(r=2.6,h=7,$fn=24);
+        hull()for(x=[2.5,55.5])for(y=[2.5,32.5])translate([x,y,0])cylinder(r=2.5,h=6,$fn=24);
         // Pins
         for(x=[0:1:7])translate([2.4,8.61+x*2.54,0])
         {
@@ -223,14 +223,13 @@ if(part)
 		b(0,0,0,12.7,N*4-0.1,1);
 		translate([0.8,0,0])b(0,0,0,11.1,N*4-0.1,4.5);
 	}
+	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])
+		rotate([90,0,-90])cylinder(d=3,h=20);
 }
 if(hole)
 {
 	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])
-	{
-		rotate([90,0,-90])cylinder(d=3,h=20);
 		translate([-10,0,0])rotate([180,0,-90])cylinder(d=3,h=20);
-	}
 }
 }
 
@@ -295,14 +294,13 @@ if(part)
 		b(0,0,0,12.7,N*4-0.1,1);
 		translate([0.8,0,0])b(0,0,0,11.1,N*4-0.1,4.5);
 	}
+	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])
+		rotate([90,0,-90])cylinder(d=3,h=20);
 }
 if(hole)
 {
 	for(p=[0:N-1])translate([0,-4*(N-1)/2+p*4,2])
-	{
-		rotate([90,0,-90])cylinder(d=3,h=20);
 		translate([-10,0,0])rotate([180,0,-90])cylinder(d=3,h=20);
-	}
 }
 }
 
@@ -345,7 +343,7 @@ if(hole)
 	hull()
 	{
                 b(0,0,.8,1.2,1.2,1);
-        	rotate([-45,0,0]) translate([0,0,10]) b(0,0,0,5,10,1);
+        	rotate([-60,0,0]) translate([0,0,5]) b(0,0,0,5,5,1);
 	}
 }
 if(block)
@@ -383,7 +381,7 @@ if(hole)
 	hull()
 	{
                 b(0,0,-2,6,6,4);
-        	rotate([-45,0,-90]) translate([0,0,10]) b(0,0,0,8,10,1);
+        	rotate([-60,0,-90]) translate([0,0,8]) b(0,0,0,8,5,1);
 	}
 }
 if(block)

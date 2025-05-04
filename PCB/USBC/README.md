@@ -11,4 +11,4 @@ This is an open source project, but bear in mind you cannot sell boards bearing 
 <img src='USBC.png' width=32%><img src='USBC-90.png' width=32%><img src='USBC-bottom.png' width=32%>
 <img src='USBC-panel.png' width=49%><img src='USBC-panel-bottom.png' width=49%>
 
-*Auto generated 2025-05-03T10:23:05*
+*Auto generated 2025-05-04T08:07:17*
