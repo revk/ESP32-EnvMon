@@ -1,6 +1,6 @@
 all:	png stl
 
-stl:	USBC/USBC.stl EnvHT/EnvHT.stl EnvMon/EnvMon.stl EnvMon/EnvMon-noco2.stl EnvMon/EnvMon-nooled.stl EnvMon/EnvMon-flush.stl EnvMon/EnvMon-flush-nooled.stl EnvMon/EnvMon-flush-noco2.scad Env2/EnvMon.stl Env2/EnvMonCO2.stl $(patsubst %.scad,%.stl,$(wildcard *.scad))
+stl:	USBC/USBC.stl EnvHT/EnvHT.stl EnvMon/EnvMon.stl EnvMon/EnvMon-noco2.stl EnvMon/EnvMon-nooled.stl EnvMon/EnvMon-flush.stl EnvMon/EnvMon-flush-nooled.stl EnvMon/EnvMon-flush-noco2.scad Env2/EnvMon.stl Env2/EnvMonCO2.stl Env2/EnvMonBlind.stl $(patsubst %.scad,%.stl,$(wildcard *.scad))
 
 PCBCase/clean: PCBCase/clean.c
 	make -C PCBCase
@@ -59,3 +59,6 @@ Env2/EnvMon.scad: Env2/EnvMon.kicad_pcb PCBCase/case Makefile
 
 Env2/EnvMonCO2.scad: Env2/EnvMon.kicad_pcb PCBCase/case Makefile
 	PCBCase/case -o $@ $< --top=12 --bottom=2 --pcb=2 --ignore=J1.1,J1.3,J1.4,J1.5,J1.6,J1.7
+
+Env2/EnvMonBlind.scad: Env2/EnvMon.kicad_pcb PCBCase/case Makefile
+	PCBCase/case -o $@ $< --top=12 --bottom=2 --pcb=2 --ignore=J1
