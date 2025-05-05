@@ -6,11 +6,11 @@ difference()
     union()
     {
         blankplate();
-        translate([-24.75,-38.25,0])cube([49.5,76.5,8]);
+        translate([-25,-25,0])cube([45,65,5]);
     }
-    #translate([-8.89-24.1,55.65-32.85+15,5.2])rotate([0,0,-90])minkowski()
+    translate([-8.89-24.1,55.65-32.85+15,3])rotate([0,0,-90])minkowski()
     {
        pcb();
-       cube([0.1,0.1,10]);
+       cube([0.3,0.3,10]);
     }
 }
