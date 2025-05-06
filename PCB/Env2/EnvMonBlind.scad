@@ -1,6 +1,6 @@
 // Generated case design for Env2/EnvMon.kicad_pcb
 // By https://github.com/revk/PCBCase
-// Generated 2025-05-05 10:28:36
+// Generated 2025-05-05 10:16:15
 // title:	Env2
 // comment:	www.me.uk
 // comment:	@TheRealRevK
@@ -43,24 +43,23 @@ translate([27.750000,35.500000,0.800000])rotate([0,0,-90.000000])m1(part,hole,bl
 translate([24.000000,20.000000,0.800000])rotate([0,0,-90.000000])m2(part,hole,block,casetop); // RevK:C_0603_ C_0603_1608Metric (back)
 translate([7.700000,45.850000,0.800000])rotate([0,0,180.000000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
 translate([47.900000,13.550000,0.800000])rotate([0,0,180.000000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
-translate([29.000000,32.750000,0.800000])translate([0.000000,0.000000,8.300000])rotate([0.000000,180.000000,180.000000])m5(part,hole,block,casetop); // RevK:LCD2 WSLCD2 (back)
 translate([9.500000,41.750000,0.800000])rotate([0,0,180.000000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
-translate([31.750000,21.750000,0.800000])rotate([0,0,90.000000])m8(part,hole,block,casetop); // D20 (back)
+translate([31.750000,21.750000,0.800000])rotate([0,0,90.000000])m4(part,hole,block,casetop); // D20 (back)
 translate([26.500000,20.700000,0.800000])rotate([0,0,180.000000])m2(part,hole,block,casetop); // RevK:C_0603_ C_0603_1608Metric (back)
 translate([16.000000,16.250000,0.800000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
-translate([17.000000,7.250000,0.800000])rotate([0,0,180.000000])m9(part,hole,block,casetop); // U2 (back)
-translate([50.550000,6.150000,0.800000])rotate([0,0,180.000000])m10(part,hole,block,casetop); // J3 (back)
-translate([37.750000,21.250000,0.800000])translate([0.000000,-2.400000,0.000000])rotate([90.000000,-0.000000,-0.000000])m11(part,hole,block,casetop); // RevK:USB-C-Socket-H CSP-USC16-TR (back)
-translate([28.700000,28.150000,0.800000])rotate([0,0,90.000000])m12(part,hole,block,casetop); // C4 (back)
-translate([16.000000,21.250000,0.800000])m13(part,hole,block,casetop); // J2 (back)
-translate([26.500000,18.700000,0.800000])rotate([0,0,180.000000])m14(part,hole,block,casetop); // RevK:SOT-23-6-MD8942 SOT-23-6 (back)
+translate([17.000000,7.250000,0.800000])rotate([0,0,180.000000])m5(part,hole,block,casetop); // U2 (back)
+translate([50.550000,6.150000,0.800000])rotate([0,0,180.000000])m6(part,hole,block,casetop); // J3 (back)
+translate([37.750000,21.250000,0.800000])translate([0.000000,-2.400000,0.000000])rotate([90.000000,-0.000000,-0.000000])m7(part,hole,block,casetop); // RevK:USB-C-Socket-H CSP-USC16-TR (back)
+translate([28.700000,28.150000,0.800000])rotate([0,0,90.000000])m8(part,hole,block,casetop); // C4 (back)
+translate([16.000000,21.250000,0.800000])m9(part,hole,block,casetop); // J2 (back)
+translate([26.500000,18.700000,0.800000])rotate([0,0,180.000000])m10(part,hole,block,casetop); // RevK:SOT-23-6-MD8942 SOT-23-6 (back)
 translate([50.000000,13.550000,0.800000])rotate([0,0,180.000000])m1(part,hole,block,casetop); // RevK:R_0402_ R_0402_1005Metric (back)
-translate([5.000000,45.250000,0.800000])rotate([0,0,-90.000000])m15(part,hole,block,casetop); // U5 (back)
-translate([26.500000,23.300000,0.800000])rotate([0,0,180.000000])scale([1.000000,1.000000,1.400000])rotate([0.000000,0.000000,-90.000000])m16(part,hole,block,casetop); // RevK:L_4x4_ TYA4020 (back)
-translate([52.575000,48.675000,0.800000])m17(part,hole,block,casetop); // D4 (back)
-translate([19.000000,37.250000,0.800000])m18(part,hole,block,casetop); // U1 (back)
-translate([42.025000,47.000000,0.800000])rotate([0,0,90.000000])m19(part,hole,block,casetop); // U4 (back)
-translate([19.000000,26.750000,0.800000])rotate([0,0,180.000000])m8(part,hole,block,casetop); // D20 (back)
+translate([5.000000,45.250000,0.800000])rotate([0,0,-90.000000])m11(part,hole,block,casetop); // U5 (back)
+translate([26.500000,23.300000,0.800000])rotate([0,0,180.000000])scale([1.000000,1.000000,1.400000])rotate([0.000000,0.000000,-90.000000])m12(part,hole,block,casetop); // RevK:L_4x4_ TYA4020 (back)
+translate([52.575000,48.675000,0.800000])m13(part,hole,block,casetop); // D4 (back)
+translate([19.000000,37.250000,0.800000])m14(part,hole,block,casetop); // U1 (back)
+translate([42.025000,47.000000,0.800000])rotate([0,0,90.000000])m15(part,hole,block,casetop); // U4 (back)
+translate([19.000000,26.750000,0.800000])rotate([0,0,180.000000])m4(part,hole,block,casetop); // D20 (back)
 translate([26.500000,16.800000,0.800000])rotate([0,0,180.000000])m1(part,hole,block,casetop); // RevK:R_0402_ R_0402_1005Metric (back)
 translate([43.500000,20.250000,0.800000])m1(part,hole,block,casetop); // RevK:R_0402_ R_0402_1005Metric (back)
 translate([36.750000,43.500000,0.800000])rotate([0,0,90.000000])m0(part,hole,block,casetop); // RevK:C_0402 C_0402_1005Metric (back)
@@ -127,78 +126,7 @@ if(block)
 }
 }
 
-module m4(part=false,hole=false,block=false,height,N=0)
-{ // RevK:LCD2 PinSocket_1x08_P2.54mm_Vertical
-translate([0,-(N-1)*2.54/2,0])
-{
-if(part)
-{
-	b(0,0,0,2.54,N*2.54,4);
-}
-if(hole)
-{
-	b(0,0,3,2.54+0.2,N*2.54+0.4,height);
-	for(x=[0:1:N-1])translate([0,(x-(N-1)/2)*2.54,-3.5])cylinder(r1=0.5,r2=1,h=2.5);
-}
-}
-}
-
-module m5(part=false,hole=false,block=false,height)
-{ // RevK:LCD2 WSLCD2
-// 2" LCD
-if(part)
-translate([-29,17.5,8.25]) rotate([180,0,0])
-{
-	// Main PCB
-	hull()for(x=[2.5,55.5])for(y=[2.5,32.5])translate([x,y,6])cylinder(r=2.5,h=1.5,$fn=24);
-	// Display
-	translate([5,0,6])cube([48,35,4]);
-	// Ribbon
-	translate([3.5,7.5,6])cube([2,20,3.5]);
-	translate([3.5,4,6])cube([2,2,3.5]);
-}
-if(hole)
-translate([-29,17.5,8.25]) rotate([180,0,0])
-{
-        translate([29+1.5,17.5,10])hull(){cube([42,32,1],center=true);translate([0,0,10])cube([52,42,1],center=true);}
-        hull()for(x=[2.5,55.5])for(y=[2.5,32.5])translate([x,y,0])cylinder(r=2.5,h=6,$fn=24);
-        // Pins
-        for(x=[0:1:7])translate([2.4,8.61+x*2.54,0])
-        {
-        	translate([0,0,7.5])cylinder(d1=1.5,d2=0.254,h=1.5,$fn=24);
-        	translate([0,0,-2])cylinder(d2=1.5,d1=0.254,h=1,$fn=24);
-        }
-        // Screws / Pillars
-        for(x=[2.5,55.5])for(y=[2.5,32.5])translate([x,y,0])
-        {
-        	translate([0,0,-2.4])cylinder(d=4,h=1.5,$fn=24);
-        	translate([0,0,-2])cylinder(d=2,h=3,$fn=24);
-        }
-}
-}
-
-module m6(part=false,hole=false,block=false,height)
-{ // RevK:LCD2 M2x6Pillar
-if(part)
-{
-	translate([0,0,-2.5])cylinder(d=3.5,h=2.5,$fn=24);
-}
-if(hole)
-{
-	cylinder(d=3.5,h=8.5,$fn=24);
-}
-}
-
-module m7(part=false,hole=false,block=false,height)
-{ // RevK:LCD2 LCDHeader
-if(hole)
-{
-	b(0,0,0,6,20,height+1);
-	b(-21,0,0,20,20,height+1);
-}
-}
-
-module m8(part=false,hole=false,block=false,height)
+module m4(part=false,hole=false,block=false,height)
 { // D20
 // SOD-123 Diode
 if(part)
@@ -208,7 +136,7 @@ if(part)
 }
 }
 
-module m9(part=false,hole=false,block=false,height)
+module m5(part=false,hole=false,block=false,height)
 { // U2
 if(part)
 {
@@ -225,7 +153,7 @@ if(hole)
 }
 }
 
-module m10(part=false,hole=false,block=false,height)
+module m6(part=false,hole=false,block=false,height)
 { // J3
 // WAGO-2060-453-998-404
 N=3;
@@ -246,7 +174,7 @@ if(hole)
 }
 }
 
-module m11(part=false,hole=false,block=false,height)
+module m7(part=false,hole=false,block=false,height)
 { // RevK:USB-C-Socket-H CSP-USC16-TR
 // USB connector
 rotate([-90,0,0])translate([-4.47,-3.84,0])
@@ -288,7 +216,7 @@ rotate([-90,0,0])translate([-4.47,-3.84,0])
 }
 }
 
-module m12(part=false,hole=false,block=false,height)
+module m8(part=false,hole=false,block=false,height)
 { // C4
 if(part)
 {
@@ -296,7 +224,7 @@ if(part)
 }
 }
 
-module m13(part=false,hole=false,block=false,height)
+module m9(part=false,hole=false,block=false,height)
 { // J2
 // WAGO-2060-452-998-404
 N=2;
@@ -317,7 +245,7 @@ if(hole)
 }
 }
 
-module m14(part=false,hole=false,block=false,height)
+module m10(part=false,hole=false,block=false,height)
 { // RevK:SOT-23-6-MD8942 SOT-23-6
 // SOT-23-6
 if(part)
@@ -327,7 +255,7 @@ if(part)
 }
 }
 
-module m15(part=false,hole=false,block=false,height)
+module m11(part=false,hole=false,block=false,height)
 { // U5
 if(part)
 {
@@ -335,7 +263,7 @@ if(part)
 }
 }
 
-module m16(part=false,hole=false,block=false,height)
+module m12(part=false,hole=false,block=false,height)
 { // RevK:L_4x4_ TYA4020
 // 4x4 Inductor
 if(part)
@@ -344,7 +272,7 @@ if(part)
 }
 }
 
-module m17(part=false,hole=false,block=false,height)
+module m13(part=false,hole=false,block=false,height)
 { // D4
 // 1x1mm LED
 if(part)
@@ -365,7 +293,7 @@ if(block)
 }
 }
 
-module m18(part=false,hole=false,block=false,height)
+module m14(part=false,hole=false,block=false,height)
 { // U1
 // ESP32-S3-MINI-1
 translate([-15.4/2,-15.45/2,0])
@@ -382,7 +310,7 @@ translate([-15.4/2,-15.45/2,0])
 }
 }
 
-module m19(part=false,hole=false,block=false,height)
+module m15(part=false,hole=false,block=false,height)
 { // U4
 if(part)
 {

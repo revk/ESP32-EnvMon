@@ -11,4 +11,4 @@ This is an open source project, but bear in mind you cannot sell boards bearing 
 <img src='EnvMon.png' width=32%><img src='EnvMon-90.png' width=32%><img src='EnvMon-bottom.png' width=32%>
 <img src='EnvMon-panel.png' width=49%><img src='EnvMon-panel-bottom.png' width=49%>
 
-*Auto generated 2025-05-03T10:20:58*
+*Auto generated 2025-05-04T08:05:16*
