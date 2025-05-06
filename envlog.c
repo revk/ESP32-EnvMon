@@ -375,8 +375,6 @@ main (int argc, const char *argv[])
                } else
                   logval ("tempt1", &l->tempt1, j_val (tt));
             }
-            if ((v = j_get (data, "target")))
-               logval ("tempt1", &l->tempt1, j_val (v));
             if ((v = j_get (data, "temp")))
                logval ("temp", &l->temp, v);
             if ((v = j_get (data, "rh")))
