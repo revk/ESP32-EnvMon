@@ -1,4 +1,10 @@
-#EnvMon
+# EnvMon
+
+---
+
+This is basically deprecated, the EPD project and the Faikin Remote project have far more sensors and options now.
+
+---
 
 Environmental monitoring with OLED display working over MQTT
 
