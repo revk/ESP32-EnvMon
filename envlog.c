@@ -365,7 +365,7 @@ main (int argc, const char *argv[])
                if (t)
                   now = (t / interval) * interval;
             }
-            j_t tt = j_find (data, "temp-target");
+            j_t tt = j_find (data, "temp-target")?:j_find (data, "temp_target");
             if (tt)
             {
                if (j_isarray (tt))
