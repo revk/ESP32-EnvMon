@@ -15,6 +15,7 @@ const char TAG[] = "Env";
 #include "esp_http_server.h"
 #include <onewire_bus.h>
 #include <ds18b20.h>
+#include <ir.h>
 #include "gfx.h"
 #include "led_strip.h"
 #include "icons.h"
@@ -75,7 +76,7 @@ static uint32_t sht_serial = 0;
 static int8_t i2cport = -1;
 static volatile uint32_t do_co2 = 0;
 static int8_t num_ds18b20 = 0;
-static ds18b20_device_handle_t adr_ds18b20[2];
+static ds18b20_device_handle_t adr_ds18b20[10];
 static char co2_found = 0;
 static char als_found = 0;      // 1 is VEML3235SL, 2 is VEML6040A3OG
 static char sht_found = 0;
@@ -944,6 +945,10 @@ ds18b20_task (void *p)
       }
       if (num_ds18b20 > 1 && !isnan (c[1]))
          lastotemp = report ("otemp", lastotemp, c[1], tempplaces);
+      if (num_ds18b20 > 2 && !isnan (c[2]))
+         lastotemp = report ("temp3", lastotemp, c[2], tempplaces);
+      if (num_ds18b20 > 3 && !isnan (c[3]))
+         lastotemp = report ("temp4", lastotemp, c[3], tempplaces);
    }
 }
 
@@ -1240,14 +1245,53 @@ web_status (httpd_req_t * req)
    return status ();
 }
 
+static void
+dokey (uint32_t k)
+{
+   jo_t j = jo_object_alloc ();
+   jo_stringf (j, "value", "%08X", k);
+   revk_event ("key", &j);
+}
+
+static void
+ir_callback (uint8_t coding, uint16_t lead0, uint16_t lead1, uint8_t len, uint8_t * data)
+{                               // Handle generic IR https://www.amazon.co.uk/dp/B07DJ58XGC
+   //ESP_LOGE (TAG, "IR CB %d %d %d %d", coding, lead0, lead1, len);
+   static uint32_t key = 0;
+   static uint8_t count = 0;
+   if (coding == IR_PDC && len == 32 && lead0 > 8500 && lead0 < 9500 && lead1 > 4000 && lead1 < 5000 && (data[2] ^ data[3]) == 0xFF)
+   {                            // Key (NEC) - normally address and inverted address, but allow for special cases, as long as code and inverted code.
+      key = (((data[0] ^ ~data[1]) & 0xFF) << 16 | (data[0] << 8) | data[2]);
+      count = 1;
+      //ESP_LOGE (TAG, "Key %04lX", key);
+   }
+   if (count && coding == IR_ZERO && len == 1 && lead0 > 8500 && lead0 < 9500 && lead1 > 1500 && lead1 < 2500 && key)
+   {                            // Continue - ignore for now
+      if (count < 255)
+         count++;
+      if (count == 10 || count == 20)
+      {
+         dokey (key);
+         count = 15;
+      }
+   }
+   if (count && coding == IR_IDLE)
+   {
+      if (count < 10)
+         dokey (key);
+      key = 0;
+      count = 0;
+   }
+}
+
 void
 app_main ()
 {
    revk_boot (&app_callback);
    revk_start ();
-   for (int i = 0; i < sizeof (gpiofixed) / sizeof (*gpiofixed); i++)
-      if (gpiofixed[i].set)
-         revk_gpio_output (gpiofixed[i], 1);
+   for (int i = 0; i < sizeof (fixedgpio) / sizeof (*fixedgpio); i++)
+      if (fixedgpio[i].set)
+         revk_gpio_output (fixedgpio[i], 1);
    revk_gpio_output (fanco2gpio, 0);
    revk_gpio_output (heatgpio, 0);
 #ifdef CONFIG_REVK_LED_STRIP
@@ -1338,6 +1382,8 @@ app_main ()
    gfx_unlock ();
    if (i2cport >= 0)
       revk_task ("I2C", i2c_task, NULL, 4);
+   if (irgpio.set)
+      ir_start (irgpio, ir_callback);
    if (ds18b20.set)
       revk_task ("DS18B20", ds18b20_task, NULL, 4);
    gfx_lock ();
