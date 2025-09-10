@@ -54,8 +54,6 @@ static float lastalsr = NAN;
 static float lastalsg = NAN;
 static float lastalsb = NAN;
 static float lastrh = NAN;
-static float lasttemp = NAN;
-static float lastotemp = NAN;
 static float thisco2 = NAN;
 static float thistemp = NAN;
 #ifdef	ELA
@@ -77,6 +75,7 @@ static int8_t i2cport = -1;
 static volatile uint32_t do_co2 = 0;
 static int8_t num_ds18b20 = 0;
 static ds18b20_device_handle_t adr_ds18b20[10];
+static float lasttemp[sizeof (adr_ds18b20) / sizeof (*adr_ds18b20)];
 static char co2_found = 0;
 static char als_found = 0;      // 1 is VEML3235SL, 2 is VEML6040A3OG
 static char sht_found = 0;
@@ -162,18 +161,18 @@ revk_state_extra (jo_t j)
    if (lasticon)
       jo_stringf (j, "icon", "%c", lasticon);
 #endif
-   if (*aircon && !isnan (lasttemp))
+   if (*aircon && !isnan (lasttemp[0]))
    {                            /* Aircon control */
       static float last = NAN;
-      if (isnan (last) || last != lasttemp || !reporting || now / reporting != reportlast / reporting)
+      if (isnan (last) || last != lasttemp[0] || !reporting || now / reporting != reportlast / reporting)
       {
          char topic[100];
          snprintf (topic, sizeof (topic), "command/%s/control", aircon);
          jo_t j = jo_object_alloc ();
          if (tempplaces <= 0)
-            jo_litf (j, "env", "%d", (int) lasttemp);
+            jo_litf (j, "env", "%d", (int) lasttemp[0]);
          else
-            jo_litf (j, "env", "%.*f", tempplaces, lasttemp);
+            jo_litf (j, "env", "%.*f", tempplaces, lasttemp[0]);
          if (!heatmonitor)
          {
             if (!isnan (temptargetmin) && temptargetmin == temptargetmax)
@@ -187,7 +186,7 @@ revk_state_extra (jo_t j)
             }
          }
          revk_mqtt_send_clients (NULL, 0, topic, &j, 1);
-         last = lasttemp;
+         last = lasttemp[0];
       }
    }
 }
@@ -359,9 +358,9 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       return co2_setting (scd41 ? 0x241d : 0x5403, scd_tempoffset = jo_read_int (j));   /* Use T * 65536 / 175 */
    if (!strcmp (suffix, "co2tempcal"))
    {                            // Set the current temp in C
-      if (isnan (lasttemp))
+      if (isnan (lasttemp[0]))
          return "No temp now";
-      return co2_setting (scd41 ? 0x241d : 0x5403, scd_tempoffset = (scd_tempoffset - (jo_read_float (j) - lasttemp) * 65536.0 / 175.0));       // Oddly the offset seems to be negative
+      return co2_setting (scd41 ? 0x241d : 0x5403, scd_tempoffset = (scd_tempoffset - (jo_read_float (j) - lasttemp[0]) * 65536.0 / 175.0));    // Oddly the offset seems to be negative
    }
    if (!strcmp (suffix, "co2alt"))
       return co2_setting (scd41 ? 0x2427 : 0x5102, jo_read_int (j));    /* m */
@@ -783,7 +782,7 @@ i2c_task (void *p)
                    && (!bletemp || bletemp->missing)
 #endif
                   )
-                  lasttemp = report ("temp", lasttemp, thistemp = t, tempplaces);       /* Treat as temp not itemp as we trust the SCD41 to * be sane */
+                  lasttemp[0] = report ("temp", lasttemp[0], thistemp = t, tempplaces); /* Treat as temp not itemp as we trust the SCD41 to * be sane */
             }
          } else
          {                      /* Wait for data to be ready */
@@ -843,7 +842,7 @@ i2c_task (void *p)
                    && (!bletemp || bletemp->missing)
 #endif
                   )
-                  lasttemp = report ("itemp", lasttemp, thistemp = t, tempplaces);
+                  lasttemp[0] = report ("itemp", lasttemp[0], thistemp = t, tempplaces);
                /* Use temp here as no DS18B20 */
                lastco2 = report ("co2", lastco2, thisco2, co2places);
                lastrh = report ("rh", lastrh, thisrh, rhplaces);
@@ -856,7 +855,7 @@ i2c_task (void *p)
          {
             float t = -45.0 + 175 * (float) (v >> 16) / 65535.0 + 0.1 * shtoffset;
             float h = -6.0 + 125 * (float) (v & 65535) / 65535.0;
-            lasttemp = report ("temp", lasttemp, thistemp = t, tempplaces);
+            lasttemp[0] = report ("temp", lasttemp[0], thistemp = t, tempplaces);
             lastrh = report ("rh", lastrh, thisrh = h, rhplaces);
             //ESP_LOGI (TAG, "SHT T/H read %08lX T=%.2f H=%.2f", v, t, h);
          }
@@ -894,7 +893,7 @@ ds18b20_task (void *p)
          ds18b20_config_t config = { };
          REVK_ERR_CHECK (ds18b20_new_device (&dev, &config, &adr_ds18b20[num_ds18b20]));
          REVK_ERR_CHECK (ds18b20_set_resolution (adr_ds18b20[num_ds18b20], DS18B20_RESOLUTION_12B));
-         num_ds18b20++;
+         lasttemp[num_ds18b20++] = NAN;
       }
    }
    init ();
@@ -940,15 +939,16 @@ ds18b20_task (void *p)
          last[p] = c[0];
          tot += last[p];
          thistemp = tot / N;
-         lasttemp = report ("temp", lasttemp, thistemp, tempplaces);
+         lasttemp[0] = report ("temp", lasttemp[0], thistemp, tempplaces);
 #undef N
       }
-      if (num_ds18b20 > 1 && !isnan (c[1]))
-         lastotemp = report ("otemp", lastotemp, c[1], tempplaces);
-      if (num_ds18b20 > 2 && !isnan (c[2]))
-         lastotemp = report ("temp3", lastotemp, c[2], tempplaces);
-      if (num_ds18b20 > 3 && !isnan (c[3]))
-         lastotemp = report ("temp4", lastotemp, c[3], tempplaces);
+      for (int i = 2; i < num_ds18b20; i++)
+         if (!isnan (c[i]))
+         {
+            char n[20];
+            sprintf (n, "temp%d", i + 1);
+            lasttemp[i] = report (n, lasttemp[i], c[2], tempplaces);
+         }
    }
 }
 
@@ -1475,7 +1475,7 @@ app_main ()
                      break;
                   }
             if (bletemp && !bletemp->missing)
-               lasttemp = report ("temp", lasttemp, thistemp = bletemp->temp / 100.0, tempplaces);      // use BLE temp
+               lasttemp[0] = report ("temp", lasttemp[0], thistemp = bletemp->temp / 100.0, tempplaces);      // use BLE temp
          }
 #endif
       }
