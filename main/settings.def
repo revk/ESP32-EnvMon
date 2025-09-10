@@ -20,6 +20,7 @@ s8	temp.places	1			// Temp reporting places
 s8	rh.places	0			// RH reporting places
 u32	rh.damp		10			// RH damping level
 gpio	ds18b20					// DS18B20 GPIO
+gpio	gpio.fixed	.array=1		// Fixed outputs (set to 1)
 s32	ds18b20offset	0 .decimal=3		// DS18B20 Offset
 #ifndef  CONFIG_GFX_BUILD_SUFFIX_GFXNONE 
 gpio	gfx.mosi				// GFX MOSI GPIO

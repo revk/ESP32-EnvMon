@@ -993,9 +993,10 @@ gfx_temp (float t)
       gfx_text (0, 2, "~");
 }
 
-void gfx_colour(char c)
+void
+gfx_colour (char c)
 {
-	gfx_foreground(gfx_rgb(c));
+   gfx_foreground (gfx_rgb (c));
 }
 
 uint8_t
@@ -1244,6 +1245,9 @@ app_main ()
 {
    revk_boot (&app_callback);
    revk_start ();
+   for (int i = 0; i < sizeof (gpiofixed) / sizeof (*gpiofixed); i++)
+      if (gpiofixed[i].set)
+         revk_gpio_output (gpiofixed[i], 1);
    revk_gpio_output (fanco2gpio, 0);
    revk_gpio_output (heatgpio, 0);
 #ifdef CONFIG_REVK_LED_STRIP
@@ -1253,9 +1257,9 @@ app_main ()
          .strip_gpio_num = (ledrgb.num),
          .max_leds = lednum,    // The number of LEDs in the strip,
 #ifdef	LED_STRIP_COLOR_COMPONENT_FMT_GRB
-            .color_component_format = LED_STRIP_COLOR_COMPONENT_FMT_GRB,
+         .color_component_format = LED_STRIP_COLOR_COMPONENT_FMT_GRB,
 #else
-            .led_pixel_format = LED_PIXEL_FORMAT_GRB,
+         .led_pixel_format = LED_PIXEL_FORMAT_GRB,
 #endif
          .led_model = LED_MODEL_WS2812, // LED strip model
          .flags.invert_out = ledrgb.invert,     // whether to invert the output signal (useful when your hardware has a level inverter)
