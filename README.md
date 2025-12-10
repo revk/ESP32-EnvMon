@@ -2,7 +2,7 @@
 
 ---
 
-This is basically deprecated, the EPD project and the Faikin Remote project have far more sensors and options now.
+This is basically deprecated, the EPD project and the Faikout Remote project have far more sensors and options now.
 
 ---
 

@@ -1,6 +1,6 @@
 u8	webcontrol	2			// Web control
 u32	reporting	60			// Reporting interval (s)
-s	aircon					// Faikin hostname
+s	aircon					// Faikout hostname
 u8	lag		5			// Lag
 gpio	sda					// I2C SDA
 gpio	scl					// I2C SCL
